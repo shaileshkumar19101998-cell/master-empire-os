@@ -14,7 +14,7 @@ if db_url and db_url.startswith("postgres://"):
 
 engine = create_engine(db_url, pool_pre_ping=True)
 
-app = FastAPI(title="Autonomous Business OS - 195+ Country Global Engine", version="3.1.0")
+app = FastAPI(title="Autonomous Business OS - 195+ Country Global Engine", version="3.2.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -164,44 +164,10 @@ def index():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        
-        <!-- Global SEO & Multi-Region Meta Architecture -->
         <title>Autonomous Business OS | Worldwide Digital Blueprints & Industry eBooks</title>
         <meta name="description" content="Access verified enterprise AI blueprints, career guides, and digital automation systems across 195+ countries worldwide. Instant global delivery.">
-        <meta name="keywords" content="AI Automation, Digital Blueprints, Enterprise Architecture, High-Income Skills, Global eBooks">
-        <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+        <meta name="robots" content="index, follow">
         <link rel="canonical" href="https://master-empire-os.onrender.com/">
-        
-        <!-- Hreflang Multi-Region Tags -->
-        <link rel="alternate" hreflang="x-default" href="https://master-empire-os.onrender.com/">
-        <link rel="alternate" hreflang="en-US" href="https://master-empire-os.onrender.com/">
-        <link rel="alternate" hreflang="en-GB" href="https://master-empire-os.onrender.com/">
-        <link rel="alternate" hreflang="en-IN" href="https://master-empire-os.onrender.com/">
-        <link rel="alternate" hreflang="en-CA" href="https://master-empire-os.onrender.com/">
-        <link rel="alternate" hreflang="en-AU" href="https://master-empire-os.onrender.com/">
-
-        <!-- Open Graph / Global Social Signals -->
-        <meta property="og:locale" content="en_US">
-        <meta property="og:type" content="website">
-        <meta property="og:title" content="Autonomous Business OS - Global Digital Assets">
-        <meta property="og:description" content="AI-Powered High-Converting eBooks and Blueprints for 195+ Countries.">
-        <meta property="og:url" content="https://master-empire-os.onrender.com/">
-
-        <!-- Global Structured Data (JSON-LD) -->
-        <script type="application/ld+json">
-        {
-          "@context": "https://schema.org",
-          "@type": "WebSite",
-          "name": "Autonomous Business OS",
-          "url": "https://master-empire-os.onrender.com/",
-          "potentialAction": {
-            "@type": "SearchAction",
-            "target": "https://master-empire-os.onrender.com/?q={search_term_string}",
-            "query-input": "required name=search_term_string"
-          }
-        }
-        </script>
-
         <style>
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0b0f19; color: #f3f4f6; margin: 0; padding: 24px; }
             .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1f2937; padding-bottom: 16px; margin-bottom: 24px; }
@@ -289,7 +255,7 @@ def index():
                 <h3 id="modal-title" style="margin-top:0; color:#60a5fa;">Book Content Preview</h3>
                 <p style="font-size:13px; color:#9ca3af;" id="modal-niche"></p>
                 <hr style="border-color:#374151; margin:12px 0;">
-                <div id="modal-body" style="background:#1f2937; padding:14px; border-radius:8px; font-size:14px; line-height:1.5; max-height:280px; overflow-y:auto;"></div>
+                <div id="modal-body" style="background:#1f2937; padding:14px; border-radius:8px; font-size:14px; line-height:1.6; max-height:280px; overflow-y:auto; white-space:pre-wrap;"></div>
             </div>
         </div>
 
@@ -354,7 +320,7 @@ def index():
                                         <span style="font-weight: 600; font-size: 15px; color:#fff;">${p.title}</span>
                                     </div>
                                     <div style="font-size: 13px; color: #9ca3af; margin-top: 6px;">🎯 Market: <b>${p.niche}</b></div>
-                                    <div style="font-size: 13px; color: #d1d5db; margin-top: 4px; font-style: italic;">"${p.proposed_content}"</div>
+                                    <div style="font-size: 13px; color: #d1d5db; margin-top: 4px; font-style: italic; white-space:pre-wrap;">"${p.proposed_content}"</div>
                                 </div>
                                 <div style="display:flex; align-items:center;">
                                     <button class="btn-approve" onclick="handleDecision(${p.id}, 'APPROVED')">✓ Approve & Publish</button>
@@ -411,9 +377,6 @@ def index():
                     else if (textContent.includes('interview')) tTag = '<span class="tag tag-pack">Industry + Interview</span>';
                     else if (textContent.includes('industry') || textContent.includes('mastery')) tTag = '<span class="tag tag-ind">Industry Level</span>';
 
-                    const safeTitle = (b.title || '').replace(/'/g, "&#39;");
-                    const safeContent = (b.content_preview || 'No content preview available.').replace(/'/g, "&#39;");
-                    const safeNiche = (b.niche || '').replace(/'/g, "&#39;");
                     const priceInfo = getCalculatedPrice(b.tier);
 
                     return `
@@ -425,28 +388,32 @@ def index():
                             <td><b>${priceInfo.text}</b></td>
                             <td><span style="color:#10b981; font-size:11px; font-weight:600;">🌍 195+ Countries Live</span></td>
                             <td>
-                                <button class="btn-preview" onclick="openPreview('${safeTitle}', '${safeNiche}', '${safeContent}')">🔍 Read</button>
-                                <button class="btn-buy" onclick="openCheckout(${b.id}, '${safeTitle}', '${safeNiche}', '${b.tier}', '${safeContent}')">🛒 Buy</button>
+                                <button class="btn-preview" onclick="openPreviewById(${b.id})">🔍 Read</button>
+                                <button class="btn-buy" onclick="openCheckoutById(${b.id})">🛒 Buy</button>
                             </td>
                         </tr>
                     `;
                 }).join('');
             }
 
-            function openPreview(title, niche, content) {
-                document.getElementById('modal-title').innerText = title;
-                document.getElementById('modal-niche').innerText = "Market / Niche: " + niche;
-                document.getElementById('modal-body').innerText = content;
+            function openPreviewById(id) {
+                const b = allBooks.find(item => item.id === id);
+                if (!b) return;
+                document.getElementById('modal-title').innerText = b.title;
+                document.getElementById('modal-niche').innerText = "Market / Niche: " + (b.niche || '--');
+                document.getElementById('modal-body').innerText = b.content_preview || 'No content preview available.';
                 document.getElementById('previewModal').style.display = 'flex';
             }
 
-            function openCheckout(id, title, niche, tier, content) {
-                selectedBook = { id, title, niche, tier, content };
-                const priceInfo = getCalculatedPrice(tier);
+            function openCheckoutById(id) {
+                selectedBook = allBooks.find(item => item.id === id);
+                if (!selectedBook) return;
+                
+                const priceInfo = getCalculatedPrice(selectedBook.tier);
                 currentPriceVal = priceInfo.val;
 
-                document.getElementById('chk-title').innerText = title;
-                document.getElementById('chk-niche').innerText = niche;
+                document.getElementById('chk-title').innerText = selectedBook.title;
+                document.getElementById('chk-niche').innerText = selectedBook.niche || '--';
                 document.getElementById('chk-price').innerText = priceInfo.text;
                 document.getElementById('coupon-input').value = "";
                 document.getElementById('coupon-msg').innerText = "";
@@ -487,7 +454,7 @@ def index():
 
             function accessBookContent() {
                 closeModal('checkoutModal');
-                openPreview(selectedBook.title, selectedBook.niche, selectedBook.content);
+                openPreviewById(selectedBook.id);
             }
 
             function closeModal(id) {
