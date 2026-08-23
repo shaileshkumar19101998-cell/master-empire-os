@@ -15,7 +15,7 @@ if db_url and db_url.startswith("postgres://"):
 
 engine = create_engine(db_url, pool_pre_ping=True)
 
-app = FastAPI(title="Autonomous Business OS - Global Enterprise Engine", version="3.5.0")
+app = FastAPI(title="Autonomous Business OS - Global Enterprise Engine", version="3.6.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -33,6 +33,10 @@ class CouponValidateRequest(BaseModel):
     book_id: int
     coupon_code: str
     original_price_val: int = 499
+
+class PurchaseOrderRequest(BaseModel):
+    book_id: int
+    final_paid_amount: int
 
 @app.get("/robots.txt", response_class=Response)
 def get_robots():
@@ -112,6 +116,26 @@ def apply_coupon(req: CouponValidateRequest):
         "message": "Invalid Promo Code."
     }
 
+@app.post("/api/record-purchase")
+def record_purchase(req: PurchaseOrderRequest):
+    try:
+        with engine.begin() as conn:
+            conn.execute(text("""
+                UPDATE books 
+                SET orders = orders + 1, 
+                    revenue = revenue + :amt, 
+                    visits = visits + 1 
+                WHERE id = :id
+            """), {"amt": req.final_paid_amount, "id": req.book_id})
+            
+            conn.execute(text("""
+                INSERT INTO system_logs (module, status, message, created_at)
+                VALUES ('COMMERCE_ENGINE', 'SUCCESS', :msg, NOW())
+            """), {"msg": f"Order confirmed for Book #{req.book_id} (Paid: ₹{req.final_paid_amount})"})
+        return {"status": "SUCCESS"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/think-idea")
 def think_batch_ideas():
     success = generate_5_trending_ideas()
@@ -183,24 +207,12 @@ def index():
         <meta name="robots" content="index, follow">
         <link rel="canonical" href="https://master-empire-os.onrender.com/">
         
-        <!-- Multi-Region Hreflang Tags for Global Organic Reach -->
         <link rel="alternate" hreflang="x-default" href="https://master-empire-os.onrender.com/">
         <link rel="alternate" hreflang="en-US" href="https://master-empire-os.onrender.com/">
         <link rel="alternate" hreflang="en-GB" href="https://master-empire-os.onrender.com/">
         <link rel="alternate" hreflang="en-IN" href="https://master-empire-os.onrender.com/">
         <link rel="alternate" hreflang="en-CA" href="https://master-empire-os.onrender.com/">
         <link rel="alternate" hreflang="en-AU" href="https://master-empire-os.onrender.com/">
-
-        <!-- Schema.org JSON-LD Structured Data for Rich Search Results -->
-        <script type="application/ld+json">
-        {
-          "@context": "https://schema.org",
-          "@type": "WebSite",
-          "name": "Autonomous Business OS",
-          "url": "https://master-empire-os.onrender.com/",
-          "description": "Global 195+ Country Enterprise Digital Systems and Blueprints Hub"
-        }
-        </script>
 
         <style>
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0b0f19; color: #f3f4f6; margin: 0; padding: 24px; }
@@ -242,17 +254,18 @@ def index():
         <div class="header">
             <div>
                 <h1 style="margin: 0; font-size: 22px;">Autonomous Business OS</h1>
-                <p style="margin: 4px 0 0 0; color: #9ca3af; font-size: 14px;">195+ Countries Worldwide Automated SEO & Digital Asset Hub</p>
+                <p style="margin: 4px 0 0 0; color: #9ca3af; font-size: 14px;">195+ Countries Worldwide Automated SEO & Real-Time Engine</p>
             </div>
             <div>
-                <button class="btn-think" id="main-think-btn" onclick="triggerAutoMarketDiscovery()">⚡ Auto-Discover 5 Draft Proposals</button>
+                <button class="btn-think" id="main-think-btn" onclick="triggerAutoMarketDiscovery()">⚡ Auto-Discover 5 Deep Blueprints</button>
             </div>
         </div>
 
         <div class="grid">
             <div class="card"><div class="card-title">Active Products</div><div class="card-value" id="m-prod">--</div></div>
             <div class="card"><div class="card-title">Total Visits</div><div class="card-value" id="m-visits">--</div></div>
-            <div class="card"><div class="card-title">Total Orders</div><div class="card-value" id="m-orders">--</div></div>
+            <div class="card"><div class="card-title">Total Orders</div><div class="card-value" id="m-orders" style="color: #10b981;">--</div></div>
+            <div class="card"><div class="card-title">Total Revenue</div><div class="card-value" id="m-rev" style="color: #3b82f6;">--</div></div>
             <div class="card"><div class="card-title">Pending Approvals</div><div class="card-value" id="m-pending" style="color: #f59e0b;">--</div></div>
         </div>
 
@@ -276,7 +289,7 @@ def index():
 
             <table>
                 <thead>
-                    <tr><th>ID</th><th>Book Title</th><th>Target Market & Niche</th><th>Level</th><th>Market Price</th><th>SEO Reach</th><th>Actions</th></tr>
+                    <tr><th>ID</th><th>Book Title</th><th>Target Market & Niche</th><th>Level</th><th>Market Price</th><th>Orders</th><th>SEO Reach</th><th>Actions</th></tr>
                 </thead>
                 <tbody id="books-tbody"></tbody>
             </table>
@@ -330,6 +343,7 @@ def index():
             let activeFolder = 'ALL';
             let selectedBook = null;
             let currentPriceVal = 499;
+            let currentPaidAmount = 499;
 
             async function loadData() {
                 try {
@@ -338,13 +352,14 @@ def index():
                     document.getElementById('m-prod').innerText = data.metrics.total_products;
                     document.getElementById('m-visits').innerText = data.metrics.total_visits;
                     document.getElementById('m-orders').innerText = data.metrics.total_orders;
+                    document.getElementById('m-rev').innerText = data.metrics.total_revenue;
                     document.getElementById('m-pending').innerText = data.metrics.pending_approvals_count;
 
                     const pBox = document.getElementById('pending-container');
                     if (data.pending_approvals.length === 0) {
                         pBox.innerHTML = `
                             <div style="background: #1f2937; padding: 18px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-                                <span style="color: #10b981;">✓ Queue is empty. Click <b>Auto-Discover</b> to generate new deep draft proposals.</span>
+                                <span style="color: #10b981;">✓ Queue is empty. Click <b>Auto-Discover</b> to generate new deep blueprints.</span>
                                 <button class="btn-think" onclick="triggerAutoMarketDiscovery()">⚡ Run Market Discovery</button>
                             </div>
                         `;
@@ -379,7 +394,7 @@ def index():
                 document.getElementById('cnt-all').innerText = allBooks.length;
                 document.getElementById('cnt-found').innerText = allBooks.filter(b => (b.tier || b.title).toLowerCase().includes('foundation')).length;
                 document.getElementById('cnt-ind').innerText = allBooks.filter(b => (b.tier || b.title).toLowerCase().includes('industry') || (b.tier || b.title).toLowerCase().includes('mastery')).length;
-                document.getElementById('cnt-norm').innerText = allBooks.length - (parseInt(document.getElementById('cnt-found').innerText) + parseInt(document.getElementById('cnt-ind').innerText));
+                document.getElementById('cnt-norm').innerText = Math.max(0, allBooks.length - (parseInt(document.getElementById('cnt-found').innerText) + parseInt(document.getElementById('cnt-ind').innerText)));
             }
 
             function setFolder(folder, btn) {
@@ -407,6 +422,11 @@ def index():
                     return true;
                 });
 
+                if (filtered.length === 0) {
+                    tBody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#6b7280; padding:24px;">No products published yet. Click <b>Auto-Discover</b> above to generate deep enterprise blueprints.</td></tr>';
+                    return;
+                }
+
                 tBody.innerHTML = filtered.map(b => {
                     const textContent = ((b.tier || '') + ' ' + (b.title || '')).toLowerCase();
                     let tTag = '<span class="tag tag-norm">Normal Standard</span>';
@@ -423,6 +443,7 @@ def index():
                             <td>${b.niche || '--'}</td>
                             <td>${tTag}</td>
                             <td><b>${priceInfo.text}</b></td>
+                            <td style="color:#10b981; font-weight:bold;">${b.orders || 0}</td>
                             <td><span style="color:#10b981; font-size:11px; font-weight:600;">🌍 195+ Countries Live</span></td>
                             <td>
                                 <button class="btn-preview" onclick="openPreviewById(${b.id})">🔍 Read</button>
@@ -449,6 +470,7 @@ def index():
                 
                 const priceInfo = getCalculatedPrice(selectedBook.tier);
                 currentPriceVal = priceInfo.val;
+                currentPaidAmount = priceInfo.val;
 
                 document.getElementById('chk-title').innerText = selectedBook.title;
                 document.getElementById('chk-niche').innerText = selectedBook.niche || '--';
@@ -477,14 +499,25 @@ def index():
                     msgBox.style.color = "#10b981";
                     msgBox.innerText = data.message;
                     priceBox.innerText = data.final_price;
+                    currentPaidAmount = data.final_val;
                 } else {
                     msgBox.style.color = "#ef4444";
                     msgBox.innerText = data.message;
                     priceBox.innerText = data.final_price;
+                    currentPaidAmount = data.final_val;
                 }
             }
 
-            function confirmPurchase() {
+            async function confirmPurchase() {
+                try {
+                    await fetch('/api/record-purchase', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ book_id: selectedBook.id, final_paid_amount: currentPaidAmount })
+                    });
+                    loadData();
+                } catch(e) {}
+
                 document.getElementById('chk-box').style.display = "none";
                 document.getElementById('btn-confirm-order').style.display = "none";
                 document.getElementById('delivery-section').style.display = "block";
@@ -523,7 +556,7 @@ def index():
                 } catch(e) {
                     await loadData();
                 } finally {
-                    btn.innerText = "⚡ Auto-Discover 5 Draft Proposals";
+                    btn.innerText = "⚡ Auto-Discover 5 Deep Blueprints";
                     btn.disabled = false;
                 }
             }
