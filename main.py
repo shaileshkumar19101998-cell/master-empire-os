@@ -1,4 +1,5 @@
 import os
+import math
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, Response
@@ -14,7 +15,7 @@ if db_url and db_url.startswith("postgres://"):
 
 engine = create_engine(db_url, pool_pre_ping=True)
 
-app = FastAPI(title="Autonomous Business OS - 195+ Country Global Engine", version="3.2.0")
+app = FastAPI(title="Autonomous Business OS - Global Enterprise Engine", version="3.5.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -50,7 +51,7 @@ def get_sitemap():
             xml.append(f'<url><loc>https://master-empire-os.onrender.com/#book-{b["id"]}</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>')
         xml.append('</urlset>')
         return Response(content="".join(xml), media_type="application/xml")
-    except Exception as e:
+    except Exception:
         return Response(content="<urlset></urlset>", media_type="application/xml")
 
 @app.get("/api/analytics")
@@ -83,20 +84,32 @@ def get_analytics():
 @app.post("/api/apply-coupon")
 def apply_coupon(req: CouponValidateRequest):
     code = req.coupon_code.strip().upper()
+    orig = req.original_price_val
+    
     if code == "SHAILJA":
         return {
             "valid": True,
             "discount_percent": 100,
             "final_price": "₹0 ($0)",
             "final_val": 0,
-            "message": "🎉 Master VIP Coupon 'SHAILJA' Applied! 100% Free Lifetime Access."
+            "message": "🎉 Master VIP Access Activated: 100% OFF (₹0 Free Access)!"
+        }
+    elif code == "AKKHI":
+        discounted_val = math.floor(orig * 0.25)
+        usd_val = max(1, math.floor(discounted_val / 82))
+        return {
+            "valid": True,
+            "discount_percent": 75,
+            "final_price": f"₹{discounted_val:,} (${usd_val})",
+            "final_val": discounted_val,
+            "message": f"🎉 VIP Special Code 'AKKHI' Applied! 75% OFF Saved."
         }
     return {
         "valid": False,
         "discount_percent": 0,
-        "final_price": f"₹{req.original_price_val}",
-        "final_val": req.original_price_val,
-        "message": "Invalid Coupon Code."
+        "final_price": f"₹{orig:,}",
+        "final_val": orig,
+        "message": "Invalid Promo Code."
     }
 
 @app.post("/api/think-idea")
@@ -164,10 +177,31 @@ def index():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Autonomous Business OS | Worldwide Digital Blueprints & Industry eBooks</title>
+        <title>Autonomous Business OS | Worldwide High-Converting Digital Assets & Blueprints</title>
         <meta name="description" content="Access verified enterprise AI blueprints, career guides, and digital automation systems across 195+ countries worldwide. Instant global delivery.">
+        <meta name="keywords" content="AI Automation, Digital Blueprints, Enterprise Architecture, High-Income Skills, Global eBooks">
         <meta name="robots" content="index, follow">
         <link rel="canonical" href="https://master-empire-os.onrender.com/">
+        
+        <!-- Multi-Region Hreflang Tags for Global Organic Reach -->
+        <link rel="alternate" hreflang="x-default" href="https://master-empire-os.onrender.com/">
+        <link rel="alternate" hreflang="en-US" href="https://master-empire-os.onrender.com/">
+        <link rel="alternate" hreflang="en-GB" href="https://master-empire-os.onrender.com/">
+        <link rel="alternate" hreflang="en-IN" href="https://master-empire-os.onrender.com/">
+        <link rel="alternate" hreflang="en-CA" href="https://master-empire-os.onrender.com/">
+        <link rel="alternate" hreflang="en-AU" href="https://master-empire-os.onrender.com/">
+
+        <!-- Schema.org JSON-LD Structured Data for Rich Search Results -->
+        <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "Autonomous Business OS",
+          "url": "https://master-empire-os.onrender.com/",
+          "description": "Global 195+ Country Enterprise Digital Systems and Blueprints Hub"
+        }
+        </script>
+
         <style>
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0b0f19; color: #f3f4f6; margin: 0; padding: 24px; }
             .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1f2937; padding-bottom: 16px; margin-bottom: 24px; }
@@ -199,8 +233,8 @@ def index():
             .tag-pack { background: #ec489922; color: #ec4899; border: 1px solid #ec4899; }
             .status-badge { background: #374151; color: #9ca3af; border: 1px solid #4b5563; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; }
 
-            .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; }
-            .modal-content { background: #111827; border: 1px solid #374151; padding: 24px; border-radius: 12px; width: 550px; max-width: 90%; color: #f3f4f6; }
+            .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
+            .modal-content { background: #111827; border: 1px solid #374151; padding: 24px; border-radius: 12px; width: 720px; max-width: 92%; color: #f3f4f6; }
             .close-btn { background: #ef4444; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; float: right; font-weight: 600; }
         </style>
     </head>
@@ -248,18 +282,21 @@ def index():
             </table>
         </div>
 
-        <!-- Modal for Content Preview -->
+        <!-- Modal for Content Preview & Reading -->
         <div id="previewModal" class="modal">
             <div class="modal-content">
                 <button class="close-btn" onclick="closeModal('previewModal')">Close ✕</button>
-                <h3 id="modal-title" style="margin-top:0; color:#60a5fa;">Book Content Preview</h3>
+                <h3 id="modal-title" style="margin-top:0; color:#60a5fa;">Full Book Reader & Blueprint</h3>
                 <p style="font-size:13px; color:#9ca3af;" id="modal-niche"></p>
                 <hr style="border-color:#374151; margin:12px 0;">
-                <div id="modal-body" style="background:#1f2937; padding:14px; border-radius:8px; font-size:14px; line-height:1.6; max-height:280px; overflow-y:auto; white-space:pre-wrap;"></div>
+                <div id="modal-body" style="background:#1f2937; padding:18px; border-radius:8px; font-size:13.5px; line-height:1.7; max-height:420px; overflow-y:auto; white-space:pre-wrap;"></div>
+                <div style="margin-top:16px; display:flex; justify-content:flex-end;">
+                    <button onclick="downloadBookAsFile()" style="background:#10b981; color:#fff; border:none; padding:8px 16px; border-radius:6px; font-weight:600; cursor:pointer;">📥 Save / Download Offline (.txt)</button>
+                </div>
             </div>
         </div>
 
-        <!-- Modal for Checkout & Coupon Code -->
+        <!-- Modal for Checkout & Secret Coupon Code -->
         <div id="checkoutModal" class="modal">
             <div class="modal-content">
                 <button class="close-btn" onclick="closeModal('checkoutModal')">Close ✕</button>
@@ -268,20 +305,20 @@ def index():
                 
                 <div id="chk-box" style="margin:16px 0; background:#1f2937; padding:16px; border-radius:8px;">
                     <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                        <span>Standard Market Price:</span>
+                        <span>Standard Price:</span>
                         <b id="chk-price" style="font-size:16px; color:#fff;">₹499 ($6)</b>
                     </div>
                     <div style="display:flex; gap:8px; margin-top:12px;">
-                        <input type="text" id="coupon-input" placeholder="Enter Coupon Code (e.g. SHAILJA)" style="flex:1; padding:8px 12px; background:#111827; border:1px solid #4b5563; border-radius:6px; color:#fff; text-transform:uppercase;">
+                        <input type="text" id="coupon-input" placeholder="Enter Promo Code" style="flex:1; padding:8px 12px; background:#111827; border:1px solid #4b5563; border-radius:6px; color:#fff; text-transform:uppercase;">
                         <button onclick="validateCoupon()" style="background:#2563eb; color:#fff; border:none; padding:8px 14px; border-radius:6px; font-weight:600; cursor:pointer;">Apply</button>
                     </div>
                     <div id="coupon-msg" style="font-size:12px; margin-top:8px;"></div>
                 </div>
 
                 <div id="delivery-section" style="display:none; background:#064e3b; border:1px solid #059669; padding:16px; border-radius:8px; margin-bottom:16px; text-align:center;">
-                    <h4 style="margin:0 0 6px 0; color:#6ee7b7;">🎉 Order Complete & Verified!</h4>
-                    <p style="font-size:13px; margin:0 0 12px 0; color:#d1fae5;">Your eBook access is active 24x7 worldwide across 195+ countries.</p>
-                    <button onclick="accessBookContent()" style="background:#10b981; color:#fff; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer;">📥 Download & Read Full eBook</button>
+                    <h4 style="margin:0 0 6px 0; color:#6ee7b7;">🎉 Purchase Verified & Active!</h4>
+                    <p style="font-size:13px; margin:0 0 12px 0; color:#d1fae5;">Your full digital blueprint is unlocked with lifetime updates.</p>
+                    <button onclick="accessBookContent()" style="background:#10b981; color:#fff; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer;">📖 Open & Download Full Blueprint</button>
                 </div>
 
                 <button id="btn-confirm-order" onclick="confirmPurchase()" style="width:100%; background:#10b981; color:#fff; border:none; padding:10px; border-radius:8px; font-size:15px; font-weight:bold; cursor:pointer;">Confirm Purchase</button>
@@ -307,7 +344,7 @@ def index():
                     if (data.pending_approvals.length === 0) {
                         pBox.innerHTML = `
                             <div style="background: #1f2937; padding: 18px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-                                <span style="color: #10b981;">✓ Queue is empty. Click <b>Auto-Discover</b> to generate new draft proposals.</span>
+                                <span style="color: #10b981;">✓ Queue is empty. Click <b>Auto-Discover</b> to generate new deep draft proposals.</span>
                                 <button class="btn-think" onclick="triggerAutoMarketDiscovery()">⚡ Run Market Discovery</button>
                             </div>
                         `;
@@ -320,7 +357,7 @@ def index():
                                         <span style="font-weight: 600; font-size: 15px; color:#fff;">${p.title}</span>
                                     </div>
                                     <div style="font-size: 13px; color: #9ca3af; margin-top: 6px;">🎯 Market: <b>${p.niche}</b></div>
-                                    <div style="font-size: 13px; color: #d1d5db; margin-top: 4px; font-style: italic; white-space:pre-wrap;">"${p.proposed_content}"</div>
+                                    <div style="font-size: 13px; color: #d1d5db; margin-top: 4px; font-style: italic; white-space:pre-wrap; max-height:80px; overflow:hidden;">"${p.proposed_content}"</div>
                                 </div>
                                 <div style="display:flex; align-items:center;">
                                     <button class="btn-approve" onclick="handleDecision(${p.id}, 'APPROVED')">✓ Approve & Publish</button>
@@ -399,6 +436,7 @@ def index():
             function openPreviewById(id) {
                 const b = allBooks.find(item => item.id === id);
                 if (!b) return;
+                selectedBook = b;
                 document.getElementById('modal-title').innerText = b.title;
                 document.getElementById('modal-niche').innerText = "Market / Niche: " + (b.niche || '--');
                 document.getElementById('modal-body').innerText = b.content_preview || 'No content preview available.';
@@ -457,13 +495,27 @@ def index():
                 openPreviewById(selectedBook.id);
             }
 
+            function downloadBookAsFile() {
+                if (!selectedBook) return;
+                const textData = "=================================================\\n" +
+                                 selectedBook.title.toUpperCase() + "\\n" +
+                                 "Market / Target: " + (selectedBook.niche || '') + "\\n" +
+                                 "=================================================\\n\\n" +
+                                 (selectedBook.content_preview || '');
+                const blob = new Blob([textData], { type: 'text/plain;charset=utf-8' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = selectedBook.title.replace(/[^a-zA-Z0-9]/g, '_') + "_Full_Blueprint.txt";
+                link.click();
+            }
+
             function closeModal(id) {
                 document.getElementById(id).style.display = 'none';
             }
 
             async function triggerAutoMarketDiscovery() {
                 const btn = document.getElementById('main-think-btn');
-                btn.innerText = "🔍 Generating Proposals...";
+                btn.innerText = "🔍 Generating Deep Blueprints...";
                 btn.disabled = true;
                 try {
                     await fetch('/api/think-idea', { method: 'POST' });
