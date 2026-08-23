@@ -15,7 +15,7 @@ if db_url and db_url.startswith("postgres://"):
 
 engine = create_engine(db_url, pool_pre_ping=True)
 
-app = FastAPI(title="Autonomous Business OS - Global Enterprise Engine", version="4.0.0")
+app = FastAPI(title="Autonomous Business OS - Global Enterprise Engine", version="5.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -37,6 +37,7 @@ class CouponValidateRequest(BaseModel):
 class PurchaseOrderRequest(BaseModel):
     book_id: int
     final_paid_amount: int
+    payment_method: str = "PROMO_100"
 
 @app.get("/robots.txt", response_class=Response)
 def get_robots():
@@ -96,6 +97,7 @@ def apply_coupon(req: CouponValidateRequest):
             "discount_percent": 100,
             "final_price": "₹0 ($0)",
             "final_val": 0,
+            "requires_payment": False,
             "message": "🎉 Master VIP Access Activated: 100% Free Lifetime Access (₹0)."
         }
     elif code == "AKKHI":
@@ -106,13 +108,15 @@ def apply_coupon(req: CouponValidateRequest):
             "discount_percent": 75,
             "final_price": f"₹{discounted_val:,} (${usd_val})",
             "final_val": discounted_val,
-            "message": f"🎉 VIP Code 'AKKHI' Applied! 75% Discount Saved (Pay 25%)."
+            "requires_payment": True,
+            "message": f"🎉 VIP Code 'AKKHI' Applied! 75% Discount Saved (Pay 25%: ₹{discounted_val:,})."
         }
     return {
         "valid": False,
         "discount_percent": 0,
         "final_price": f"₹{orig:,}",
         "final_val": orig,
+        "requires_payment": True,
         "message": "Invalid Promo Code."
     }
 
@@ -131,7 +135,7 @@ def record_purchase(req: PurchaseOrderRequest):
             conn.execute(text("""
                 INSERT INTO system_logs (module, status, message, created_at)
                 VALUES ('COMMERCE_ENGINE', 'SUCCESS', :msg, NOW())
-            """), {"msg": f"Order confirmed for Book #{req.book_id} (Paid: ₹{req.final_paid_amount})"})
+            """), {"msg": f"Order confirmed for Book #{req.book_id} via {req.payment_method}. Amount: ₹{req.final_paid_amount}"})
         return {"status": "SUCCESS"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -201,8 +205,8 @@ def index():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Autonomous Business OS | Worldwide High-Converting Digital Assets & Blueprints</title>
-        <meta name="description" content="Access verified enterprise AI blueprints, career guides, and digital automation systems across 195+ countries worldwide. Instant global delivery.">
+        <title>Autonomous Business OS | Worldwide Enterprise Digital Assets</title>
+        <meta name="description" content="Access complete, full-length enterprise AI engineering and systems design blueprints across 195+ countries.">
         <meta name="robots" content="index, follow">
         <link rel="canonical" href="https://master-empire-os.onrender.com/">
         
@@ -245,7 +249,7 @@ def index():
             .status-badge { background: #374151; color: #9ca3af; border: 1px solid #4b5563; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; }
 
             .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
-            .modal-content { background: #111827; border: 1px solid #374151; padding: 24px; border-radius: 12px; width: 800px; max-width: 95%; color: #f3f4f6; }
+            .modal-content { background: #111827; border: 1px solid #374151; padding: 24px; border-radius: 12px; width: 840px; max-width: 95%; color: #f3f4f6; }
             .close-btn { background: #ef4444; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; float: right; font-weight: 600; }
         </style>
     </head>
@@ -294,6 +298,7 @@ def index():
             </table>
         </div>
 
+        <!-- Full Book Reader Modal -->
         <div id="previewModal" class="modal">
             <div class="modal-content">
                 <button class="close-btn" onclick="closeModal('previewModal')">Close ✕</button>
@@ -308,6 +313,7 @@ def index():
             </div>
         </div>
 
+        <!-- Checkout & Payment Simulation Modal -->
         <div id="checkoutModal" class="modal">
             <div class="modal-content" style="max-width:520px;">
                 <button class="close-btn" onclick="closeModal('checkoutModal')">Close ✕</button>
@@ -326,13 +332,26 @@ def index():
                     <div id="coupon-msg" style="font-size:12px; margin-top:8px;"></div>
                 </div>
 
+                <!-- Payment Method Section if Price > 0 -->
+                <div id="pay-methods-box" style="margin-bottom:16px; background:#1f2937; padding:14px; border-radius:8px; display:block;">
+                    <span style="font-size:12px; color:#9ca3af; font-weight:bold; text-transform:uppercase;">Select Payment Gateway:</span>
+                    <div style="display:flex; gap:10px; margin-top:8px;">
+                        <label style="flex:1; background:#111827; border:1px solid #3b82f6; padding:8px; border-radius:6px; font-size:12px; display:flex; align-items:center; gap:6px; cursor:pointer;">
+                            <input type="radio" name="pay_opt" value="UPI_SCAN" checked> ⚡ UPI / QR
+                        </label>
+                        <label style="flex:1; background:#111827; border:1px solid #374151; padding:8px; border-radius:6px; font-size:12px; display:flex; align-items:center; gap:6px; cursor:pointer;">
+                            <input type="radio" name="pay_opt" value="CARD_INTL"> 💳 Card / Stripe
+                        </label>
+                    </div>
+                </div>
+
                 <div id="delivery-section" style="display:none; background:#064e3b; border:1px solid #059669; padding:16px; border-radius:8px; margin-bottom:16px; text-align:center;">
-                    <h4 style="margin:0 0 6px 0; color:#6ee7b7;">🎉 Access Successfully Activated!</h4>
-                    <p style="font-size:13px; margin:0 0 12px 0; color:#d1fae5;">The full enterprise source text and blueprint are unlocked.</p>
+                    <h4 style="margin:0 0 6px 0; color:#6ee7b7;">🎉 Payment Verified & Access Activated!</h4>
+                    <p style="font-size:13px; margin:0 0 12px 0; color:#d1fae5;">The full enterprise master blueprint is unlocked with lifetime updates.</p>
                     <button onclick="accessBookContent()" style="background:#10b981; color:#fff; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer;">📖 Open & Download Master Blueprint</button>
                 </div>
 
-                <button id="btn-confirm-order" onclick="confirmPurchase()" style="width:100%; background:#10b981; color:#fff; border:none; padding:10px; border-radius:8px; font-size:15px; font-weight:bold; cursor:pointer;">Confirm Purchase</button>
+                <button id="btn-confirm-order" onclick="confirmPurchase()" style="width:100%; background:#10b981; color:#fff; border:none; padding:10px; border-radius:8px; font-size:15px; font-weight:bold; cursor:pointer;">Complete & Pay</button>
             </div>
         </div>
 
@@ -342,6 +361,7 @@ def index():
             let selectedBook = null;
             let currentPriceVal = 499;
             let currentPaidAmount = 499;
+            let requiresPaymentGateway = true;
 
             async function loadData() {
                 try {
@@ -469,12 +489,15 @@ def index():
                 const priceInfo = getCalculatedPrice(selectedBook.tier, selectedBook.title);
                 currentPriceVal = priceInfo.val;
                 currentPaidAmount = priceInfo.val;
+                requiresPaymentGateway = true;
 
                 document.getElementById('chk-title').innerText = selectedBook.title;
                 document.getElementById('chk-niche').innerText = selectedBook.niche || '--';
                 document.getElementById('chk-price').innerText = priceInfo.text;
                 document.getElementById('coupon-input').value = "";
                 document.getElementById('coupon-msg').innerText = "";
+                document.getElementById('pay-methods-box').style.display = "block";
+                document.getElementById('btn-confirm-order').innerText = `Complete & Pay (₹${currentPaidAmount:,})`;
                 
                 document.getElementById('delivery-section').style.display = "none";
                 document.getElementById('chk-box').style.display = "block";
@@ -493,30 +516,48 @@ def index():
                     body: JSON.stringify({ book_id: selectedBook.id, coupon_code: code, original_price_val: currentPriceVal })
                 });
                 const data = await res.json();
+                currentPaidAmount = data.final_val;
+                priceBox.innerText = data.final_price;
+
                 if (data.valid) {
                     msgBox.style.color = "#10b981";
                     msgBox.innerText = data.message;
-                    priceBox.innerText = data.final_price;
-                    currentPaidAmount = data.final_val;
+                    if (data.final_val === 0) {
+                        requiresPaymentGateway = false;
+                        document.getElementById('pay-methods-box').style.display = "none";
+                        document.getElementById('btn-confirm-order').innerText = "Claim Free Access (₹0)";
+                    } else {
+                        requiresPaymentGateway = true;
+                        document.getElementById('pay-methods-box').style.display = "block";
+                        document.getElementById('btn-confirm-order').innerText = `Complete & Pay Discounted (₹${currentPaidAmount:,})`;
+                    }
                 } else {
                     msgBox.style.color = "#ef4444";
                     msgBox.innerText = data.message;
-                    priceBox.innerText = data.final_price;
-                    currentPaidAmount = data.final_val;
+                    requiresPaymentGateway = true;
+                    document.getElementById('pay-methods-box').style.display = "block";
+                    document.getElementById('btn-confirm-order').innerText = `Complete & Pay (₹${currentPaidAmount:,})`;
                 }
             }
 
             async function confirmPurchase() {
+                const payMethod = requiresPaymentGateway ? document.querySelector('input[name="pay_opt"]:checked').value : "VIP_FREE_PASS";
+                
                 try {
                     await fetch('/api/record-purchase', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ book_id: selectedBook.id, final_paid_amount: currentPaidAmount })
+                        body: JSON.stringify({ 
+                            book_id: selectedBook.id, 
+                            final_paid_amount: currentPaidAmount,
+                            payment_method: payMethod 
+                        })
                     });
                     loadData();
                 } catch(e) {}
 
                 document.getElementById('chk-box').style.display = "none";
+                document.getElementById('pay-methods-box').style.display = "none";
                 document.getElementById('btn-confirm-order').style.display = "none";
                 document.getElementById('delivery-section').style.display = "block";
             }
