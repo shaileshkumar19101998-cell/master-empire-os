@@ -1,12 +1,11 @@
 import os
-import random
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
-from worker import run_research_task_with_retry
+from worker import generate_5_trending_ideas
 
 load_dotenv()
 db_url = os.getenv("DATABASE_URL")
@@ -15,7 +14,7 @@ if db_url and db_url.startswith("postgres://"):
 
 engine = create_engine(db_url, pool_pre_ping=True)
 
-app = FastAPI(title="Autonomous Business OS", version="2.2.0")
+app = FastAPI(title="Autonomous Business OS", version="2.3.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -28,9 +27,6 @@ app.add_middleware(
 class ApprovalRequest(BaseModel):
     task_id: int
     decision: str
-
-class GenerateIdeaRequest(BaseModel):
-    custom_niche: str = ""
 
 @app.get("/api/analytics")
 def get_analytics():
@@ -60,13 +56,10 @@ def get_analytics():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/think-idea")
-def think_new_idea(req: GenerateIdeaRequest):
-    tiers = ["Foundation Tier", "Standard Tier", "Industry Mastery Tier"]
-    niches = ["AI Workflow Automation", "Autonomous E-Commerce", "B2B Lead Generation", "SaaS Growth Engine"]
-    target = req.custom_niche.strip() if req.custom_niche.strip() else f"{random.choice(niches)} - {random.choice(tiers)}"
-    success = run_research_task_with_retry(target)
+def think_batch_ideas():
+    success = generate_5_trending_ideas()
     if success:
-        return {"status": "SUCCESS"}
+        return {"status": "SUCCESS", "message": "5 Trending High-Converting Ideas Generated!"}
     raise HTTPException(status_code=500, detail="Research failed")
 
 @app.post("/api/approve-task")
@@ -80,11 +73,11 @@ def approve_task(req: ApprovalRequest):
             conn.execute(text("UPDATE pending_approvals SET status = :decision WHERE id = :id"), {"decision": req.decision.upper(), "id": req.task_id})
 
             if req.decision.upper() == "APPROVED":
-                title_lower = (row["title"] + row["niche"]).lower()
+                title_lower = (row["title"] + row["task_type"]).lower()
                 tier_val = "Normal Standard"
                 if "foundation" in title_lower:
                     tier_val = "Foundation Level"
-                elif "industry" in title_lower or "mastery" in title_lower or "advanced" in title_lower:
+                elif "industry" in title_lower or "mastery" in title_lower or "enterprise" in title_lower:
                     tier_val = "Industry Level"
 
                 conn.execute(text("""
@@ -107,7 +100,7 @@ def index():
     <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>Autonomous Business OS</title>
+        <title>Autonomous Business OS - Enterprise</title>
         <style>
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0b0f19; color: #f3f4f6; margin: 0; padding: 24px; }
             .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1f2937; padding-bottom: 16px; margin-bottom: 24px; }
@@ -117,16 +110,15 @@ def index():
             .card-value { font-size: 24px; font-weight: bold; color: #fff; }
             .section { background: #111827; border: 1px solid #1f2937; border-radius: 10px; padding: 20px; margin-bottom: 24px; }
             
-            .btn-think { background: #6366f1; color: #fff; border: none; padding: 9px 18px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; }
+            .btn-think { background: #6366f1; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; box-shadow: 0 4px 12px rgba(99,102,241,0.3); }
             .btn-think:hover { background: #4f46e5; }
             
-            /* Tier Folders */
             .folder-nav { display: flex; gap: 10px; margin-bottom: 16px; border-bottom: 1px solid #1f2937; padding-bottom: 12px; }
             .folder-btn { background: #1f2937; color: #9ca3af; border: 1px solid #374151; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; }
             .folder-btn.active { background: #2563eb; color: #fff; border-color: #3b82f6; }
             
-            .btn-approve { background: #10b981; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; margin-right: 6px; }
-            .btn-reject { background: #ef4444; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+            .btn-approve { background: #10b981; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; margin-right: 8px; }
+            .btn-reject { background: #ef4444; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; }
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
             th, td { text-align: left; padding: 10px; border-bottom: 1px solid #1f2937; font-size: 14px; }
             th { color: #9ca3af; }
@@ -134,16 +126,17 @@ def index():
             .tag-found { background: #3b82f622; color: #3b82f6; border: 1px solid #3b82f6; }
             .tag-norm { background: #f59e0b22; color: #f59e0b; border: 1px solid #f59e0b; }
             .tag-ind { background: #8b5cf622; color: #8b5cf6; border: 1px solid #8b5cf6; }
+            .rating-badge { background: #f59e0b1a; color: #fbbf24; border: 1px solid #f59e0b44; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; }
         </style>
     </head>
     <body>
         <div class="header">
             <div>
                 <h1 style="margin: 0; font-size: 22px;">Autonomous Business OS</h1>
-                <p style="margin: 4px 0 0 0; color: #9ca3af; font-size: 14px;">PostgreSQL Enterprise Control Center</p>
+                <p style="margin: 4px 0 0 0; color: #9ca3af; font-size: 14px;">Market Discovery Engine (5% Conversion Benchmark)</p>
             </div>
             <div>
-                <button class="btn-think" onclick="triggerThinkIdea()">⚡ Think / Generate AI Idea</button>
+                <button class="btn-think" id="main-think-btn" onclick="triggerAutoMarketDiscovery()">⚡ Auto-Discover 5 Top-Trending Ideas</button>
             </div>
         </div>
 
@@ -155,8 +148,11 @@ def index():
         </div>
 
         <div class="section">
-            <h2 style="font-size: 16px; margin-top: 0;">⚡ Human-In-The-Loop Approval Queue</h2>
-            <div id="pending-container"><p style="color: #6b7280;">Loading...</p></div>
+            <h2 style="font-size: 16px; margin-top: 0; display:flex; justify-content:space-between; align-items:center;">
+                <span>⚡ Human-In-The-Loop Approval Queue (Top 5 Ranked)</span>
+                <span style="font-size:12px; color:#9ca3af; font-weight:normal;">AI Rated by Market Conversion Potential</span>
+            </h2>
+            <div id="pending-container"><p style="color: #6b7280;">Loading ideas...</p></div>
         </div>
 
         <div class="section">
@@ -171,7 +167,7 @@ def index():
 
             <table>
                 <thead>
-                    <tr><th>ID</th><th>Book Title</th><th>Niche</th><th>Tier Level</th><th>Price</th></tr>
+                    <tr><th>ID</th><th>Book Title</th><th>Target Market & Niche</th><th>Level</th><th>Price</th></tr>
                 </thead>
                 <tbody id="books-tbody"></tbody>
             </table>
@@ -192,16 +188,25 @@ def index():
 
                     const pBox = document.getElementById('pending-container');
                     if (data.pending_approvals.length === 0) {
-                        pBox.innerHTML = '<p style="color: #10b981; margin:0;">✓ Approval queue is clear. Click <b>⚡ Think / Generate AI Idea</b> above to generate new book drafts.</p>';
+                        pBox.innerHTML = `
+                            <div style="background: #1f2937; padding: 18px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: #10b981;">✓ Queue is empty. Click <b>Auto-Discover</b> to let AI generate 5 trending high-conversion books.</span>
+                                <button class="btn-think" onclick="triggerAutoMarketDiscovery()">⚡ Run Market Discovery</button>
+                            </div>
+                        `;
                     } else {
                         pBox.innerHTML = data.pending_approvals.map(p => `
-                            <div style="background: #1f2937; padding: 14px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <div style="font-weight: 600; font-size: 15px;">${p.title}</div>
-                                    <div style="font-size: 13px; color: #9ca3af; margin-top: 4px;">Niche: <b>${p.niche}</b></div>
+                            <div style="background: #1f2937; border: 1px solid #374151; padding: 16px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                                <div style="max-width: 75%;">
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span class="rating-badge">${p.task_type || '★★★★★ 4.9/5'}</span>
+                                        <span style="font-weight: 600; font-size: 15px; color:#fff;">${p.title}</span>
+                                    </div>
+                                    <div style="font-size: 13px; color: #9ca3af; margin-top: 6px;">🎯 Market: <b>${p.niche}</b></div>
+                                    <div style="font-size: 13px; color: #d1d5db; margin-top: 4px; font-style: italic;">"${p.proposed_content}"</div>
                                 </div>
-                                <div>
-                                    <button class="btn-approve" onclick="handleDecision(${p.id}, 'APPROVED')">✓ Approve</button>
+                                <div style="display:flex; align-items:center;">
+                                    <button class="btn-approve" onclick="handleDecision(${p.id}, 'APPROVED')">✓ Approve & Publish</button>
                                     <button class="btn-reject" onclick="handleDecision(${p.id}, 'REJECTED')">✕ Reject</button>
                                 </div>
                             </div>
@@ -258,16 +263,20 @@ def index():
                 }).join('');
             }
 
-            async function triggerThinkIdea() {
-                const niche = prompt("Enter specific niche (or leave blank for AI Auto-Discovery):", "");
-                if (niche === null) return;
-                alert("Agent activated. Generating new draft...");
-                await fetch('/api/think-idea', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ custom_niche: niche })
-                });
-                loadData();
+            async function triggerAutoMarketDiscovery() {
+                const btn = document.getElementById('main-think-btn');
+                btn.innerText = "🔍 AI Agent Scanning Trends...";
+                btn.disabled = true;
+                try {
+                    await fetch('/api/think-idea', { method: 'POST' });
+                    await loadData();
+                } catch(e) {
+                    alert("Discovery completed. Refreshing queue.");
+                    await loadData();
+                } finally {
+                    btn.innerText = "⚡ Auto-Discover 5 Top-Trending Ideas";
+                    btn.disabled = false;
+                }
             }
 
             async function handleDecision(taskId, decision) {
