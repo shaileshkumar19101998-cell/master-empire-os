@@ -1,7 +1,7 @@
 import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
@@ -14,7 +14,7 @@ if db_url and db_url.startswith("postgres://"):
 
 engine = create_engine(db_url, pool_pre_ping=True)
 
-app = FastAPI(title="Autonomous Business OS", version="2.3.0")
+app = FastAPI(title="Autonomous Business OS - 195+ Country Global Engine", version="3.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -27,6 +27,31 @@ app.add_middleware(
 class ApprovalRequest(BaseModel):
     task_id: int
     decision: str
+
+class CouponValidateRequest(BaseModel):
+    book_id: int
+    coupon_code: str
+    original_price_val: int = 499
+
+@app.get("/robots.txt", response_class=Response)
+def get_robots():
+    content = "User-agent: *\nAllow: /\nSitemap: https://master-empire-os.onrender.com/sitemap.xml\n"
+    return Response(content=content, media_type="text/plain")
+
+@app.get("/sitemap.xml", response_class=Response)
+def get_sitemap():
+    try:
+        with engine.connect() as conn:
+            books_res = conn.execute(text("SELECT id, title FROM books ORDER BY id DESC;")).mappings().all()
+        
+        xml = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+        xml.append('<url><loc>https://master-empire-os.onrender.com/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>')
+        for b in books_res:
+            xml.append(f'<url><loc>https://master-empire-os.onrender.com/#book-{b["id"]}</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>')
+        xml.append('</urlset>')
+        return Response(content="".join(xml), media_type="application/xml")
+    except Exception as e:
+        return Response(content="<urlset></urlset>", media_type="application/xml")
 
 @app.get("/api/analytics")
 def get_analytics():
@@ -55,12 +80,31 @@ def get_analytics():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/apply-coupon")
+def apply_coupon(req: CouponValidateRequest):
+    code = req.coupon_code.strip().upper()
+    if code == "SHAILJA":
+        return {
+            "valid": True,
+            "discount_percent": 100,
+            "final_price": "₹0 ($0)",
+            "final_val": 0,
+            "message": "🎉 Master VIP Coupon 'SHAILJA' Applied! 100% Free Lifetime Access."
+        }
+    return {
+        "valid": False,
+        "discount_percent": 0,
+        "final_price": f"₹{req.original_price_val}",
+        "final_val": req.original_price_val,
+        "message": "Invalid Coupon Code."
+    }
+
 @app.post("/api/think-idea")
 def think_batch_ideas():
     success = generate_5_trending_ideas()
     if success:
-        return {"status": "SUCCESS", "message": "5 Trending High-Converting Ideas Generated!"}
-    raise HTTPException(status_code=500, detail="Research failed")
+        return {"status": "SUCCESS"}
+    raise HTTPException(status_code=500, detail="Research task failed")
 
 @app.post("/api/approve-task")
 def approve_task(req: ApprovalRequest):
@@ -74,19 +118,38 @@ def approve_task(req: ApprovalRequest):
 
             if req.decision.upper() == "APPROVED":
                 title_lower = (row["title"] + row["task_type"]).lower()
+                
                 tier_val = "Normal Standard"
+                price_str = "₹999 ($12)"
+                price_val = 999
+                mkt_price = "₹2,999 ($36)"
+
                 if "foundation" in title_lower:
                     tier_val = "Foundation Level"
+                    price_str = "₹499 ($6)"
+                    price_val = 499
+                    mkt_price = "₹1,499 ($18)"
+                elif "interview" in title_lower or "career" in title_lower:
+                    tier_val = "Industry + Interview Pack"
+                    price_str = "₹2,499 ($30)"
+                    price_val = 2499
+                    mkt_price = "₹6,999 ($85)"
                 elif "industry" in title_lower or "mastery" in title_lower or "enterprise" in title_lower:
                     tier_val = "Industry Level"
+                    price_str = "₹1,999 ($24)"
+                    price_val = 1999
+                    mkt_price = "₹4,999 ($60)"
 
                 conn.execute(text("""
                     INSERT INTO books (title, niche, tier, price, price_val, market_price, badge, visits, orders, revenue, content_preview, file, seo_status, status)
-                    VALUES (:title, :niche, :tier, '₹499 ($6)', 499, '₹1999 ($24)', 'AI ASSET', 0, 0, 0, :content, '', 'Active 24x7 SEO', 'ACTIVE')
+                    VALUES (:title, :niche, :tier, :price, :price_val, :mkt_price, 'GLOBAL VERIFIED ASSET', 0, 0, 0, :content, '', '195+ Countries Live', 'ACTIVE')
                 """), {
                     "title": row["title"],
                     "niche": row["niche"],
                     "tier": tier_val,
+                    "price": price_str,
+                    "price_val": price_val,
+                    "mkt_price": mkt_price,
                     "content": row["proposed_content"]
                 })
         return {"status": "SUCCESS"}
@@ -100,7 +163,45 @@ def index():
     <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>Autonomous Business OS - Enterprise</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        <!-- Global SEO & Multi-Region Meta Architecture -->
+        <title>Autonomous Business OS | Worldwide Digital Blueprints & Industry eBooks</title>
+        <meta name="description" content="Access verified enterprise AI blueprints, career guides, and digital automation systems across 195+ countries worldwide. Instant global delivery.">
+        <meta name="keywords" content="AI Automation, Digital Blueprints, Enterprise Architecture, High-Income Skills, Global eBooks">
+        <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+        <link rel="canonical" href="https://master-empire-os.onrender.com/">
+        
+        <!-- Hreflang Multi-Region Tags -->
+        <link rel="alternate" hreflang="x-default" href="https://master-empire-os.onrender.com/">
+        <link rel="alternate" hreflang="en-US" href="https://master-empire-os.onrender.com/">
+        <link rel="alternate" hreflang="en-GB" href="https://master-empire-os.onrender.com/">
+        <link rel="alternate" hreflang="en-IN" href="https://master-empire-os.onrender.com/">
+        <link rel="alternate" hreflang="en-CA" href="https://master-empire-os.onrender.com/">
+        <link rel="alternate" hreflang="en-AU" href="https://master-empire-os.onrender.com/">
+
+        <!-- Open Graph / Global Social Signals -->
+        <meta property="og:locale" content="en_US">
+        <meta property="og:type" content="website">
+        <meta property="og:title" content="Autonomous Business OS - Global Digital Assets">
+        <meta property="og:description" content="AI-Powered High-Converting eBooks and Blueprints for 195+ Countries.">
+        <meta property="og:url" content="https://master-empire-os.onrender.com/">
+
+        <!-- Global Structured Data (JSON-LD) -->
+        <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "Autonomous Business OS",
+          "url": "https://master-empire-os.onrender.com/",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://master-empire-os.onrender.com/?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        }
+        </script>
+
         <style>
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0b0f19; color: #f3f4f6; margin: 0; padding: 24px; }
             .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1f2937; padding-bottom: 16px; margin-bottom: 24px; }
@@ -110,15 +211,18 @@ def index():
             .card-value { font-size: 24px; font-weight: bold; color: #fff; }
             .section { background: #111827; border: 1px solid #1f2937; border-radius: 10px; padding: 20px; margin-bottom: 24px; }
             
-            .btn-think { background: #6366f1; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; box-shadow: 0 4px 12px rgba(99,102,241,0.3); }
+            .btn-think { background: #6366f1; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; }
             .btn-think:hover { background: #4f46e5; }
             
-            .folder-nav { display: flex; gap: 10px; margin-bottom: 16px; border-bottom: 1px solid #1f2937; padding-bottom: 12px; }
-            .folder-btn { background: #1f2937; color: #9ca3af; border: 1px solid #374151; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; }
+            .folder-nav { display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid #1f2937; padding-bottom: 12px; flex-wrap: wrap; }
+            .folder-btn { background: #1f2937; color: #9ca3af; border: 1px solid #374151; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; }
             .folder-btn.active { background: #2563eb; color: #fff; border-color: #3b82f6; }
             
             .btn-approve { background: #10b981; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; margin-right: 8px; }
             .btn-reject { background: #ef4444; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+            .btn-preview { background: #374151; color: #60a5fa; border: 1px solid #4b5563; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; margin-right:6px; }
+            .btn-buy { background: #10b981; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; }
+            
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
             th, td { text-align: left; padding: 10px; border-bottom: 1px solid #1f2937; font-size: 14px; }
             th { color: #9ca3af; }
@@ -126,17 +230,22 @@ def index():
             .tag-found { background: #3b82f622; color: #3b82f6; border: 1px solid #3b82f6; }
             .tag-norm { background: #f59e0b22; color: #f59e0b; border: 1px solid #f59e0b; }
             .tag-ind { background: #8b5cf622; color: #8b5cf6; border: 1px solid #8b5cf6; }
-            .rating-badge { background: #f59e0b1a; color: #fbbf24; border: 1px solid #f59e0b44; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; }
+            .tag-pack { background: #ec489922; color: #ec4899; border: 1px solid #ec4899; }
+            .status-badge { background: #374151; color: #9ca3af; border: 1px solid #4b5563; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; }
+
+            .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; }
+            .modal-content { background: #111827; border: 1px solid #374151; padding: 24px; border-radius: 12px; width: 550px; max-width: 90%; color: #f3f4f6; }
+            .close-btn { background: #ef4444; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; float: right; font-weight: 600; }
         </style>
     </head>
     <body>
         <div class="header">
             <div>
                 <h1 style="margin: 0; font-size: 22px;">Autonomous Business OS</h1>
-                <p style="margin: 4px 0 0 0; color: #9ca3af; font-size: 14px;">Market Discovery Engine (5% Conversion Benchmark)</p>
+                <p style="margin: 4px 0 0 0; color: #9ca3af; font-size: 14px;">195+ Countries Worldwide Automated SEO & Digital Asset Hub</p>
             </div>
             <div>
-                <button class="btn-think" id="main-think-btn" onclick="triggerAutoMarketDiscovery()">⚡ Auto-Discover 5 Top-Trending Ideas</button>
+                <button class="btn-think" id="main-think-btn" onclick="triggerAutoMarketDiscovery()">⚡ Auto-Discover 5 Draft Proposals</button>
             </div>
         </div>
 
@@ -149,33 +258,75 @@ def index():
 
         <div class="section">
             <h2 style="font-size: 16px; margin-top: 0; display:flex; justify-content:space-between; align-items:center;">
-                <span>⚡ Human-In-The-Loop Approval Queue (Top 5 Ranked)</span>
-                <span style="font-size:12px; color:#9ca3af; font-weight:normal;">AI Rated by Market Conversion Potential</span>
+                <span>⚡ Human-In-The-Loop Approval Queue</span>
+                <span style="font-size:12px; color:#9ca3af; font-weight:normal;">Evaluation Status: Transparent</span>
             </h2>
-            <div id="pending-container"><p style="color: #6b7280;">Loading ideas...</p></div>
+            <div id="pending-container"><p style="color: #6b7280;">Loading proposals...</p></div>
         </div>
 
         <div class="section">
-            <h2 style="font-size: 16px; margin-top: 0; margin-bottom: 12px;">📁 Product Books by Level</h2>
+            <h2 style="font-size: 16px; margin-top: 0; margin-bottom: 12px;">📁 Product Books & Content Inspector</h2>
             
             <div class="folder-nav">
                 <button class="folder-btn active" onclick="setFolder('ALL', this)">📂 All Books (<span id="cnt-all">0</span>)</button>
-                <button class="folder-btn" onclick="setFolder('Foundation', this)">📘 Foundation Level (<span id="cnt-found">0</span>)</button>
+                <button class="folder-btn" onclick="setFolder('Foundation', this)">📘 Foundation (<span id="cnt-found">0</span>)</button>
                 <button class="folder-btn" onclick="setFolder('Normal', this)">📗 Normal Standard (<span id="cnt-norm">0</span>)</button>
                 <button class="folder-btn" onclick="setFolder('Industry', this)">📕 Industry Level (<span id="cnt-ind">0</span>)</button>
             </div>
 
             <table>
                 <thead>
-                    <tr><th>ID</th><th>Book Title</th><th>Target Market & Niche</th><th>Level</th><th>Price</th></tr>
+                    <tr><th>ID</th><th>Book Title</th><th>Target Market & Niche</th><th>Level</th><th>Market Price</th><th>SEO Reach</th><th>Actions</th></tr>
                 </thead>
                 <tbody id="books-tbody"></tbody>
             </table>
         </div>
 
+        <!-- Modal for Content Preview -->
+        <div id="previewModal" class="modal">
+            <div class="modal-content">
+                <button class="close-btn" onclick="closeModal('previewModal')">Close ✕</button>
+                <h3 id="modal-title" style="margin-top:0; color:#60a5fa;">Book Content Preview</h3>
+                <p style="font-size:13px; color:#9ca3af;" id="modal-niche"></p>
+                <hr style="border-color:#374151; margin:12px 0;">
+                <div id="modal-body" style="background:#1f2937; padding:14px; border-radius:8px; font-size:14px; line-height:1.5; max-height:280px; overflow-y:auto;"></div>
+            </div>
+        </div>
+
+        <!-- Modal for Checkout & Coupon Code -->
+        <div id="checkoutModal" class="modal">
+            <div class="modal-content">
+                <button class="close-btn" onclick="closeModal('checkoutModal')">Close ✕</button>
+                <h3 id="chk-title" style="margin-top:0; color:#10b981;">Order Checkout</h3>
+                <p style="font-size:13px; color:#9ca3af;" id="chk-niche"></p>
+                
+                <div id="chk-box" style="margin:16px 0; background:#1f2937; padding:16px; border-radius:8px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                        <span>Standard Market Price:</span>
+                        <b id="chk-price" style="font-size:16px; color:#fff;">₹499 ($6)</b>
+                    </div>
+                    <div style="display:flex; gap:8px; margin-top:12px;">
+                        <input type="text" id="coupon-input" placeholder="Enter Coupon Code (e.g. SHAILJA)" style="flex:1; padding:8px 12px; background:#111827; border:1px solid #4b5563; border-radius:6px; color:#fff; text-transform:uppercase;">
+                        <button onclick="validateCoupon()" style="background:#2563eb; color:#fff; border:none; padding:8px 14px; border-radius:6px; font-weight:600; cursor:pointer;">Apply</button>
+                    </div>
+                    <div id="coupon-msg" style="font-size:12px; margin-top:8px;"></div>
+                </div>
+
+                <div id="delivery-section" style="display:none; background:#064e3b; border:1px solid #059669; padding:16px; border-radius:8px; margin-bottom:16px; text-align:center;">
+                    <h4 style="margin:0 0 6px 0; color:#6ee7b7;">🎉 Order Complete & Verified!</h4>
+                    <p style="font-size:13px; margin:0 0 12px 0; color:#d1fae5;">Your eBook access is active 24x7 worldwide across 195+ countries.</p>
+                    <button onclick="accessBookContent()" style="background:#10b981; color:#fff; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer;">📥 Download & Read Full eBook</button>
+                </div>
+
+                <button id="btn-confirm-order" onclick="confirmPurchase()" style="width:100%; background:#10b981; color:#fff; border:none; padding:10px; border-radius:8px; font-size:15px; font-weight:bold; cursor:pointer;">Confirm Purchase</button>
+            </div>
+        </div>
+
         <script>
             let allBooks = [];
             let activeFolder = 'ALL';
+            let selectedBook = null;
+            let currentPriceVal = 499;
 
             async function loadData() {
                 try {
@@ -190,7 +341,7 @@ def index():
                     if (data.pending_approvals.length === 0) {
                         pBox.innerHTML = `
                             <div style="background: #1f2937; padding: 18px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-                                <span style="color: #10b981;">✓ Queue is empty. Click <b>Auto-Discover</b> to let AI generate 5 trending high-conversion books.</span>
+                                <span style="color: #10b981;">✓ Queue is empty. Click <b>Auto-Discover</b> to generate new draft proposals.</span>
                                 <button class="btn-think" onclick="triggerAutoMarketDiscovery()">⚡ Run Market Discovery</button>
                             </div>
                         `;
@@ -199,7 +350,7 @@ def index():
                             <div style="background: #1f2937; border: 1px solid #374151; padding: 16px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
                                 <div style="max-width: 75%;">
                                     <div style="display:flex; align-items:center; gap:8px;">
-                                        <span class="rating-badge">${p.task_type || '★★★★★ 4.9/5'}</span>
+                                        <span class="status-badge">${p.task_type || 'Market Score: Not Yet Scored'}</span>
                                         <span style="font-weight: 600; font-size: 15px; color:#fff;">${p.title}</span>
                                     </div>
                                     <div style="font-size: 13px; color: #9ca3af; margin-top: 6px;">🎯 Market: <b>${p.niche}</b></div>
@@ -235,6 +386,14 @@ def index():
                 renderTable();
             }
 
+            function getCalculatedPrice(tier) {
+                const t = (tier || '').toLowerCase();
+                if (t.includes('foundation')) return { text: "₹499 ($6)", val: 499 };
+                if (t.includes('interview') || t.includes('career')) return { text: "₹2,499 ($30)", val: 2499 };
+                if (t.includes('industry') || t.includes('mastery')) return { text: "₹1,999 ($24)", val: 1999 };
+                return { text: "₹999 ($12)", val: 999 };
+            }
+
             function renderTable() {
                 const tBody = document.getElementById('books-tbody');
                 const filtered = allBooks.filter(b => {
@@ -249,7 +408,13 @@ def index():
                     const textContent = ((b.tier || '') + ' ' + (b.title || '')).toLowerCase();
                     let tTag = '<span class="tag tag-norm">Normal Standard</span>';
                     if (textContent.includes('foundation')) tTag = '<span class="tag tag-found">Foundation Level</span>';
-                    if (textContent.includes('industry') || textContent.includes('mastery')) tTag = '<span class="tag tag-ind">Industry Level</span>';
+                    else if (textContent.includes('interview')) tTag = '<span class="tag tag-pack">Industry + Interview</span>';
+                    else if (textContent.includes('industry') || textContent.includes('mastery')) tTag = '<span class="tag tag-ind">Industry Level</span>';
+
+                    const safeTitle = (b.title || '').replace(/'/g, "&#39;");
+                    const safeContent = (b.content_preview || 'No content preview available.').replace(/'/g, "&#39;");
+                    const safeNiche = (b.niche || '').replace(/'/g, "&#39;");
+                    const priceInfo = getCalculatedPrice(b.tier);
 
                     return `
                         <tr>
@@ -257,24 +422,89 @@ def index():
                             <td><b>${b.title}</b></td>
                             <td>${b.niche || '--'}</td>
                             <td>${tTag}</td>
-                            <td>${b.price || '₹499'}</td>
+                            <td><b>${priceInfo.text}</b></td>
+                            <td><span style="color:#10b981; font-size:11px; font-weight:600;">🌍 195+ Countries Live</span></td>
+                            <td>
+                                <button class="btn-preview" onclick="openPreview('${safeTitle}', '${safeNiche}', '${safeContent}')">🔍 Read</button>
+                                <button class="btn-buy" onclick="openCheckout(${b.id}, '${safeTitle}', '${safeNiche}', '${b.tier}', '${safeContent}')">🛒 Buy</button>
+                            </td>
                         </tr>
                     `;
                 }).join('');
             }
 
+            function openPreview(title, niche, content) {
+                document.getElementById('modal-title').innerText = title;
+                document.getElementById('modal-niche').innerText = "Market / Niche: " + niche;
+                document.getElementById('modal-body').innerText = content;
+                document.getElementById('previewModal').style.display = 'flex';
+            }
+
+            function openCheckout(id, title, niche, tier, content) {
+                selectedBook = { id, title, niche, tier, content };
+                const priceInfo = getCalculatedPrice(tier);
+                currentPriceVal = priceInfo.val;
+
+                document.getElementById('chk-title').innerText = title;
+                document.getElementById('chk-niche').innerText = niche;
+                document.getElementById('chk-price').innerText = priceInfo.text;
+                document.getElementById('coupon-input').value = "";
+                document.getElementById('coupon-msg').innerText = "";
+                
+                document.getElementById('delivery-section').style.display = "none";
+                document.getElementById('chk-box').style.display = "block";
+                document.getElementById('btn-confirm-order').style.display = "block";
+                document.getElementById('checkoutModal').style.display = 'flex';
+            }
+
+            async function validateCoupon() {
+                const code = document.getElementById('coupon-input').value;
+                const msgBox = document.getElementById('coupon-msg');
+                const priceBox = document.getElementById('chk-price');
+                
+                const res = await fetch('/api/apply-coupon', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ book_id: selectedBook.id, coupon_code: code, original_price_val: currentPriceVal })
+                });
+                const data = await res.json();
+                if (data.valid) {
+                    msgBox.style.color = "#10b981";
+                    msgBox.innerText = data.message;
+                    priceBox.innerText = data.final_price;
+                } else {
+                    msgBox.style.color = "#ef4444";
+                    msgBox.innerText = data.message;
+                    priceBox.innerText = data.final_price;
+                }
+            }
+
+            function confirmPurchase() {
+                document.getElementById('chk-box').style.display = "none";
+                document.getElementById('btn-confirm-order').style.display = "none";
+                document.getElementById('delivery-section').style.display = "block";
+            }
+
+            function accessBookContent() {
+                closeModal('checkoutModal');
+                openPreview(selectedBook.title, selectedBook.niche, selectedBook.content);
+            }
+
+            function closeModal(id) {
+                document.getElementById(id).style.display = 'none';
+            }
+
             async function triggerAutoMarketDiscovery() {
                 const btn = document.getElementById('main-think-btn');
-                btn.innerText = "🔍 AI Agent Scanning Trends...";
+                btn.innerText = "🔍 Generating Proposals...";
                 btn.disabled = true;
                 try {
                     await fetch('/api/think-idea', { method: 'POST' });
                     await loadData();
                 } catch(e) {
-                    alert("Discovery completed. Refreshing queue.");
                     await loadData();
                 } finally {
-                    btn.innerText = "⚡ Auto-Discover 5 Top-Trending Ideas";
+                    btn.innerText = "⚡ Auto-Discover 5 Draft Proposals";
                     btn.disabled = false;
                 }
             }
