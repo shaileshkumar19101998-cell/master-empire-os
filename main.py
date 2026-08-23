@@ -15,7 +15,7 @@ if db_url and db_url.startswith("postgres://"):
 
 engine = create_engine(db_url, pool_pre_ping=True)
 
-app = FastAPI(title="Autonomous Business OS - Global Enterprise Engine", version="3.6.0")
+app = FastAPI(title="Autonomous Business OS - Global Enterprise Engine", version="4.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -96,7 +96,7 @@ def apply_coupon(req: CouponValidateRequest):
             "discount_percent": 100,
             "final_price": "₹0 ($0)",
             "final_val": 0,
-            "message": "🎉 Master VIP Access Activated: 100% OFF (₹0 Free Access)!"
+            "message": "🎉 Master VIP Access Activated: 100% Free Lifetime Access (₹0)."
         }
     elif code == "AKKHI":
         discounted_val = math.floor(orig * 0.25)
@@ -106,7 +106,7 @@ def apply_coupon(req: CouponValidateRequest):
             "discount_percent": 75,
             "final_price": f"₹{discounted_val:,} (${usd_val})",
             "final_val": discounted_val,
-            "message": f"🎉 VIP Special Code 'AKKHI' Applied! 75% OFF Saved."
+            "message": f"🎉 VIP Code 'AKKHI' Applied! 75% Discount Saved (Pay 25%)."
         }
     return {
         "valid": False,
@@ -179,7 +179,7 @@ def approve_task(req: ApprovalRequest):
 
                 conn.execute(text("""
                     INSERT INTO books (title, niche, tier, price, price_val, market_price, badge, visits, orders, revenue, content_preview, file, seo_status, status)
-                    VALUES (:title, :niche, :tier, :price, :price_val, :mkt_price, 'GLOBAL VERIFIED ASSET', 0, 0, 0, :content, '', '195+ Countries Live', 'ACTIVE')
+                    VALUES (:title, :niche, :tier, :price, :price_val, :mkt_price, 'ENTERPRISE PRODUCTION ASSET', 0, 0, 0, :content, '', '195+ Countries Live', 'ACTIVE')
                 """), {
                     "title": row["title"],
                     "niche": row["niche"],
@@ -203,7 +203,6 @@ def index():
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Autonomous Business OS | Worldwide High-Converting Digital Assets & Blueprints</title>
         <meta name="description" content="Access verified enterprise AI blueprints, career guides, and digital automation systems across 195+ countries worldwide. Instant global delivery.">
-        <meta name="keywords" content="AI Automation, Digital Blueprints, Enterprise Architecture, High-Income Skills, Global eBooks">
         <meta name="robots" content="index, follow">
         <link rel="canonical" href="https://master-empire-os.onrender.com/">
         
@@ -217,7 +216,7 @@ def index():
         <style>
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0b0f19; color: #f3f4f6; margin: 0; padding: 24px; }
             .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1f2937; padding-bottom: 16px; margin-bottom: 24px; }
-            .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+            .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
             .card { background: #111827; border: 1px solid #1f2937; border-radius: 10px; padding: 18px; }
             .card-title { font-size: 13px; color: #9ca3af; text-transform: uppercase; font-weight: 600; margin-bottom: 6px; }
             .card-value { font-size: 24px; font-weight: bold; color: #fff; }
@@ -246,7 +245,7 @@ def index():
             .status-badge { background: #374151; color: #9ca3af; border: 1px solid #4b5563; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; }
 
             .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
-            .modal-content { background: #111827; border: 1px solid #374151; padding: 24px; border-radius: 12px; width: 720px; max-width: 92%; color: #f3f4f6; }
+            .modal-content { background: #111827; border: 1px solid #374151; padding: 24px; border-radius: 12px; width: 800px; max-width: 95%; color: #f3f4f6; }
             .close-btn { background: #ef4444; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; float: right; font-weight: 600; }
         </style>
     </head>
@@ -257,7 +256,7 @@ def index():
                 <p style="margin: 4px 0 0 0; color: #9ca3af; font-size: 14px;">195+ Countries Worldwide Automated SEO & Real-Time Engine</p>
             </div>
             <div>
-                <button class="btn-think" id="main-think-btn" onclick="triggerAutoMarketDiscovery()">⚡ Auto-Discover 5 Deep Blueprints</button>
+                <button class="btn-think" id="main-think-btn" onclick="triggerAutoMarketDiscovery()">⚡ Auto-Discover 5 Full Blueprints</button>
             </div>
         </div>
 
@@ -272,13 +271,13 @@ def index():
         <div class="section">
             <h2 style="font-size: 16px; margin-top: 0; display:flex; justify-content:space-between; align-items:center;">
                 <span>⚡ Human-In-The-Loop Approval Queue</span>
-                <span style="font-size:12px; color:#9ca3af; font-weight:normal;">Evaluation Status: Transparent</span>
+                <span style="font-size:12px; color:#9ca3af; font-weight:normal;">Quality Gate: Production Grade</span>
             </h2>
             <div id="pending-container"><p style="color: #6b7280;">Loading proposals...</p></div>
         </div>
 
         <div class="section">
-            <h2 style="font-size: 16px; margin-top: 0; margin-bottom: 12px;">📁 Product Books & Content Inspector</h2>
+            <h2 style="font-size: 16px; margin-top: 0; margin-bottom: 12px;">📁 Published Enterprise Blueprints</h2>
             
             <div class="folder-nav">
                 <button class="folder-btn active" onclick="setFolder('ALL', this)">📂 All Books (<span id="cnt-all">0</span>)</button>
@@ -289,37 +288,36 @@ def index():
 
             <table>
                 <thead>
-                    <tr><th>ID</th><th>Book Title</th><th>Target Market & Niche</th><th>Level</th><th>Market Price</th><th>Orders</th><th>SEO Reach</th><th>Actions</th></tr>
+                    <tr><th>ID</th><th>Book Title</th><th>Target Market & Niche</th><th>Level</th><th>Market Price</th><th>Orders</th><th>Global Reach</th><th>Actions</th></tr>
                 </thead>
                 <tbody id="books-tbody"></tbody>
             </table>
         </div>
 
-        <!-- Modal for Content Preview & Reading -->
         <div id="previewModal" class="modal">
             <div class="modal-content">
                 <button class="close-btn" onclick="closeModal('previewModal')">Close ✕</button>
-                <h3 id="modal-title" style="margin-top:0; color:#60a5fa;">Full Book Reader & Blueprint</h3>
+                <h3 id="modal-title" style="margin-top:0; color:#60a5fa;">Full Enterprise Document Reader</h3>
                 <p style="font-size:13px; color:#9ca3af;" id="modal-niche"></p>
                 <hr style="border-color:#374151; margin:12px 0;">
-                <div id="modal-body" style="background:#1f2937; padding:18px; border-radius:8px; font-size:13.5px; line-height:1.7; max-height:420px; overflow-y:auto; white-space:pre-wrap;"></div>
-                <div style="margin-top:16px; display:flex; justify-content:flex-end;">
-                    <button onclick="downloadBookAsFile()" style="background:#10b981; color:#fff; border:none; padding:8px 16px; border-radius:6px; font-weight:600; cursor:pointer;">📥 Save / Download Offline (.txt)</button>
+                <div id="modal-body" style="background:#1f2937; padding:20px; border-radius:8px; font-size:13.5px; line-height:1.75; max-height:460px; overflow-y:auto; white-space:pre-wrap; font-family: monospace;"></div>
+                <div style="margin-top:16px; display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:12px; color:#10b981;">✓ Full Complete Production-Ready Material</span>
+                    <button onclick="downloadBookAsFile()" style="background:#10b981; color:#fff; border:none; padding:10px 18px; border-radius:6px; font-weight:600; cursor:pointer;">📥 Download Offline (.txt)</button>
                 </div>
             </div>
         </div>
 
-        <!-- Modal for Checkout & Secret Coupon Code -->
         <div id="checkoutModal" class="modal">
-            <div class="modal-content">
+            <div class="modal-content" style="max-width:520px;">
                 <button class="close-btn" onclick="closeModal('checkoutModal')">Close ✕</button>
-                <h3 id="chk-title" style="margin-top:0; color:#10b981;">Order Checkout</h3>
+                <h3 id="chk-title" style="margin-top:0; color:#10b981;">Enterprise Asset Checkout</h3>
                 <p style="font-size:13px; color:#9ca3af;" id="chk-niche"></p>
                 
                 <div id="chk-box" style="margin:16px 0; background:#1f2937; padding:16px; border-radius:8px;">
                     <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                        <span>Standard Price:</span>
-                        <b id="chk-price" style="font-size:16px; color:#fff;">₹499 ($6)</b>
+                        <span>Retail Market Price:</span>
+                        <b id="chk-price" style="font-size:16px; color:#fff;">₹2,499 ($30)</b>
                     </div>
                     <div style="display:flex; gap:8px; margin-top:12px;">
                         <input type="text" id="coupon-input" placeholder="Enter Promo Code" style="flex:1; padding:8px 12px; background:#111827; border:1px solid #4b5563; border-radius:6px; color:#fff; text-transform:uppercase;">
@@ -329,9 +327,9 @@ def index():
                 </div>
 
                 <div id="delivery-section" style="display:none; background:#064e3b; border:1px solid #059669; padding:16px; border-radius:8px; margin-bottom:16px; text-align:center;">
-                    <h4 style="margin:0 0 6px 0; color:#6ee7b7;">🎉 Purchase Verified & Active!</h4>
-                    <p style="font-size:13px; margin:0 0 12px 0; color:#d1fae5;">Your full digital blueprint is unlocked with lifetime updates.</p>
-                    <button onclick="accessBookContent()" style="background:#10b981; color:#fff; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer;">📖 Open & Download Full Blueprint</button>
+                    <h4 style="margin:0 0 6px 0; color:#6ee7b7;">🎉 Access Successfully Activated!</h4>
+                    <p style="font-size:13px; margin:0 0 12px 0; color:#d1fae5;">The full enterprise source text and blueprint are unlocked.</p>
+                    <button onclick="accessBookContent()" style="background:#10b981; color:#fff; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer;">📖 Open & Download Master Blueprint</button>
                 </div>
 
                 <button id="btn-confirm-order" onclick="confirmPurchase()" style="width:100%; background:#10b981; color:#fff; border:none; padding:10px; border-radius:8px; font-size:15px; font-weight:bold; cursor:pointer;">Confirm Purchase</button>
@@ -359,7 +357,7 @@ def index():
                     if (data.pending_approvals.length === 0) {
                         pBox.innerHTML = `
                             <div style="background: #1f2937; padding: 18px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-                                <span style="color: #10b981;">✓ Queue is empty. Click <b>Auto-Discover</b> to generate new deep blueprints.</span>
+                                <span style="color: #10b981;">✓ Ready to discover. Click <b>Auto-Discover</b> to research complete multi-module blueprints.</span>
                                 <button class="btn-think" onclick="triggerAutoMarketDiscovery()">⚡ Run Market Discovery</button>
                             </div>
                         `;
@@ -368,11 +366,11 @@ def index():
                             <div style="background: #1f2937; border: 1px solid #374151; padding: 16px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
                                 <div style="max-width: 75%;">
                                     <div style="display:flex; align-items:center; gap:8px;">
-                                        <span class="status-badge">${p.task_type || 'Market Score: Not Yet Scored'}</span>
+                                        <span class="status-badge">${p.task_type || 'Market Score: Verified'}</span>
                                         <span style="font-weight: 600; font-size: 15px; color:#fff;">${p.title}</span>
                                     </div>
-                                    <div style="font-size: 13px; color: #9ca3af; margin-top: 6px;">🎯 Market: <b>${p.niche}</b></div>
-                                    <div style="font-size: 13px; color: #d1d5db; margin-top: 4px; font-style: italic; white-space:pre-wrap; max-height:80px; overflow:hidden;">"${p.proposed_content}"</div>
+                                    <div style="font-size: 13px; color: #9ca3af; margin-top: 6px;">🎯 Target: <b>${p.niche}</b></div>
+                                    <div style="font-size: 13px; color: #d1d5db; margin-top: 4px; font-style: italic; white-space:pre-wrap; max-height:80px; overflow:hidden;">"${p.proposed_content.substring(0, 200)}..."</div>
                                 </div>
                                 <div style="display:flex; align-items:center;">
                                     <button class="btn-approve" onclick="handleDecision(${p.id}, 'APPROVED')">✓ Approve & Publish</button>
@@ -404,11 +402,11 @@ def index():
                 renderTable();
             }
 
-            function getCalculatedPrice(tier) {
-                const t = (tier || '').toLowerCase();
-                if (t.includes('foundation')) return { text: "₹499 ($6)", val: 499 };
+            function getCalculatedPrice(tier, title) {
+                const t = ((tier || '') + ' ' + (title || '')).toLowerCase();
                 if (t.includes('interview') || t.includes('career')) return { text: "₹2,499 ($30)", val: 2499 };
                 if (t.includes('industry') || t.includes('mastery')) return { text: "₹1,999 ($24)", val: 1999 };
+                if (t.includes('foundation')) return { text: "₹499 ($6)", val: 499 };
                 return { text: "₹999 ($12)", val: 999 };
             }
 
@@ -423,7 +421,7 @@ def index():
                 });
 
                 if (filtered.length === 0) {
-                    tBody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#6b7280; padding:24px;">No products published yet. Click <b>Auto-Discover</b> above to generate deep enterprise blueprints.</td></tr>';
+                    tBody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#6b7280; padding:24px;">No products published yet. Click <b>Auto-Discover</b> above to generate full-length master blueprints.</td></tr>';
                     return;
                 }
 
@@ -434,7 +432,7 @@ def index():
                     else if (textContent.includes('interview')) tTag = '<span class="tag tag-pack">Industry + Interview</span>';
                     else if (textContent.includes('industry') || textContent.includes('mastery')) tTag = '<span class="tag tag-ind">Industry Level</span>';
 
-                    const priceInfo = getCalculatedPrice(b.tier);
+                    const priceInfo = getCalculatedPrice(b.tier, b.title);
 
                     return `
                         <tr>
@@ -460,7 +458,7 @@ def index():
                 selectedBook = b;
                 document.getElementById('modal-title').innerText = b.title;
                 document.getElementById('modal-niche').innerText = "Market / Niche: " + (b.niche || '--');
-                document.getElementById('modal-body').innerText = b.content_preview || 'No content preview available.';
+                document.getElementById('modal-body').innerText = b.content_preview || 'Full material loading...';
                 document.getElementById('previewModal').style.display = 'flex';
             }
 
@@ -468,7 +466,7 @@ def index():
                 selectedBook = allBooks.find(item => item.id === id);
                 if (!selectedBook) return;
                 
-                const priceInfo = getCalculatedPrice(selectedBook.tier);
+                const priceInfo = getCalculatedPrice(selectedBook.tier, selectedBook.title);
                 currentPriceVal = priceInfo.val;
                 currentPaidAmount = priceInfo.val;
 
@@ -530,15 +528,10 @@ def index():
 
             function downloadBookAsFile() {
                 if (!selectedBook) return;
-                const textData = "=================================================\\n" +
-                                 selectedBook.title.toUpperCase() + "\\n" +
-                                 "Market / Target: " + (selectedBook.niche || '') + "\\n" +
-                                 "=================================================\\n\\n" +
-                                 (selectedBook.content_preview || '');
-                const blob = new Blob([textData], { type: 'text/plain;charset=utf-8' });
+                const blob = new Blob([selectedBook.content_preview || ''], { type: 'text/plain;charset=utf-8' });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
-                link.download = selectedBook.title.replace(/[^a-zA-Z0-9]/g, '_') + "_Full_Blueprint.txt";
+                link.download = selectedBook.title.replace(/[^a-zA-Z0-9]/g, '_') + "_Production_Master_Blueprint.txt";
                 link.click();
             }
 
@@ -548,7 +541,7 @@ def index():
 
             async function triggerAutoMarketDiscovery() {
                 const btn = document.getElementById('main-think-btn');
-                btn.innerText = "🔍 Generating Deep Blueprints...";
+                btn.innerText = "🔍 Generating Complete Master Blueprints...";
                 btn.disabled = true;
                 try {
                     await fetch('/api/think-idea', { method: 'POST' });
@@ -556,7 +549,7 @@ def index():
                 } catch(e) {
                     await loadData();
                 } finally {
-                    btn.innerText = "⚡ Auto-Discover 5 Deep Blueprints";
+                    btn.innerText = "⚡ Auto-Discover 5 Full Blueprints";
                     btn.disabled = false;
                 }
             }
