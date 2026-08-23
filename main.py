@@ -1,10 +1,12 @@
 import os
+import random
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
+from worker import run_research_task_with_retry
 
 load_dotenv()
 db_url = os.getenv("DATABASE_URL")
@@ -27,14 +29,17 @@ class ApprovalRequest(BaseModel):
     task_id: int
     decision: str  # APPROVED or REJECTED
 
+class GenerateIdeaRequest(BaseModel):
+    custom_niche: str = ""
+
 @app.get("/health")
 def health_check():
     try:
         with engine.connect() as conn:
             conn.execute(text("SELECT 1;"))
-        return {"status": "HEALTHY", "database": "CONNECTED", "mode": "AUTONOMOUS_ENTERPRISE"}
+        return {"status": "HEALTHY", "database": "CONNECTED"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database Disconnected: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/analytics")
 def get_analytics():
@@ -62,6 +67,21 @@ def get_analytics():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/think-idea")
+def think_new_idea(req: GenerateIdeaRequest):
+    default_niches = [
+        "AI Workflow Automation 2026",
+        "Autonomous E-Commerce Blueprint",
+        "High-Ticket B2B Lead Engine",
+        "Global SaaS Growth Blueprint",
+        "AI Agent Systems For Enterprises"
+    ]
+    target_niche = req.custom_niche.strip() if req.custom_niche.strip() else random.choice(default_niches)
+    success = run_research_task_with_retry(target_niche)
+    if success:
+        return {"status": "SUCCESS", "message": f"New Idea on '{target_niche}' generated and queued for approval!"}
+    raise HTTPException(status_code=500, detail="Failed to run research engine.")
 
 @app.post("/api/approve-task")
 def approve_task(req: ApprovalRequest):
@@ -99,7 +119,7 @@ def index():
     <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>Autonomous Business OS - Live Dashboard</title>
+        <title>Autonomous Business OS - Enterprise</title>
         <style>
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0b0f19; color: #f3f4f6; margin: 0; padding: 24px; }
             .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1f2937; padding-bottom: 16px; margin-bottom: 24px; }
@@ -109,8 +129,9 @@ def index():
             .card-title { font-size: 13px; color: #9ca3af; text-transform: uppercase; font-weight: 600; margin-bottom: 6px; }
             .card-value { font-size: 24px; font-weight: bold; color: #fff; }
             .section { background: #111827; border: 1px solid #1f2937; border-radius: 10px; padding: 20px; margin-bottom: 24px; }
-            .btn-approve { background: #10b981; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; }
-            .btn-reject { background: #ef4444; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; margin-left: 8px; }
+            .btn-think { background: #6366f1; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; }
+            .btn-approve { background: #10b981; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; margin-right: 6px; }
+            .btn-reject { background: #ef4444; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; }
             table { width: 100%; border-collapse: collapse; margin-top: 12px; }
             th, td { text-align: left; padding: 10px; border-bottom: 1px solid #1f2937; font-size: 14px; }
             th { color: #9ca3af; }
@@ -122,7 +143,9 @@ def index():
                 <h1 style="margin: 0; font-size: 22px;">Autonomous Business OS</h1>
                 <p style="margin: 4px 0 0 0; color: #9ca3af; font-size: 14px;">PostgreSQL Enterprise Control Center</p>
             </div>
-            <div class="badge">● LIVE POSTGRESQL CLOUD</div>
+            <div>
+                <button class="btn-think" onclick="triggerThinkIdea()">⚡ Think / Generate New AI Idea</button>
+            </div>
         </div>
 
         <div class="grid" id="metrics-grid">
@@ -133,7 +156,10 @@ def index():
         </div>
 
         <div class="section">
-            <h2 style="font-size: 16px; margin-top: 0;">⚡ Human-In-The-Loop Approval Queue</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h2 style="font-size: 16px; margin: 0;">⚡ Human-In-The-Loop Approval Queue</h2>
+                <button class="btn-think" style="background: #374151; font-size: 12px; padding: 4px 10px;" onclick="triggerThinkIdea()">+ Think Idea</button>
+            </div>
             <div id="pending-container"><p style="color: #6b7280;">Loading pending tasks...</p></div>
         </div>
 
@@ -159,17 +185,22 @@ def index():
 
                     const pBox = document.getElementById('pending-container');
                     if (data.pending_approvals.length === 0) {
-                        pBox.innerHTML = '<p style="color: #10b981;">✓ All queued autonomous actions are approved and running.</p>';
+                        pBox.innerHTML = `
+                            <div style="background: #1f2937; padding: 14px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: #10b981;">✓ All queued actions are approved. Click 'Think Idea' to generate new content.</span>
+                                <button class="btn-think" onclick="triggerThinkIdea()">💡 Think New Idea</button>
+                            </div>
+                        `;
                     } else {
                         pBox.innerHTML = data.pending_approvals.map(p => `
                             <div style="background: #1f2937; padding: 14px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
                                 <div>
-                                    <div style="font-weight: 600;">${p.title}</div>
-                                    <div style="font-size: 13px; color: #9ca3af;">Niche: ${p.niche} | Type: ${p.task_type}</div>
+                                    <div style="font-weight: 600; font-size: 15px;">${p.title}</div>
+                                    <div style="font-size: 13px; color: #9ca3af; margin-top: 4px;">Niche: <b>${p.niche}</b> | Type: ${p.task_type}</div>
                                 </div>
-                                <div>
-                                    <button class="btn-approve" onclick="handleDecision(${p.id}, 'APPROVED')">Approve & Publish</button>
-                                    <button class="btn-reject" onclick="handleDecision(${p.id}, 'REJECTED')">Reject</button>
+                                <div style="display: flex; align-items: center;">
+                                    <button class="btn-approve" onclick="handleDecision(${p.id}, 'APPROVED')">✓ Approve & Publish</button>
+                                    <button class="btn-reject" onclick="handleDecision(${p.id}, 'REJECTED')">✕ Reject</button>
                                 </div>
                             </div>
                         `).join('');
@@ -186,8 +217,20 @@ def index():
                         </tr>
                     `).join('');
                 } catch (e) {
-                    console.error("Fetch failed", e);
+                    console.error("Fetch error", e);
                 }
+            }
+
+            async function triggerThinkIdea() {
+                const niche = prompt("Enter specific niche (or leave blank for AI Auto-Discovery):", "");
+                if (niche === null) return;
+                alert("Research Agent activated. Generating idea...");
+                await fetch('/api/think-idea', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ custom_niche: niche })
+                });
+                loadData();
             }
 
             async function handleDecision(taskId, decision) {
@@ -200,6 +243,7 @@ def index():
             }
 
             loadData();
+            setInterval(loadData, 5000);
         </script>
     </body>
     </html>
