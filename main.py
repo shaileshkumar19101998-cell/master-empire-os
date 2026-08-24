@@ -10,13 +10,12 @@ from collections import defaultdict
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, FileResponse, Response as PlainResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse, RedirectResponse, Response as PlainResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 
-import pdf_engine
+import storage_engine
 
 load_dotenv()
 db_url = os.getenv("DATABASE_URL", "sqlite:///./autonomous_local.db")
@@ -33,15 +32,11 @@ RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "")
 RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET", "")
 DOWNLOAD_TOKEN_SECRET = os.getenv("DOWNLOAD_TOKEN_SECRET", "")
 
-# In-memory Rate Limiter for Download Endpoint (Sliding window: max 5 requests / 60 seconds per IP)
 RATE_LIMIT_RECORD = defaultdict(list)
 RATE_LIMIT_WINDOW = 60
 RATE_LIMIT_MAX_REQ = 5
 
-app = FastAPI(title="Autonomous Business OS - Global Enterprise Engine", version="0.7.0")
-
-os.makedirs(pdf_engine.PDF_STORAGE_DIR, exist_ok=True)
-app.mount("/static/pdfs", StaticFiles(directory=pdf_engine.PDF_STORAGE_DIR), name="pdfs")
+app = FastAPI(title="Autonomous Business OS - Global Enterprise Engine", version="0.8.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -93,8 +88,6 @@ def verify_signed_download_token(token: str, order_id: str) -> bool:
     except Exception:
         return False
 
-# ==================== STEP 1, 2 & 3: SSR STOREFRONT & SEO ====================
-
 @app.get("/", response_class=HTMLResponse)
 def get_storefront():
     with engine.connect() as conn:
@@ -112,7 +105,7 @@ def get_storefront():
             <div>
                 <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #38bdf8; font-weight: 600;">{p['target_niche']}</span>
                 <h3 style="color: #f8fafc; margin: 10px 0 8px 0; font-size: 18px;">{p['title']}</h3>
-                <p style="color: #94a3b8; font-size: 13px; line-height: 1.5; margin-bottom: 16px;">Tier: {p['tier_level']} • Complete enterprise blueprint & technical guide.</p>
+                <p style="color: #94a3b8; font-size: 13px; line-height: 1.5; margin-bottom: 16px;">Tier: {p['tier_level']} • Complete enterprise blueprint.</p>
             </div>
             <div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
@@ -132,7 +125,6 @@ def get_storefront():
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Autonomous OS — Digital Publishing Catalog</title>
-    <meta name="description" content="Autonomous enterprise digital library and technical blueprints.">
     <link rel="canonical" href="https://master-empire-os.onrender.com/">
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
@@ -150,9 +142,7 @@ def get_storefront():
             </div>
             <a href="/docs" style="color: #38bdf8; text-decoration: none; font-size: 13px; border: 1px solid #334155; padding: 8px 16px; border-radius: 6px;">API Docs</a>
         </header>
-        <div class="grid">
-            {cards_html}
-        </div>
+        <div class="grid">{cards_html}</div>
     </div>
     <script>
         async function initiateCheckout(productId) {{
@@ -212,10 +202,7 @@ def get_product_detail(slug: str):
 <head>
     <meta charset="UTF-8">
     <title>{p['title']} — Autonomous OS</title>
-    <meta name="description" content="Technical blueprint for {p['title']}.">
     <link rel="canonical" href="https://master-empire-os.onrender.com/books/{p['slug']}">
-    <meta property="og:title" content="{p['title']}">
-    <meta property="og:description" content="Tier {p['tier_level']} Asset.">
     <script type="application/ld+json">
     {{
       "@context": "https://schema.org",
@@ -265,8 +252,6 @@ def get_sitemap():
 </urlset>"""
     return PlainResponse(xml_content, media_type="application/xml")
 
-# ==================== STEP 4: PAYMENT SESSION ====================
-
 @app.post("/api/payments/create-session")
 def create_payment_session(req: CreatePaymentSessionRequest):
     with engine.connect() as conn:
@@ -283,16 +268,13 @@ def create_payment_session(req: CreatePaymentSessionRequest):
     net_amt = Decimal(str(order["net_amount"]))
     amount_paise = int(net_amt * 100)
 
-    # Return only public key_id and order info. Secrets are NEVER returned.
     return {
         "order_id": str(order["id"]),
         "razorpay_order_id": order["razorpay_order_id"] or f"order_{str(order['id'])[:14]}",
         "amount_paise": amount_paise,
         "currency": "INR",
-        "razorpay_key_id": os.getenv("RAZORPAY_KEY_ID", "rzp_test_placeholder_key")
+        "razorpay_key_id": os.getenv("RAZORPAY_KEY_ID", "")
     }
-
-# ==================== STEP 5, 6 & 7: DOWNLOAD GATE & VERIFIED LIFECYCLE ====================
 
 @app.post("/api/orders/create")
 def create_secure_order(req: CreateOrderRequest):
@@ -474,7 +456,12 @@ async def razorpay_payment_webhook(request: Request):
 
 @app.get("/api/download/{order_id}")
 def download_secure_book(order_id: str, request: Request, token: Optional[str] = None):
-    # Step 6: Rate Limiting Enforcement
+    # 1. Reject invalid/expired/missing HMAC token BEFORE any storage or DB queries
+    oid_clean = str(order_id).strip()
+    if not token or not verify_signed_download_token(token, oid_clean):
+        raise HTTPException(status_code=403, detail="Download token is invalid, expired, or missing.")
+
+    # 2. Rate Limiting Check
     client_ip = request.client.host if request.client else "127.0.0.1"
     curr_time = time.time()
     RATE_LIMIT_RECORD[client_ip] = [t for t in RATE_LIMIT_RECORD[client_ip] if curr_time - t < RATE_LIMIT_WINDOW]
@@ -483,7 +470,6 @@ def download_secure_book(order_id: str, request: Request, token: Optional[str] =
     RATE_LIMIT_RECORD[client_ip].append(curr_time)
 
     try:
-        oid_clean = str(order_id).strip()
         with engine.connect() as conn:
             order = conn.execute(
                 text("SELECT * FROM orders WHERE id = :oid"), 
@@ -495,27 +481,29 @@ def download_secure_book(order_id: str, request: Request, token: Optional[str] =
             if order["status"] != "PAID":
                 raise HTTPException(status_code=403, detail="Payment pending or incomplete. Access denied.")
 
-            if not token or not verify_signed_download_token(token, oid_clean):
-                raise HTTPException(status_code=403, detail="Download token is invalid, expired, or missing.")
-
             product = conn.execute(
                 text("SELECT * FROM products WHERE id = :pid"), 
                 {"pid": order["product_id"]}
             ).mappings().first()
             
-            pdf_rel_path = product["pdf_file_path"] if product and product["pdf_file_path"] else None
+            pdf_object_key = product["pdf_file_path"] if product and product["pdf_file_path"] else None
 
-        if not pdf_rel_path:
-            raise HTTPException(status_code=404, detail="PDF asset path not configured for this product.")
+        if not pdf_object_key:
+            raise HTTPException(status_code=404, detail="Digital asset object key not configured for this product.")
 
-        clean_name = os.path.basename(pdf_rel_path)
-        abs_path = os.path.join(pdf_engine.PDF_STORAGE_DIR, clean_name)
-        
-        # Step 7: Zero Fake PDF Delivery in Production
-        if not os.path.exists(abs_path):
-            raise HTTPException(status_code=404, detail="Digital asset PDF file not found on storage. Contact support.")
-            
-        return FileResponse(abs_path, media_type="application/pdf", filename=clean_name)
+        # 3. Generate 300-second Presigned URL via Cloudflare R2
+        client = storage_engine.get_r2_client()
+        if not client:
+            raise HTTPException(status_code=503, detail="Persistent object storage service unavailable.")
+
+        if not storage_engine.object_exists(pdf_object_key):
+            raise HTTPException(status_code=404, detail="Digital asset not found in storage repository.")
+
+        presigned_url = storage_engine.generate_presigned_download(pdf_object_key, expiry_seconds=300)
+        if not presigned_url:
+            raise HTTPException(status_code=503, detail="Failed to generate secure download authorization.")
+
+        return RedirectResponse(url=presigned_url, status_code=302)
     except HTTPException:
         raise
     except Exception as e:

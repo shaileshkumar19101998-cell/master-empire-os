@@ -7,3 +7,4 @@ pydantic
 google-genai
 reportlab
 markdown
+razorpay
