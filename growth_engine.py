@@ -7,8 +7,6 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 from sqlalchemy import create_engine, text
 
-import ai_engine
-
 def get_db_engine():
     db_url = os.getenv("DATABASE_URL", "sqlite:///./autonomous_local.db")
     if db_url and db_url.startswith("postgres://"):
@@ -16,6 +14,14 @@ def get_db_engine():
     if "sqlite" in db_url:
         return create_engine(db_url, connect_args={"check_same_thread": False})
     return create_engine(db_url, pool_pre_ping=True)
+
+def sanitize_text(val: str) -> str:
+    """Safe inline sanitization without requiring hard top-level ai_engine dependency at startup."""
+    try:
+        import ai_engine
+        return ai_engine.sanitize_input(val)
+    except Exception:
+        return re.sub(r"[^\w\s\-\.\,\:\?]", "", str(val or "")).strip()
 
 # ==================== 1. REVENUE & BUSINESS TELEMETRY ====================
 
@@ -238,7 +244,7 @@ def check_ai_research_limits(topic: str, engine=None) -> Dict[str, Any]:
     if engine is None:
         engine = get_db_engine()
 
-    clean_topic = ai_engine.sanitize_input(topic).lower()
+    clean_topic = sanitize_text(topic).lower()
     topic_hash = hashlib.sha256(clean_topic.encode("utf-8")).hexdigest()[:16]
     max_daily = int(os.getenv("MAX_DAILY_AI_RESEARCH_JOBS", "5"))
 
@@ -266,8 +272,8 @@ def generate_growth_recommendations(topic: str, target_niche: str, engine=None) 
     if engine is None:
         engine = get_db_engine()
 
-    clean_topic = ai_engine.sanitize_input(topic)
-    clean_niche = ai_engine.sanitize_input(target_niche)
+    clean_topic = sanitize_text(topic)
+    clean_niche = sanitize_text(target_niche)
 
     limit_check = check_ai_research_limits(clean_topic, engine)
     if not limit_check["allowed"]:
