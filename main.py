@@ -50,6 +50,31 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.on_event("startup")
+def init_db_catalog():
+    try:
+        with engine.begin() as conn:
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS products (
+                    id SERIAL PRIMARY KEY,
+                    slug VARCHAR(120) UNIQUE NOT NULL,
+                    title VARCHAR(255) NOT NULL,
+                    tier_level VARCHAR(50) DEFAULT 'Tier 1',
+                    target_niche VARCHAR(120) NOT NULL,
+                    base_price_inr INTEGER NOT NULL DEFAULT 999,
+                    base_price_usd INTEGER NOT NULL DEFAULT 12,
+                    pdf_file_path VARCHAR(255),
+                    status VARCHAR(50) DEFAULT 'ACTIVE'
+                );
+            """))
+            conn.execute(text("""
+                INSERT INTO products (slug, title, tier_level, target_niche, base_price_inr, base_price_usd, pdf_file_path, status)
+                VALUES ('saas-architecture-handbook', 'SaaS Architecture & Scale Handbook', 'Tier 1', 'Cloud Architecture', 1, 1, 'books/saas/v1.pdf', 'ACTIVE')
+                ON CONFLICT (slug) DO UPDATE SET base_price_inr = 1, status = 'ACTIVE';
+            """))
+    except Exception as e:
+        print(f"Startup DB init error: {e}")
+
 class CreateOrderRequest(BaseModel):
     product_id: int
     customer_email: str = "customer@global-enterprise.org"
