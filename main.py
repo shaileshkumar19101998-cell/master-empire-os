@@ -4,9 +4,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, Response
 from pydantic import BaseModel
+from typing import Optional
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
-from worker import generate_5_trending_ideas
 
 load_dotenv()
 db_url = os.getenv("DATABASE_URL")
@@ -15,7 +15,7 @@ if db_url and db_url.startswith("postgres://"):
 
 engine = create_engine(db_url, pool_pre_ping=True)
 
-app = FastAPI(title="Autonomous Business OS - Global Enterprise Engine", version="5.0.0")
+app = FastAPI(title="Autonomous Business OS - Global Enterprise Engine", version="6.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,19 +25,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class CreateOrderRequest(BaseModel):
+    product_id: int
+    customer_email: str = "customer@global-enterprise.org"
+    coupon_code: Optional[str] = None
+
 class ApprovalRequest(BaseModel):
     task_id: int
     decision: str
-
-class CouponValidateRequest(BaseModel):
-    book_id: int
-    coupon_code: str
-    original_price_val: int = 499
-
-class PurchaseOrderRequest(BaseModel):
-    book_id: int
-    final_paid_amount: int
-    payment_method: str = "PROMO_100"
 
 @app.get("/robots.txt", response_class=Response)
 def get_robots():
@@ -66,17 +61,17 @@ def get_analytics():
             books_res = conn.execute(text("SELECT * FROM books ORDER BY id DESC;")).mappings().all()
             pending_res = conn.execute(text("SELECT * FROM pending_approvals WHERE status = 'PENDING' ORDER BY id DESC;")).mappings().all()
             logs_res = conn.execute(text("SELECT * FROM system_logs ORDER BY id DESC LIMIT 10;")).mappings().all()
+            orders_res = conn.execute(text("SELECT COUNT(*) AS total_orders FROM orders WHERE status = 'PAID';")).scalar() or 0
+            rev_res = conn.execute(text("SELECT COALESCE(SUM(net_revenue), 0) FROM revenue_ledger;")).scalar() or 0
 
             total_visits = sum(b.get("visits", 0) for b in books_res)
-            total_orders = sum(b.get("orders", 0) for b in books_res)
-            total_rev = sum(b.get("revenue", 0) for b in books_res)
 
         return {
             "metrics": {
                 "total_products": len(books_res),
                 "total_visits": total_visits,
-                "total_orders": total_orders,
-                "total_revenue": f"₹{total_rev:,}",
+                "total_orders": orders_res,
+                "total_revenue": f"₹{rev_res:,}",
                 "pending_approvals_count": len(pending_res)
             },
             "products": [dict(b) for b in books_res],
@@ -86,66 +81,115 @@ def get_analytics():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/apply-coupon")
-def apply_coupon(req: CouponValidateRequest):
-    code = req.coupon_code.strip().upper()
-    orig = req.original_price_val
-    
-    if code == "SHAILJA":
-        return {
-            "valid": True,
-            "discount_percent": 100,
-            "final_price": "₹0 ($0)",
-            "final_val": 0,
-            "requires_payment": False,
-            "message": "🎉 Master VIP Access Activated: 100% Free Lifetime Access (₹0)."
-        }
-    elif code == "AKKHI":
-        discounted_val = math.floor(orig * 0.25)
-        usd_val = max(1, math.floor(discounted_val / 82))
-        return {
-            "valid": True,
-            "discount_percent": 75,
-            "final_price": f"₹{discounted_val:,} (${usd_val})",
-            "final_val": discounted_val,
-            "requires_payment": True,
-            "message": f"🎉 VIP Code 'AKKHI' Applied! 75% Discount Saved (Pay 25%: ₹{discounted_val:,})."
-        }
-    return {
-        "valid": False,
-        "discount_percent": 0,
-        "final_price": f"₹{orig:,}",
-        "final_val": orig,
-        "requires_payment": True,
-        "message": "Invalid Promo Code."
-    }
-
-@app.post("/api/record-purchase")
-def record_purchase(req: PurchaseOrderRequest):
+@app.post("/api/orders/create")
+def create_secure_order(req: CreateOrderRequest):
     try:
         with engine.begin() as conn:
-            conn.execute(text("""
-                UPDATE books 
-                SET orders = orders + 1, 
-                    revenue = revenue + :amt, 
-                    visits = visits + 1 
-                WHERE id = :id
-            """), {"amt": req.final_paid_amount, "id": req.book_id})
+            # 1. Product Lookup
+            product = conn.execute(
+                text("SELECT * FROM products WHERE id = :pid"), 
+                {"pid": req.product_id}
+            ).mappings().first()
             
-            conn.execute(text("""
-                INSERT INTO system_logs (module, status, message, created_at)
-                VALUES ('COMMERCE_ENGINE', 'SUCCESS', :msg, NOW())
-            """), {"msg": f"Order confirmed for Book #{req.book_id} via {req.payment_method}. Amount: ₹{req.final_paid_amount}"})
-        return {"status": "SUCCESS"}
+            # Fallback to books table if products table is syncing
+            if not product:
+                book = conn.execute(
+                    text("SELECT * FROM books WHERE id = :bid"), 
+                    {"bid": req.product_id}
+                ).mappings().first()
+                if not book:
+                    raise HTTPException(status_code=404, detail="Product not found")
+                
+                # Auto-sync into products table
+                price_val = book.get("price_val", 999)
+                usd_val = max(1, math.floor(price_val / 82))
+                slug_val = f"book-{book['id']}"
+                conn.execute(text("""
+                    INSERT INTO products (id, slug, title, tier_level, target_niche, base_price_inr, base_price_usd, status)
+                    VALUES (:id, :slug, :title, :tier, :niche, :pinr, :pusd, 'ACTIVE')
+                    ON CONFLICT (id) DO NOTHING
+                """), {
+                    "id": book["id"], "slug": slug_val, "title": book["title"],
+                    "tier": book.get("tier", "Standard"), "niche": book.get("niche", "General"),
+                    "pinr": price_val, "pusd": usd_val
+                })
+                gross_amount = price_val
+            else:
+                gross_amount = product["base_price_inr"]
+
+            # 2. Customer Lookup or Create
+            cust = conn.execute(
+                text("SELECT id FROM customers WHERE email = :email"), 
+                {"email": req.customer_email.strip().lower()}
+            ).mappings().first()
+            
+            if not cust:
+                cust_id = conn.execute(
+                    text("INSERT INTO customers (email) VALUES (:email) RETURNING id"), 
+                    {"email": req.customer_email.strip().lower()}
+                ).scalar()
+            else:
+                cust_id = cust["id"]
+
+            # 3. Server-Side Coupon Validation (DB Row Lock)
+            coupon_id = None
+            discount_amount = 0
+            order_type = "PAID"
+            requires_payment = True
+
+            if req.coupon_code:
+                code_clean = req.coupon_code.strip().upper()
+                coupon = conn.execute(
+                    text("SELECT * FROM coupons WHERE code = :code AND is_active = TRUE AND expires_at > NOW() FOR UPDATE"),
+                    {"code": code_clean}
+                ).mappings().first()
+
+                if coupon:
+                    coupon_id = coupon["id"]
+                    if coupon["discount_type"] == "PERCENT":
+                        discount_amount = math.floor(gross_amount * (coupon["discount_value"] / 100))
+                    requires_payment = coupon["requires_payment"]
+                    if not requires_payment or discount_amount >= gross_amount:
+                        order_type = "FREE"
+                        requires_payment = False
+
+            net_amount = max(0, gross_amount - discount_amount)
+
+            # 4. Insert Order
+            initial_status = "PAID" if not requires_payment else "PENDING"
+            order_id = conn.execute(text("""
+                INSERT INTO orders (customer_id, product_id, coupon_id, order_type, gross_amount, discount_amount, net_amount, currency, status)
+                VALUES (:cid, :pid, :cpid, :otype, :gross, :disc, :net, 'INR', :status)
+                RETURNING id
+            """), {
+                "cid": cust_id, "pid": req.product_id, "cpid": coupon_id,
+                "otype": order_type, "gross": gross_amount, "disc": discount_amount,
+                "net": net_amount, "status": initial_status
+            }).scalar()
+
+            # 5. If FREE order (e.g. SHAILJA), auto-complete and grant access
+            if not requires_payment:
+                # Log audit
+                conn.execute(text("""
+                    INSERT INTO system_logs (module, status, message, created_at)
+                    VALUES ('ORDER_ENGINE', 'SUCCESS', :msg, NOW())
+                """), {"msg": f"Order #{order_id} activated via 100% VIP Free Pass."})
+                
+                # Increment coupon count
+                if coupon_id:
+                    conn.execute(text("UPDATE coupons SET used_count = used_count + 1 WHERE id = :id"), {"id": coupon_id})
+
+            return {
+                "order_id": str(order_id),
+                "gross_amount": gross_amount,
+                "discount_amount": discount_amount,
+                "net_amount": net_amount,
+                "requires_payment": requires_payment,
+                "order_type": order_type,
+                "status": initial_status
+            }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/api/think-idea")
-def think_batch_ideas():
-    success = generate_5_trending_ideas()
-    if success:
-        return {"status": "SUCCESS"}
-    raise HTTPException(status_code=500, detail="Research task failed")
 
 @app.post("/api/approve-task")
 def approve_task(req: ApprovalRequest):
@@ -181,17 +225,26 @@ def approve_task(req: ApprovalRequest):
                     price_val = 1999
                     mkt_price = "₹4,999 ($60)"
 
-                conn.execute(text("""
+                # Sync into books table
+                new_book_id = conn.execute(text("""
                     INSERT INTO books (title, niche, tier, price, price_val, market_price, badge, visits, orders, revenue, content_preview, file, seo_status, status)
                     VALUES (:title, :niche, :tier, :price, :price_val, :mkt_price, 'ENTERPRISE PRODUCTION ASSET', 0, 0, 0, :content, '', '195+ Countries Live', 'ACTIVE')
+                    RETURNING id
                 """), {
-                    "title": row["title"],
-                    "niche": row["niche"],
-                    "tier": tier_val,
-                    "price": price_str,
-                    "price_val": price_val,
-                    "mkt_price": mkt_price,
+                    "title": row["title"], "niche": row["niche"], "tier": tier_val,
+                    "price": price_str, "price_val": price_val, "mkt_price": mkt_price,
                     "content": row["proposed_content"]
+                }).scalar()
+
+                # Sync into products relational table
+                usd_val = max(1, math.floor(price_val / 82))
+                conn.execute(text("""
+                    INSERT INTO products (id, slug, title, tier_level, target_niche, base_price_inr, base_price_usd, status)
+                    VALUES (:id, :slug, :title, :tier, :niche, :pinr, :pusd, 'ACTIVE')
+                    ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, base_price_inr = EXCLUDED.base_price_inr
+                """), {
+                    "id": new_book_id, "slug": f"asset-{new_book_id}", "title": row["title"],
+                    "tier": tier_val, "niche": row["niche"], "pinr": price_val, "pusd": usd_val
                 })
         return {"status": "SUCCESS"}
     except Exception as e:
@@ -205,18 +258,8 @@ def index():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Autonomous Business OS | Worldwide Enterprise Digital Assets</title>
-        <meta name="description" content="Access complete, full-length enterprise AI engineering and systems design blueprints across 195+ countries.">
+        <title>Autonomous Business OS | Enterprise Assets</title>
         <meta name="robots" content="index, follow">
-        <link rel="canonical" href="https://master-empire-os.onrender.com/">
-        
-        <link rel="alternate" hreflang="x-default" href="https://master-empire-os.onrender.com/">
-        <link rel="alternate" hreflang="en-US" href="https://master-empire-os.onrender.com/">
-        <link rel="alternate" hreflang="en-GB" href="https://master-empire-os.onrender.com/">
-        <link rel="alternate" hreflang="en-IN" href="https://master-empire-os.onrender.com/">
-        <link rel="alternate" hreflang="en-CA" href="https://master-empire-os.onrender.com/">
-        <link rel="alternate" hreflang="en-AU" href="https://master-empire-os.onrender.com/">
-
         <style>
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0b0f19; color: #f3f4f6; margin: 0; padding: 24px; }
             .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1f2937; padding-bottom: 16px; margin-bottom: 24px; }
@@ -225,31 +268,14 @@ def index():
             .card-title { font-size: 13px; color: #9ca3af; text-transform: uppercase; font-weight: 600; margin-bottom: 6px; }
             .card-value { font-size: 24px; font-weight: bold; color: #fff; }
             .section { background: #111827; border: 1px solid #1f2937; border-radius: 10px; padding: 20px; margin-bottom: 24px; }
-            
             .btn-think { background: #6366f1; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; }
-            .btn-think:hover { background: #4f46e5; }
-            
-            .folder-nav { display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid #1f2937; padding-bottom: 12px; flex-wrap: wrap; }
-            .folder-btn { background: #1f2937; color: #9ca3af; border: 1px solid #374151; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; }
-            .folder-btn.active { background: #2563eb; color: #fff; border-color: #3b82f6; }
-            
-            .btn-approve { background: #10b981; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; margin-right: 8px; }
-            .btn-reject { background: #ef4444; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; }
             .btn-preview { background: #374151; color: #60a5fa; border: 1px solid #4b5563; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; margin-right:6px; }
             .btn-buy { background: #10b981; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; }
-            
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
             th, td { text-align: left; padding: 10px; border-bottom: 1px solid #1f2937; font-size: 14px; }
             th { color: #9ca3af; }
-            .tag { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
-            .tag-found { background: #3b82f622; color: #3b82f6; border: 1px solid #3b82f6; }
-            .tag-norm { background: #f59e0b22; color: #f59e0b; border: 1px solid #f59e0b; }
-            .tag-ind { background: #8b5cf622; color: #8b5cf6; border: 1px solid #8b5cf6; }
-            .tag-pack { background: #ec489922; color: #ec4899; border: 1px solid #ec4899; }
-            .status-badge { background: #374151; color: #9ca3af; border: 1px solid #4b5563; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; }
-
             .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
-            .modal-content { background: #111827; border: 1px solid #374151; padding: 24px; border-radius: 12px; width: 840px; max-width: 95%; color: #f3f4f6; }
+            .modal-content { background: #111827; border: 1px solid #374151; padding: 24px; border-radius: 12px; width: 800px; max-width: 95%; color: #f3f4f6; }
             .close-btn { background: #ef4444; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; float: right; font-weight: 600; }
         </style>
     </head>
@@ -257,219 +283,90 @@ def index():
         <div class="header">
             <div>
                 <h1 style="margin: 0; font-size: 22px;">Autonomous Business OS</h1>
-                <p style="margin: 4px 0 0 0; color: #9ca3af; font-size: 14px;">195+ Countries Worldwide Automated SEO & Real-Time Engine</p>
-            </div>
-            <div>
-                <button class="btn-think" id="main-think-btn" onclick="triggerAutoMarketDiscovery()">⚡ Auto-Discover 5 Full Blueprints</button>
+                <p style="margin: 4px 0 0 0; color: #9ca3af; font-size: 14px;">Zero-Trust Relational Architecture (Phase 0.2 Active)</p>
             </div>
         </div>
 
         <div class="grid">
             <div class="card"><div class="card-title">Active Products</div><div class="card-value" id="m-prod">--</div></div>
             <div class="card"><div class="card-title">Total Visits</div><div class="card-value" id="m-visits">--</div></div>
-            <div class="card"><div class="card-title">Total Orders</div><div class="card-value" id="m-orders" style="color: #10b981;">--</div></div>
-            <div class="card"><div class="card-title">Total Revenue</div><div class="card-value" id="m-rev" style="color: #3b82f6;">--</div></div>
-            <div class="card"><div class="card-title">Pending Approvals</div><div class="card-value" id="m-pending" style="color: #f59e0b;">--</div></div>
+            <div class="card"><div class="card-title">Verified Paid Orders</div><div class="card-value" id="m-orders" style="color: #10b981;">--</div></div>
+            <div class="card"><div class="card-title">Verified Net Revenue</div><div class="card-value" id="m-rev" style="color: #3b82f6;">--</div></div>
         </div>
 
         <div class="section">
-            <h2 style="font-size: 16px; margin-top: 0; display:flex; justify-content:space-between; align-items:center;">
-                <span>⚡ Human-In-The-Loop Approval Queue</span>
-                <span style="font-size:12px; color:#9ca3af; font-weight:normal;">Quality Gate: Production Grade</span>
-            </h2>
-            <div id="pending-container"><p style="color: #6b7280;">Loading proposals...</p></div>
-        </div>
-
-        <div class="section">
-            <h2 style="font-size: 16px; margin-top: 0; margin-bottom: 12px;">📁 Published Enterprise Blueprints</h2>
-            
-            <div class="folder-nav">
-                <button class="folder-btn active" onclick="setFolder('ALL', this)">📂 All Books (<span id="cnt-all">0</span>)</button>
-                <button class="folder-btn" onclick="setFolder('Foundation', this)">📘 Foundation (<span id="cnt-found">0</span>)</button>
-                <button class="folder-btn" onclick="setFolder('Normal', this)">📗 Normal Standard (<span id="cnt-norm">0</span>)</button>
-                <button class="folder-btn" onclick="setFolder('Industry', this)">📕 Industry Level (<span id="cnt-ind">0</span>)</button>
-            </div>
-
+            <h2 style="font-size: 16px; margin-top: 0;">📁 Published Enterprise Assets</h2>
             <table>
                 <thead>
-                    <tr><th>ID</th><th>Book Title</th><th>Target Market & Niche</th><th>Level</th><th>Market Price</th><th>Orders</th><th>Global Reach</th><th>Actions</th></tr>
+                    <tr><th>ID</th><th>Book Title</th><th>Target Market</th><th>Tier</th><th>Price</th><th>Global Reach</th><th>Actions</th></tr>
                 </thead>
                 <tbody id="books-tbody"></tbody>
             </table>
         </div>
 
-        <!-- Full Book Reader Modal -->
+        <!-- Read Modal -->
         <div id="previewModal" class="modal">
             <div class="modal-content">
                 <button class="close-btn" onclick="closeModal('previewModal')">Close ✕</button>
-                <h3 id="modal-title" style="margin-top:0; color:#60a5fa;">Full Enterprise Document Reader</h3>
-                <p style="font-size:13px; color:#9ca3af;" id="modal-niche"></p>
-                <hr style="border-color:#374151; margin:12px 0;">
+                <h3 id="modal-title" style="margin-top:0; color:#60a5fa;">Document Reader</h3>
                 <div id="modal-body" style="background:#1f2937; padding:20px; border-radius:8px; font-size:13.5px; line-height:1.75; max-height:460px; overflow-y:auto; white-space:pre-wrap; font-family: monospace;"></div>
-                <div style="margin-top:16px; display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-size:12px; color:#10b981;">✓ Full Complete Production-Ready Material</span>
-                    <button onclick="downloadBookAsFile()" style="background:#10b981; color:#fff; border:none; padding:10px 18px; border-radius:6px; font-weight:600; cursor:pointer;">📥 Download Offline (.txt)</button>
-                </div>
             </div>
         </div>
 
-        <!-- Checkout & Payment Simulation Modal -->
+        <!-- Checkout Modal (Server-Side Verified) -->
         <div id="checkoutModal" class="modal">
             <div class="modal-content" style="max-width:520px;">
                 <button class="close-btn" onclick="closeModal('checkoutModal')">Close ✕</button>
-                <h3 id="chk-title" style="margin-top:0; color:#10b981;">Enterprise Asset Checkout</h3>
-                <p style="font-size:13px; color:#9ca3af;" id="chk-niche"></p>
-                
+                <h3 id="chk-title" style="margin-top:0; color:#10b981;">Server-Verified Checkout</h3>
                 <div id="chk-box" style="margin:16px 0; background:#1f2937; padding:16px; border-radius:8px;">
                     <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                        <span>Retail Market Price:</span>
-                        <b id="chk-price" style="font-size:16px; color:#fff;">₹2,499 ($30)</b>
+                        <span>Retail Base Price:</span>
+                        <b id="chk-price" style="font-size:16px; color:#fff;">--</b>
                     </div>
                     <div style="display:flex; gap:8px; margin-top:12px;">
                         <input type="text" id="coupon-input" placeholder="Enter Promo Code" style="flex:1; padding:8px 12px; background:#111827; border:1px solid #4b5563; border-radius:6px; color:#fff; text-transform:uppercase;">
-                        <button onclick="validateCoupon()" style="background:#2563eb; color:#fff; border:none; padding:8px 14px; border-radius:6px; font-weight:600; cursor:pointer;">Apply</button>
                     </div>
                     <div id="coupon-msg" style="font-size:12px; margin-top:8px;"></div>
                 </div>
 
-                <!-- Payment Method Section if Price > 0 -->
-                <div id="pay-methods-box" style="margin-bottom:16px; background:#1f2937; padding:14px; border-radius:8px; display:block;">
-                    <span style="font-size:12px; color:#9ca3af; font-weight:bold; text-transform:uppercase;">Select Payment Gateway:</span>
-                    <div style="display:flex; gap:10px; margin-top:8px;">
-                        <label style="flex:1; background:#111827; border:1px solid #3b82f6; padding:8px; border-radius:6px; font-size:12px; display:flex; align-items:center; gap:6px; cursor:pointer;">
-                            <input type="radio" name="pay_opt" value="UPI_SCAN" checked> ⚡ UPI / QR
-                        </label>
-                        <label style="flex:1; background:#111827; border:1px solid #374151; padding:8px; border-radius:6px; font-size:12px; display:flex; align-items:center; gap:6px; cursor:pointer;">
-                            <input type="radio" name="pay_opt" value="CARD_INTL"> 💳 Card / Stripe
-                        </label>
-                    </div>
-                </div>
-
                 <div id="delivery-section" style="display:none; background:#064e3b; border:1px solid #059669; padding:16px; border-radius:8px; margin-bottom:16px; text-align:center;">
-                    <h4 style="margin:0 0 6px 0; color:#6ee7b7;">🎉 Payment Verified & Access Activated!</h4>
-                    <p style="font-size:13px; margin:0 0 12px 0; color:#d1fae5;">The full enterprise master blueprint is unlocked with lifetime updates.</p>
-                    <button onclick="accessBookContent()" style="background:#10b981; color:#fff; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer;">📖 Open & Download Master Blueprint</button>
+                    <h4 style="margin:0 0 6px 0; color:#6ee7b7;">🎉 Access Granted!</h4>
+                    <p style="font-size:13px; margin:0 0 12px 0; color:#d1fae5;" id="order-confirm-msg">Order registered in secure database.</p>
+                    <button onclick="accessBookContent()" style="background:#10b981; color:#fff; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer;">📖 Open Blueprint</button>
                 </div>
 
-                <button id="btn-confirm-order" onclick="confirmPurchase()" style="width:100%; background:#10b981; color:#fff; border:none; padding:10px; border-radius:8px; font-size:15px; font-weight:bold; cursor:pointer;">Complete & Pay</button>
+                <button id="btn-confirm-order" onclick="executeServerOrder()" style="width:100%; background:#10b981; color:#fff; border:none; padding:10px; border-radius:8px; font-size:15px; font-weight:bold; cursor:pointer;">Create Order & Verify</button>
             </div>
         </div>
 
         <script>
             let allBooks = [];
-            let activeFolder = 'ALL';
             let selectedBook = null;
-            let currentPriceVal = 499;
-            let currentPaidAmount = 499;
-            let requiresPaymentGateway = true;
 
             async function loadData() {
-                try {
-                    const res = await fetch('/api/analytics');
-                    const data = await res.json();
-                    document.getElementById('m-prod').innerText = data.metrics.total_products;
-                    document.getElementById('m-visits').innerText = data.metrics.total_visits;
-                    document.getElementById('m-orders').innerText = data.metrics.total_orders;
-                    document.getElementById('m-rev').innerText = data.metrics.total_revenue;
-                    document.getElementById('m-pending').innerText = data.metrics.pending_approvals_count;
+                const res = await fetch('/api/analytics');
+                const data = await res.json();
+                document.getElementById('m-prod').innerText = data.metrics.total_products;
+                document.getElementById('m-visits').innerText = data.metrics.total_visits;
+                document.getElementById('m-orders').innerText = data.metrics.total_orders;
+                document.getElementById('m-rev').innerText = data.metrics.total_revenue;
 
-                    const pBox = document.getElementById('pending-container');
-                    if (data.pending_approvals.length === 0) {
-                        pBox.innerHTML = `
-                            <div style="background: #1f2937; padding: 18px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-                                <span style="color: #10b981;">✓ Ready to discover. Click <b>Auto-Discover</b> to research complete multi-module blueprints.</span>
-                                <button class="btn-think" onclick="triggerAutoMarketDiscovery()">⚡ Run Market Discovery</button>
-                            </div>
-                        `;
-                    } else {
-                        pBox.innerHTML = data.pending_approvals.map(p => `
-                            <div style="background: #1f2937; border: 1px solid #374151; padding: 16px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-                                <div style="max-width: 75%;">
-                                    <div style="display:flex; align-items:center; gap:8px;">
-                                        <span class="status-badge">${p.task_type || 'Market Score: Verified'}</span>
-                                        <span style="font-weight: 600; font-size: 15px; color:#fff;">${p.title}</span>
-                                    </div>
-                                    <div style="font-size: 13px; color: #9ca3af; margin-top: 6px;">🎯 Target: <b>${p.niche}</b></div>
-                                    <div style="font-size: 13px; color: #d1d5db; margin-top: 4px; font-style: italic; white-space:pre-wrap; max-height:80px; overflow:hidden;">"${p.proposed_content.substring(0, 200)}..."</div>
-                                </div>
-                                <div style="display:flex; align-items:center;">
-                                    <button class="btn-approve" onclick="handleDecision(${p.id}, 'APPROVED')">✓ Approve & Publish</button>
-                                    <button class="btn-reject" onclick="handleDecision(${p.id}, 'REJECTED')">✕ Reject</button>
-                                </div>
-                            </div>
-                        `).join('');
-                    }
-
-                    allBooks = data.products;
-                    updateFolderCounts();
-                    renderTable();
-                } catch (e) {
-                    console.error(e);
-                }
-            }
-
-            function updateFolderCounts() {
-                document.getElementById('cnt-all').innerText = allBooks.length;
-                document.getElementById('cnt-found').innerText = allBooks.filter(b => (b.tier || b.title).toLowerCase().includes('foundation')).length;
-                document.getElementById('cnt-ind').innerText = allBooks.filter(b => (b.tier || b.title).toLowerCase().includes('industry') || (b.tier || b.title).toLowerCase().includes('mastery')).length;
-                document.getElementById('cnt-norm').innerText = Math.max(0, allBooks.length - (parseInt(document.getElementById('cnt-found').innerText) + parseInt(document.getElementById('cnt-ind').innerText)));
-            }
-
-            function setFolder(folder, btn) {
-                activeFolder = folder;
-                document.querySelectorAll('.folder-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                renderTable();
-            }
-
-            function getCalculatedPrice(tier, title) {
-                const t = ((tier || '') + ' ' + (title || '')).toLowerCase();
-                if (t.includes('interview') || t.includes('career')) return { text: "₹2,499 ($30)", val: 2499 };
-                if (t.includes('industry') || t.includes('mastery')) return { text: "₹1,999 ($24)", val: 1999 };
-                if (t.includes('foundation')) return { text: "₹499 ($6)", val: 499 };
-                return { text: "₹999 ($12)", val: 999 };
-            }
-
-            function renderTable() {
+                allBooks = data.products;
                 const tBody = document.getElementById('books-tbody');
-                const filtered = allBooks.filter(b => {
-                    const textContent = ((b.tier || '') + ' ' + (b.title || '')).toLowerCase();
-                    if (activeFolder === 'Foundation') return textContent.includes('foundation');
-                    if (activeFolder === 'Industry') return textContent.includes('industry') || textContent.includes('mastery');
-                    if (activeFolder === 'Normal') return !textContent.includes('foundation') && !textContent.includes('industry') && !textContent.includes('mastery');
-                    return true;
-                });
-
-                if (filtered.length === 0) {
-                    tBody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#6b7280; padding:24px;">No products published yet. Click <b>Auto-Discover</b> above to generate full-length master blueprints.</td></tr>';
-                    return;
-                }
-
-                tBody.innerHTML = filtered.map(b => {
-                    const textContent = ((b.tier || '') + ' ' + (b.title || '')).toLowerCase();
-                    let tTag = '<span class="tag tag-norm">Normal Standard</span>';
-                    if (textContent.includes('foundation')) tTag = '<span class="tag tag-found">Foundation Level</span>';
-                    else if (textContent.includes('interview')) tTag = '<span class="tag tag-pack">Industry + Interview</span>';
-                    else if (textContent.includes('industry') || textContent.includes('mastery')) tTag = '<span class="tag tag-ind">Industry Level</span>';
-
-                    const priceInfo = getCalculatedPrice(b.tier, b.title);
-
-                    return `
-                        <tr>
-                            <td>#${b.id}</td>
-                            <td><b>${b.title}</b></td>
-                            <td>${b.niche || '--'}</td>
-                            <td>${tTag}</td>
-                            <td><b>${priceInfo.text}</b></td>
-                            <td style="color:#10b981; font-weight:bold;">${b.orders || 0}</td>
-                            <td><span style="color:#10b981; font-size:11px; font-weight:600;">🌍 195+ Countries Live</span></td>
-                            <td>
-                                <button class="btn-preview" onclick="openPreviewById(${b.id})">🔍 Read</button>
-                                <button class="btn-buy" onclick="openCheckoutById(${b.id})">🛒 Buy</button>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
+                tBody.innerHTML = allBooks.map(b => `
+                    <tr>
+                        <td>#${b.id}</td>
+                        <td><b>${b.title}</b></td>
+                        <td>${b.niche || '--'}</td>
+                        <td>${b.tier || 'Standard'}</td>
+                        <td><b>${b.price}</b></td>
+                        <td><span style="color:#10b981; font-size:11px;">🌍 195+ Countries Live</span></td>
+                        <td>
+                            <button class="btn-preview" onclick="openPreviewById(${b.id})">🔍 Read</button>
+                            <button class="btn-buy" onclick="openCheckoutById(${b.id})">🛒 Buy</button>
+                        </td>
+                    </tr>
+                `).join('');
             }
 
             function openPreviewById(id) {
@@ -477,89 +374,42 @@ def index():
                 if (!b) return;
                 selectedBook = b;
                 document.getElementById('modal-title').innerText = b.title;
-                document.getElementById('modal-niche').innerText = "Market / Niche: " + (b.niche || '--');
-                document.getElementById('modal-body').innerText = b.content_preview || 'Full material loading...';
+                document.getElementById('modal-body').innerText = b.content_preview || 'Content loading...';
                 document.getElementById('previewModal').style.display = 'flex';
             }
 
             function openCheckoutById(id) {
                 selectedBook = allBooks.find(item => item.id === id);
                 if (!selectedBook) return;
-                
-                const priceInfo = getCalculatedPrice(selectedBook.tier, selectedBook.title);
-                currentPriceVal = priceInfo.val;
-                currentPaidAmount = priceInfo.val;
-                requiresPaymentGateway = true;
-
                 document.getElementById('chk-title').innerText = selectedBook.title;
-                document.getElementById('chk-niche').innerText = selectedBook.niche || '--';
-                document.getElementById('chk-price').innerText = priceInfo.text;
+                document.getElementById('chk-price').innerText = selectedBook.price;
                 document.getElementById('coupon-input').value = "";
                 document.getElementById('coupon-msg').innerText = "";
-                document.getElementById('pay-methods-box').style.display = "block";
-                document.getElementById('btn-confirm-order').innerText = `Complete & Pay (₹${currentPaidAmount:,})`;
-                
                 document.getElementById('delivery-section').style.display = "none";
                 document.getElementById('chk-box').style.display = "block";
                 document.getElementById('btn-confirm-order').style.display = "block";
                 document.getElementById('checkoutModal').style.display = 'flex';
             }
 
-            async function validateCoupon() {
-                const code = document.getElementById('coupon-input').value;
-                const msgBox = document.getElementById('coupon-msg');
-                const priceBox = document.getElementById('chk-price');
-                
-                const res = await fetch('/api/apply-coupon', {
+            async function executeServerOrder() {
+                const code = document.getElementById('coupon-input').value.trim();
+                const res = await fetch('/api/orders/create', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ book_id: selectedBook.id, coupon_code: code, original_price_val: currentPriceVal })
+                    body: JSON.stringify({ product_id: selectedBook.id, coupon_code: code, customer_email: 'buyer@global-net.org' })
                 });
                 const data = await res.json();
-                currentPaidAmount = data.final_val;
-                priceBox.innerText = data.final_price;
-
-                if (data.valid) {
-                    msgBox.style.color = "#10b981";
-                    msgBox.innerText = data.message;
-                    if (data.final_val === 0) {
-                        requiresPaymentGateway = false;
-                        document.getElementById('pay-methods-box').style.display = "none";
-                        document.getElementById('btn-confirm-order').innerText = "Claim Free Access (₹0)";
-                    } else {
-                        requiresPaymentGateway = true;
-                        document.getElementById('pay-methods-box').style.display = "block";
-                        document.getElementById('btn-confirm-order').innerText = `Complete & Pay Discounted (₹${currentPaidAmount:,})`;
-                    }
-                } else {
-                    msgBox.style.color = "#ef4444";
-                    msgBox.innerText = data.message;
-                    requiresPaymentGateway = true;
-                    document.getElementById('pay-methods-box').style.display = "block";
-                    document.getElementById('btn-confirm-order').innerText = `Complete & Pay (₹${currentPaidAmount:,})`;
-                }
-            }
-
-            async function confirmPurchase() {
-                const payMethod = requiresPaymentGateway ? document.querySelector('input[name="pay_opt"]:checked').value : "VIP_FREE_PASS";
                 
-                try {
-                    await fetch('/api/record-purchase', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ 
-                            book_id: selectedBook.id, 
-                            final_paid_amount: currentPaidAmount,
-                            payment_method: payMethod 
-                        })
-                    });
+                if (res.ok) {
+                    document.getElementById('chk-box').style.display = "none";
+                    document.getElementById('btn-confirm-order').style.display = "none";
+                    document.getElementById('delivery-section').style.display = "block";
+                    document.getElementById('order-confirm-msg').innerText = `Order ID: ${data.order_id} | Net Payable: ₹${data.net_amount}`;
                     loadData();
-                } catch(e) {}
-
-                document.getElementById('chk-box').style.display = "none";
-                document.getElementById('pay-methods-box').style.display = "none";
-                document.getElementById('btn-confirm-order').style.display = "none";
-                document.getElementById('delivery-section').style.display = "block";
+                } else {
+                    document.getElementById('coupon-msg').innerText = data.detail || "Order Failed";
+                    document.getElementById('coupon-msg').style.color = "#ef4444";
+                }
             }
 
             function accessBookContent() {
@@ -567,41 +417,8 @@ def index():
                 openPreviewById(selectedBook.id);
             }
 
-            function downloadBookAsFile() {
-                if (!selectedBook) return;
-                const blob = new Blob([selectedBook.content_preview || ''], { type: 'text/plain;charset=utf-8' });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = selectedBook.title.replace(/[^a-zA-Z0-9]/g, '_') + "_Production_Master_Blueprint.txt";
-                link.click();
-            }
-
             function closeModal(id) {
                 document.getElementById(id).style.display = 'none';
-            }
-
-            async function triggerAutoMarketDiscovery() {
-                const btn = document.getElementById('main-think-btn');
-                btn.innerText = "🔍 Generating Complete Master Blueprints...";
-                btn.disabled = true;
-                try {
-                    await fetch('/api/think-idea', { method: 'POST' });
-                    await loadData();
-                } catch(e) {
-                    await loadData();
-                } finally {
-                    btn.innerText = "⚡ Auto-Discover 5 Full Blueprints";
-                    btn.disabled = false;
-                }
-            }
-
-            async function handleDecision(taskId, decision) {
-                await fetch('/api/approve-task', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ task_id: taskId, decision: decision })
-                });
-                loadData();
             }
 
             loadData();
