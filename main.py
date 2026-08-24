@@ -40,7 +40,7 @@ RATE_LIMIT_RECORD = defaultdict(list)
 RATE_LIMIT_WINDOW = 60
 RATE_LIMIT_MAX_REQ = 5
 
-app = FastAPI(title="Autonomous Business OS - Global Enterprise Engine", version="1.1.0")
+app = FastAPI(title="Autonomous Business OS - Global Enterprise Engine", version="1.2.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -54,6 +54,10 @@ class CreateOrderRequest(BaseModel):
     product_id: int
     customer_email: str = "customer@global-enterprise.org"
     coupon_code: Optional[str] = None
+    utm_source: Optional[str] = None
+    utm_medium: Optional[str] = None
+    utm_campaign: Optional[str] = None
+    referrer: Optional[str] = None
 
 class CreatePaymentSessionRequest(BaseModel):
     order_id: str
@@ -61,6 +65,11 @@ class CreatePaymentSessionRequest(BaseModel):
 class AdminActionRequest(BaseModel):
     approval_id: int
     reason: Optional[str] = "Admin Decision"
+    financial_override: Optional[bool] = False
+
+class GenerateMarketingKitRequest(BaseModel):
+    product_id: int
+    campaign_name: Optional[str] = "launch"
     financial_override: Optional[bool] = False
 
 def generate_signed_download_token(order_id: str, expiry_seconds: int = 86400) -> str:
@@ -165,13 +174,24 @@ def get_storefront():
         <div class="grid">{cards_html}</div>
     </div>
     <script>
+        function getUTMParams() {{
+            const p = new URLSearchParams(window.location.search);
+            return {{
+                utm_source: p.get("utm_source") || "direct",
+                utm_medium: p.get("utm_medium") || "organic",
+                utm_campaign: p.get("utm_campaign") || "web",
+                referrer: document.referrer || "direct"
+            }};
+        }}
+
         async function initiateCheckout(productId) {{
             const email = prompt("Enter your email for digital asset delivery:", "customer@global-enterprise.org");
             if (!email) return;
+            const utm = getUTMParams();
             const res = await fetch("/api/orders/create", {{
                 method: "POST",
                 headers: {{ "Content-Type": "application/json" }},
-                body: JSON.stringify({{ product_id: productId, customer_email: email }})
+                body: JSON.stringify({{ product_id: productId, customer_email: email, ...utm }})
             }});
             const data = await res.json();
             if (data.download_url) {{
@@ -262,7 +282,7 @@ def get_sitemap():
 </urlset>"""
     return PlainResponse(xml_content, media_type="application/xml")
 
-# ==================== PHASE 1.1: ULTRA-PREMIUM AI COMMAND CENTER ====================
+# ==================== PHASE 1.2: COMMAND CENTER + ACQUISITION INTELLIGENCE ====================
 
 @app.get("/admin/bi-dashboard", response_class=HTMLResponse)
 @app.get("/admin/bi-dashboard/", response_class=HTMLResponse)
@@ -276,6 +296,7 @@ def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(No
 
     t_data = growth_engine.get_command_center_telemetry(engine)
     m = t_data["metrics"]
+    acq = t_data["acquisition"]
 
     # Approvals HTML
     approvals_html = ""
@@ -283,11 +304,11 @@ def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(No
         approvals_html = "<tr><td colspan='4' style='padding: 16px; text-align: center; color: #64748b;'>No items pending human approval. System autonomous queue optimal.</td></tr>"
     else:
         for app_item in t_data["pending_approvals"]:
-            app_title = html.escape(str(app_item.get('title') or 'Pending Growth Recommendation'))
-            app_niche = html.escape(str(app_item.get('target_niche') or 'Strategy'))
+            app_title = html.escape(str(app_item.get('title') or 'Staged Marketing Asset / Book'))
+            app_niche = html.escape(str(app_item.get('target_niche') or 'Growth Strategy'))
             approvals_html += f"""
             <tr style="border-bottom: 1px solid #1e293b;">
-                <td style="padding: 14px 16px; font-weight: 600; color: #f8fafc;">{app_title}<br><span style="font-size: 11px; color: #38bdf8; font-weight: normal;">Niche: {app_niche}</span></td>
+                <td style="padding: 14px 16px; font-weight: 600; color: #f8fafc;">{app_title}<br><span style="font-size: 11px; color: #38bdf8; font-weight: normal;">Category: {app_niche}</span></td>
                 <td style="padding: 14px 16px; color: #f59e0b; font-size: 12px;"><span style="background: rgba(245,158,11,0.1); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(245,158,11,0.3);">STAGED FOR APPROVAL</span></td>
                 <td style="padding: 14px 16px; color: #94a3b8; font-size: 12px;">{app_item['created_at']}</td>
                 <td style="padding: 14px 16px; text-align: right;">
@@ -297,32 +318,11 @@ def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(No
             </tr>
             """
 
-    # Transactions HTML
-    tx_html = ""
-    for tx in t_data["recent_transactions"]:
-        tx_title = html.escape(str(tx.get('title') or 'Enterprise Product'))
-        tx_status_badge = '<span style="color:#10b981; font-weight:bold;">PAID</span>' if tx['status'] == 'PAID' else '<span style="color:#f59e0b;">PENDING</span>'
-        tx_html += f"""
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #1e293b;">
-            <div>
-                <div style="color: #f8fafc; font-size: 13px; font-weight: 600;">{tx_title}</div>
-                <div style="color: #64748b; font-size: 11px;">Ref: {str(tx['id'])[:8]}... • {tx['created_at']}</div>
-            </div>
-            <div style="text-align: right;">
-                <div style="color: #f8fafc; font-size: 13px; font-weight: 700;">₹{tx['net_amount']}</div>
-                <div style="font-size: 11px;">{tx_status_badge}</div>
-            </div>
-        </div>
-        """
-
-    # Audit Logs HTML
-    logs_html = "".join([
-        f"<div style='font-family: monospace; font-size: 11px; padding: 6px 0; border-bottom: 1px solid #1e293b; color: #94a3b8;'>"
-        f"<span style='color: #38bdf8;'>[{html.escape(str(l['module']))}]</span> "
-        f"<span style='color: #10b981;'>{html.escape(str(l['status']))}</span>: {html.escape(str(l['message']))}"
-        f"</div>"
-        for l in t_data["audit_logs"]
-    ])
+    # Acquisition Rows HTML
+    src_rows = "".join([
+        f"<tr style='border-bottom: 1px solid #1e293b;'><td style='padding: 8px 12px; color: #38bdf8;'>{html.escape(s['source'])}</td><td style='padding: 8px 12px;'>{s['orders']} ({s['paid_orders']} Paid)</td><td style='padding: 8px 12px; text-align: right; color: #10b981; font-weight: bold;'>₹{s['revenue']}</td></tr>"
+        for s in acq["sources"]
+    ]) or "<tr><td colspan='3' style='padding: 12px; text-align: center; color: #64748b;'>No attributed traffic recorded yet.</td></tr>"
 
     return HTMLResponse(f"""<!DOCTYPE html>
 <html lang="en">
@@ -342,14 +342,11 @@ def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(No
         .kpi-card {{ background: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; }}
         .kpi-label {{ color: #64748b; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }}
         .kpi-val {{ font-size: 26px; font-weight: 800; color: #f8fafc; margin: 8px 0 4px 0; font-variant-numeric: tabular-nums; }}
-        .grid-2 {{ display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 28px; }}
+        .grid-2 {{ display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px; }}
         .panel {{ background: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 24px; }}
         .panel-title {{ font-size: 15px; font-weight: 700; color: #f8fafc; margin: 0 0 16px 0; display: flex; justify-content: space-between; align-items: center; }}
         table {{ width: 100%; border-collapse: collapse; }}
         th {{ text-align: left; font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 16px; background: #0f172a; }}
-        .pipeline-stepper {{ display: flex; justify-content: space-between; background: #0f172a; padding: 16px; border-radius: 8px; border: 1px solid #1e293b; margin-top: 12px; }}
-        .step {{ text-align: center; font-size: 11px; color: #94a3b8; }}
-        .step-val {{ font-size: 18px; font-weight: 800; color: #f8fafc; margin-top: 4px; }}
     </style>
 </head>
 <body>
@@ -360,8 +357,8 @@ def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(No
             <span class="badge-autonomy">LEVEL 2: HUMAN-GATED</span>
         </div>
         <div style="display: flex; align-items: center; gap: 16px; font-size: 12px; color: #94a3b8;">
-            <span>AI Capacity: <strong style="color: #f8fafc;">Active (5/Day Max)</strong></span>
-            <span>Storage: <strong style="color: #10b981;">R2 Private</strong></span>
+            <span>Top Source: <strong style="color: #38bdf8;">{html.escape(acq['top_source'])}</strong></span>
+            <span>AI Daily Cap: <strong style="color: #f8fafc;">Active (5 Max)</strong></span>
         </div>
     </div>
 
@@ -379,19 +376,14 @@ def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(No
                 <span style="font-size: 11px; color: #64748b;">After Gateway Fees</span>
             </div>
             <div class="kpi-card">
-                <div class="kpi-label">Paid Orders</div>
-                <div class="kpi-val">{m['paid_orders']} <span style="font-size: 14px; color: #64748b;">/ {m['total_orders']}</span></div>
-                <span style="font-size: 11px; color: #10b981;">Conversion: {m['conversion_rate']}</span>
+                <div class="kpi-label">Attributed Revenue</div>
+                <div class="kpi-val" style="color: #f59e0b;">₹{acq['total_attributed_revenue']}</div>
+                <span style="font-size: 11px; color: #64748b;">Orders: {acq['total_attributed_orders']}</span>
             </div>
             <div class="kpi-card">
-                <div class="kpi-label">Average Order Value</div>
-                <div class="kpi-val" style="color: #f59e0b;">₹{m['average_order_value']}</div>
-                <span style="font-size: 11px; color: #64748b;">Per verified buyer</span>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-label">Health Index</div>
-                <div class="kpi-val" style="color: #a855f7;">{m['health_score']}%</div>
-                <span style="font-size: 11px; color: #10b981;">Optimal Status</span>
+                <div class="kpi-label">Conversion Rate</div>
+                <div class="kpi-val" style="color: #a855f7;">{m['conversion_rate']}</div>
+                <span style="font-size: 11px; color: #10b981;">Paid: {m['paid_orders']} / {m['total_orders']}</span>
             </div>
         </div>
 
@@ -402,52 +394,29 @@ def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(No
                 <span style="font-size: 12px; color: #f59e0b; font-weight: normal;">Mandatory Gate (Level 2 Autonomy)</span>
             </div>
             <table>
-                <thead><tr><th>Generated Asset / Opportunity</th><th>Action Status</th><th>Created</th><th style="text-align: right;">Decision</th></tr></thead>
+                <thead><tr><th>Asset / Marketing Kit</th><th>Status</th><th>Created</th><th style="text-align: right;">Decision</th></tr></thead>
                 <tbody>{approvals_html}</tbody>
             </table>
         </div>
 
-        <!-- Two Column Control Matrix -->
+        <!-- Acquisition & Marketing Matrix -->
         <div class="grid-2">
-            <div>
-                <!-- Publishing Pipeline State Machine -->
-                <div class="panel" style="margin-bottom: 24px;">
-                    <div class="panel-title">Autonomous Publishing Pipeline</div>
-                    <div class="pipeline-stepper">
-                        <div class="step"><div>DRAFT</div><div class="step-val" style="color: #94a3b8;">{t_data['pipeline']['DRAFT']}</div></div>
-                        <div class="step"><div>PROCESSING</div><div class="step-val" style="color: #38bdf8;">{t_data['pipeline']['PROCESSING']}</div></div>
-                        <div class="step"><div>COMPLETED</div><div class="step-val" style="color: #f59e0b;">{t_data['pipeline']['COMPLETED']}</div></div>
-                        <div class="step"><div>PUBLISHED</div><div class="step-val" style="color: #10b981;">{t_data['pipeline']['PUBLISHED']}</div></div>
-                        <div class="step"><div>FAILED</div><div class="step-val" style="color: #ef4444;">{t_data['pipeline']['FAILED']}</div></div>
-                    </div>
-                </div>
-
-                <!-- AI Growth Intelligence -->
-                <div class="panel">
-                    <div class="panel-title">AI Growth Intelligence & Opportunities <span style="font-size: 11px; background: rgba(56,189,248,0.1); color: #38bdf8; padding: 2px 8px; border-radius: 4px;">AI RECOMMENDATION ONLY</span></div>
-                    <div style="background: #0f172a; padding: 16px; border-radius: 8px; border: 1px solid #1e293b; margin-bottom: 12px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <strong style="color: #f8fafc; font-size: 13px;">High Potential Blueprint: Autonomous Multi-Agent SaaS</strong>
-                            <span style="color: #10b981; font-weight: bold; font-size: 12px;">Score: 84/100 (Grade A)</span>
-                        </div>
-                        <p style="color: #94a3b8; font-size: 12px; margin: 8px 0 0 0; line-height: 1.4;">
-                            Identified high demand with low direct competitive saturation in enterprise workflow niches. Staged for synthesis.
-                        </p>
-                    </div>
-                </div>
+            <div class="panel">
+                <div class="panel-title">Acquisition Intelligence (UTM Attribution)</div>
+                <table>
+                    <thead><tr><th>Channel / Source</th><th>Orders</th><th style="text-align: right;">Net Revenue</th></tr></thead>
+                    <tbody>{src_rows}</tbody>
+                </table>
             </div>
 
-            <div>
-                <!-- Real-time Transactions -->
-                <div class="panel" style="margin-bottom: 24px;">
-                    <div class="panel-title">Live Transaction Stream</div>
-                    {tx_html if tx_html else "<div style='color:#64748b; font-size:12px;'>No recent orders recorded.</div>"}
-                </div>
-
-                <!-- System Audit Stream -->
-                <div class="panel">
-                    <div class="panel-title">Audit Log Stream</div>
-                    {logs_html if logs_html else "<div style='color:#64748b; font-size:12px;'>No system logs available.</div>"}
+            <div class="panel">
+                <div class="panel-title">AI Marketing Staging Engine <span style="font-size: 11px; background: rgba(56,189,248,0.1); color: #38bdf8; padding: 2px 8px; border-radius: 4px;">DRAFTS ONLY</span></div>
+                <div style="background: #0f172a; padding: 16px; border-radius: 8px; border: 1px solid #1e293b;">
+                    <div style="color: #f8fafc; font-size: 13px; font-weight: 600; margin-bottom: 6px;">Automated Cross-Channel Promotion Kits</div>
+                    <p style="color: #94a3b8; font-size: 12px; margin: 0 0 12px 0; line-height: 1.4;">
+                        Generates high-converting Instagram reels, email drafts, WhatsApp broadcasts, and SEO meta tags for live catalog assets.
+                    </p>
+                    <button onclick="generateMarketingKit()" style="background: #2563eb; color: #ffffff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12px;">+ Generate Marketing Kit</button>
                 </div>
             </div>
         </div>
@@ -471,11 +440,42 @@ def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(No
                 alert("Action Failed: " + (data.detail || "Unauthorized"));
             }}
         }}
+
+        async function generateMarketingKit() {{
+            const pid = prompt("Enter Active Product ID to generate marketing kit for:", "1");
+            if (!pid) return;
+            const secret = prompt("Enter BI Admin Secret:");
+            if (!secret) return;
+            const res = await fetch("/api/admin/generate-marketing-kit", {{
+                method: "POST",
+                headers: {{ "Content-Type": "application/json", "x-admin-secret": secret }},
+                body: JSON.stringify({{ product_id: parseInt(pid), campaign_name: "launch" }})
+            }});
+            const data = await res.json();
+            if (res.ok) {{
+                alert("Marketing Kit successfully staged for human approval!");
+                window.location.reload();
+            }} else {{
+                alert("Generation Failed: " + (data.detail || "Error"));
+            }}
+        }}
     </script>
 </body>
 </html>""")
 
-# ==================== ADMIN ACTION ENDPOINTS ====================
+# ==================== ADMIN ACTION & MARKETING ENDPOINTS ====================
+
+@app.post("/api/admin/generate-marketing-kit")
+def generate_marketing_kit_endpoint(req: GenerateMarketingKitRequest, x_admin_secret: Optional[str] = Header(None)):
+    configured_secret = (os.getenv("BI_ADMIN_SECRET") or BI_ADMIN_SECRET).strip()
+    if not configured_secret or not x_admin_secret or not hmac.compare_digest(x_admin_secret, configured_secret):
+        raise HTTPException(status_code=401, detail="Unauthorized.")
+    if req.financial_override:
+        raise HTTPException(status_code=403, detail="Financial manipulation is strictly prohibited.")
+    try:
+        return growth_engine.generate_marketing_campaign_kit(req.product_id, req.campaign_name or "launch", engine)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/api/admin/approve")
 def approve_job_endpoint(req: AdminActionRequest, x_admin_secret: Optional[str] = Header(None)):
@@ -501,7 +501,7 @@ def reject_job_endpoint(req: AdminActionRequest, x_admin_secret: Optional[str] =
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-# ==================== PAYMENT & ORDER ENDPOINTS (PHASE 0.6 UNTOUCHED) ====================
+# ==================== PAYMENT & ORDER ENDPOINTS WITH ATTRIBUTION ====================
 
 @app.post("/api/payments/create-session")
 def create_payment_session(req: CreatePaymentSessionRequest):
@@ -589,6 +589,26 @@ def create_secure_order(req: CreateOrderRequest):
                 "otype": order_type, "gross": gross_amount, "disc": discount_amount,
                 "net": net_amount, "status": initial_status
             })
+
+            # Safe attribution logging (Zero migration schema preservation)
+            clean_src = growth_engine.sanitize_text(req.utm_source, max_length=50) or "direct"
+            clean_med = growth_engine.sanitize_text(req.utm_medium, max_length=50) or "organic"
+            clean_cmp = growth_engine.sanitize_text(req.utm_campaign, max_length=50) or "web"
+            clean_ref = growth_engine.sanitize_text(req.referrer, max_length=150) or "direct"
+
+            attr_payload = json.dumps({
+                "order_id": new_oid,
+                "utm_source": clean_src,
+                "utm_medium": clean_med,
+                "utm_campaign": clean_cmp,
+                "referrer": clean_ref,
+                "net_amount": float(net_amount),
+                "status": initial_status
+            })
+            conn.execute(text("""
+                INSERT INTO system_logs (module, status, message)
+                VALUES ('ATTRIBUTION', 'CAPTURED', :msg)
+            """), {"msg": attr_payload})
 
             download_url = None
             if not requires_payment:

@@ -15,13 +15,12 @@ def get_db_engine():
         return create_engine(db_url, connect_args={"check_same_thread": False})
     return create_engine(db_url, pool_pre_ping=True)
 
-def sanitize_text(val: str) -> str:
-    """Safe inline sanitization without requiring hard top-level ai_engine dependency at startup."""
-    try:
-        import ai_engine
-        return ai_engine.sanitize_input(val)
-    except Exception:
-        return re.sub(r"[^\w\s\-\.\,\:\?]", "", str(val or "")).strip()
+def sanitize_text(val: str, max_length: int = 120) -> str:
+    """Safe inline sanitization removing script injections and enforcing bounds."""
+    if not val:
+        return ""
+    clean = re.sub(r"[^\w\s\-\.\,\:\?\/@]", "", str(val)).strip()
+    return clean[:max_length]
 
 # ==================== 1. REVENUE & BUSINESS TELEMETRY ====================
 
@@ -99,7 +98,161 @@ def calculate_revenue_metrics(engine=None) -> Dict[str, Any]:
         "health_score": health_score
     }
 
-# ==================== 2. PIPELINE & TELEMETRY AGGREGATION ====================
+# ==================== 2. PHASE 1.2: CONVERSION & ATTRIBUTION ENGINE ====================
+
+def calculate_acquisition_metrics(engine=None) -> Dict[str, Any]:
+    """Parse zero-migration attribution metadata from system_logs and orders."""
+    if engine is None:
+        engine = get_db_engine()
+
+    sources_map = {}
+    campaigns_map = {}
+    total_attributed_orders = 0
+    total_attributed_rev = Decimal("0.00")
+
+    with engine.connect() as conn:
+        attr_logs = conn.execute(text("""
+            SELECT message, created_at FROM system_logs 
+            WHERE module = 'ATTRIBUTION' AND status = 'CAPTURED'
+            ORDER BY id DESC LIMIT 500
+        """)).mappings().all()
+
+        for l in attr_logs:
+            try:
+                data = json.loads(l["message"])
+                src = data.get("utm_source") or "direct"
+                cmp = data.get("utm_campaign") or "organic"
+                amt = Decimal(str(data.get("net_amount", 0)))
+                is_paid = data.get("status") == "PAID"
+
+                # Aggregate Source
+                if src not in sources_map:
+                    sources_map[src] = {"orders": 0, "paid_orders": 0, "revenue": Decimal("0.00")}
+                sources_map[src]["orders"] += 1
+                if is_paid:
+                    sources_map[src]["paid_orders"] += 1
+                    sources_map[src]["revenue"] += amt
+
+                # Aggregate Campaign
+                if cmp not in campaigns_map:
+                    campaigns_map[cmp] = {"orders": 0, "paid_orders": 0, "revenue": Decimal("0.00")}
+                campaigns_map[cmp]["orders"] += 1
+                if is_paid:
+                    campaigns_map[cmp]["paid_orders"] += 1
+                    campaigns_map[cmp]["revenue"] += amt
+
+                total_attributed_orders += 1
+                if is_paid:
+                    total_attributed_rev += amt
+            except Exception:
+                continue
+
+    # Format output for UI tables
+    src_summary = [
+        {"source": k, "orders": v["orders"], "paid_orders": v["paid_orders"], "revenue": str(v["revenue"].quantize(Decimal("0.01")))}
+        for k, v in sources_map.items()
+    ]
+    cmp_summary = [
+        {"campaign": k, "orders": v["orders"], "paid_orders": v["paid_orders"], "revenue": str(v["revenue"].quantize(Decimal("0.01")))}
+        for k, v in campaigns_map.items()
+    ]
+
+    top_source = max(src_summary, key=lambda x: Decimal(x["revenue"]))["source"] if src_summary else "Direct / None"
+    top_campaign = max(cmp_summary, key=lambda x: Decimal(x["revenue"]))["campaign"] if cmp_summary else "Organic / None"
+
+    return {
+        "sources": src_summary,
+        "campaigns": cmp_summary,
+        "top_source": top_source,
+        "top_campaign": top_campaign,
+        "total_attributed_orders": total_attributed_orders,
+        "total_attributed_revenue": str(total_attributed_rev.quantize(Decimal("0.01")))
+    }
+
+# ==================== 3. PHASE 1.2: MARKETING CAMPAIGN GENERATOR ====================
+
+def generate_marketing_campaign_kit(product_id: int, campaign_name: str = "launch", engine=None) -> Dict[str, Any]:
+    """Generate structured multi-channel marketing kit staged for Level 2 human approval."""
+    if engine is None:
+        engine = get_db_engine()
+
+    clean_campaign = sanitize_text(campaign_name, max_length=50).lower() or "launch"
+    max_daily = int(os.getenv("MAX_DAILY_AI_RESEARCH_JOBS", "5"))
+
+    with engine.connect() as conn:
+        prod = conn.execute(
+            text("SELECT * FROM products WHERE id = :pid AND status = 'ACTIVE'"),
+            {"pid": product_id}
+        ).mappings().first()
+
+        if not prod:
+            raise ValueError("Target product not found or not in ACTIVE catalog.")
+
+        # Check daily quota usage
+        since_t = datetime.utcnow() - timedelta(days=1)
+        daily_count = conn.execute(text("""
+            SELECT count(*) FROM system_logs 
+            WHERE (module = 'AI_RESEARCH' OR module = 'MARKETING_AI') AND status = 'EXECUTED' AND created_at >= :t
+        """), {"t": since_t}).scalar() or 0
+
+        if daily_count >= max_daily:
+            raise ValueError(f"Daily AI budget limit reached ({daily_count}/{max_daily}).")
+
+        # Duplicate kit check
+        dup_hash = hashlib.sha256(f"{prod['slug']}:{clean_campaign}".encode("utf-8")).hexdigest()[:16]
+        dup = conn.execute(text("""
+            SELECT id FROM system_logs 
+            WHERE module = 'MARKETING_AI' AND message LIKE :dhash
+        """), {"dhash": f"%[hash:{dup_hash}]%"}).first()
+
+        if dup:
+            raise ValueError(f"Marketing kit already exists for {prod['slug']} with campaign '{clean_campaign}'.")
+
+    p_title = sanitize_text(prod['title'], max_length=150)
+    p_niche = sanitize_text(prod['target_niche'], max_length=80)
+    p_slug = sanitize_text(prod['slug'], max_length=80)
+
+    # Structured marketing content kit
+    marketing_kit = {
+        "product_id": prod["id"],
+        "slug": p_slug,
+        "campaign": clean_campaign,
+        "instagram": {
+            "caption": f"🚀 Master {p_title} with our definitive enterprise guide! #tech #engineering #{p_niche.lower().replace(' ', '')}",
+            "reel_hook": f"Stop making this 1 crucial mistake in {p_niche}.",
+            "cta": f"Link in bio to get full blueprint for ₹{prod['base_price_inr']}."
+        },
+        "email": {
+            "subject": f"Exclusive Blueprint: How to scale your {p_niche} stack",
+            "body": f"Hi there,\n\nWe just published '{p_title}'. It covers end-to-end architecture and actionable blueprints designed for high-performance teams.\n\nGrab your copy here: https://master-empire-os.onrender.com/books/{p_slug}"
+        },
+        "seo": {
+            "title": f"{p_title} | Comprehensive Guide & Industry Handbook",
+            "meta_description": f"Master {p_niche} with {p_title}. Production-grade blueprints, architectures, and implementation patterns."
+        },
+        "whatsapp_copy": f"🔥 New Release: *{p_title}* is now live. Get instant access here: https://master-empire-os.onrender.com/books/{p_slug}"
+    }
+
+    with engine.begin() as conn:
+        # Log to system_logs
+        conn.execute(text("""
+            INSERT INTO system_logs (module, status, message)
+            VALUES ('MARKETING_AI', 'EXECUTED', :msg)
+        """), {"msg": f"Generated marketing kit for {p_slug} ({clean_campaign}) [hash:{dup_hash}]"})
+
+        # Stage into pending_approvals (Requires Level 2 Human Approval)
+        conn.execute(text("""
+            INSERT INTO pending_approvals (book_id, status)
+            VALUES (:bid, 'PENDING')
+        """), {"bid": prod["id"]})
+
+    return {
+        "status": "STAGED_FOR_APPROVAL",
+        "autonomy_level": 2,
+        "data": marketing_kit
+    }
+
+# ==================== 4. COMMAND CENTER TELEMETRY UNIFICATION ====================
 
 def get_command_center_telemetry(engine=None) -> Dict[str, Any]:
     """Single batched query aggregator for the Ultra-Premium Command Center."""
@@ -107,6 +260,7 @@ def get_command_center_telemetry(engine=None) -> Dict[str, Any]:
         engine = get_db_engine()
 
     metrics = calculate_revenue_metrics(engine)
+    acquisition = calculate_acquisition_metrics(engine)
 
     with engine.connect() as conn:
         pending_items = conn.execute(text("""
@@ -133,8 +287,15 @@ def get_command_center_telemetry(engine=None) -> Dict[str, Any]:
             SELECT module, status, message, created_at FROM system_logs ORDER BY id DESC LIMIT 8
         """)).mappings().all()
 
+        # Marketing kit queues
+        mkt_kits = conn.execute(text("""
+            SELECT message, created_at FROM system_logs 
+            WHERE module = 'MARKETING_AI' ORDER BY id DESC LIMIT 5
+        """)).mappings().all()
+
     return {
         "metrics": metrics,
+        "acquisition": acquisition,
         "pending_approvals": [dict(r) for r in pending_items],
         "pipeline": {
             "DRAFT": pipeline_counts.get("DRAFT", 0),
@@ -144,10 +305,11 @@ def get_command_center_telemetry(engine=None) -> Dict[str, Any]:
             "FAILED": pipeline_counts.get("FAILED", 0)
         },
         "recent_transactions": [dict(r) for r in recent_txs],
-        "audit_logs": [dict(r) for r in audit_logs]
+        "audit_logs": [dict(r) for r in audit_logs],
+        "marketing_queue": [dict(r) for r in mkt_kits]
     }
 
-# ==================== 3. ADMINISTRATIVE APPROVAL / REJECTION ====================
+# ==================== 5. ADMINISTRATIVE APPROVAL / REJECTION ====================
 
 def approve_pending_job(approval_id: int, engine=None) -> Dict[str, Any]:
     if engine is None:
@@ -169,25 +331,22 @@ def approve_pending_job(approval_id: int, engine=None) -> Dict[str, Any]:
             {"bid": approval["book_id"]}
         ).mappings().first()
 
-        if not book:
-            raise ValueError("Associated book metadata not found.")
+        if book:
+            conn.execute(text("""
+                INSERT INTO products (slug, title, tier_level, target_niche, base_price_inr, base_price_usd, pdf_file_path, status)
+                VALUES (:s, :t, 'Tier 1', :n, 999, 12, :r2_key, 'ACTIVE')
+            """), {
+                "s": book["slug"], "t": book["title"], "n": book["target_niche"], "r2_key": book["pdf_file_path"]
+            })
+            conn.execute(text("UPDATE books SET status = 'PUBLISHED' WHERE id = :bid"), {"bid": book["id"]})
 
-        conn.execute(text("""
-            INSERT INTO products (slug, title, tier_level, target_niche, base_price_inr, base_price_usd, pdf_file_path, status)
-            VALUES (:s, :t, 'Tier 1', :n, 999, 12, :r2_key, 'ACTIVE')
-        """), {
-            "s": book["slug"], "t": book["title"], "n": book["target_niche"], "r2_key": book["pdf_file_path"]
-        })
-
-        conn.execute(text("UPDATE books SET status = 'PUBLISHED' WHERE id = :bid"), {"bid": book["id"]})
         conn.execute(text("UPDATE pending_approvals SET status = 'APPROVED' WHERE id = :id"), {"id": approval_id})
-
         conn.execute(text("""
             INSERT INTO system_logs (module, status, message)
             VALUES ('APPROVAL_ENGINE', 'APPROVED', :msg)
-        """), {"msg": f"Admin approved book {book['slug']} (ID: {book['id']}) for production catalog."})
+        """), {"msg": f"Admin approved staged item ID: {approval_id}"})
 
-    return {"status": "SUCCESS", "message": f"Book {book['slug']} approved and published to live catalog."}
+    return {"status": "SUCCESS", "message": f"Approval item ID {approval_id} approved."}
 
 def reject_pending_job(approval_id: int, reason: str = "Admin Rejected", engine=None) -> Dict[str, Any]:
     if engine is None:
@@ -205,101 +364,13 @@ def reject_pending_job(approval_id: int, reason: str = "Admin Rejected", engine=
             raise ValueError(f"Record already processed with status {approval['status']}.")
 
         conn.execute(text("UPDATE pending_approvals SET status = 'REJECTED' WHERE id = :id"), {"id": approval_id})
-        conn.execute(text("UPDATE books SET status = 'FAILED', error_message = :err WHERE id = :bid"),
-                     {"err": reason[:250], "bid": approval["book_id"]})
+        if approval["book_id"]:
+            conn.execute(text("UPDATE books SET status = 'FAILED', error_message = :err WHERE id = :bid"),
+                         {"err": reason[:250], "bid": approval["book_id"]})
 
         conn.execute(text("""
             INSERT INTO system_logs (module, status, message)
             VALUES ('APPROVAL_ENGINE', 'REJECTED', :msg)
-        """), {"msg": f"Admin rejected approval item ID: {approval_id}. Reason: {reason}"})
+        """), {"msg": f"Admin rejected item ID: {approval_id}. Reason: {reason}"})
 
     return {"status": "SUCCESS", "message": f"Approval item ID {approval_id} rejected."}
-
-# ==================== 4. MARKET OPPORTUNITY & RESEARCH SCORING ====================
-
-def calculate_opportunity_score(
-    demand_index: int,
-    competition_index: int,
-    commercial_intent_index: int,
-    content_gap_index: int
-) -> Dict[str, Any]:
-    d = max(0, min(100, demand_index))
-    c = max(0, min(100, competition_index))
-    ci = max(0, min(100, commercial_intent_index))
-    cg = max(0, min(100, content_gap_index))
-
-    comp_advantage = 100 - c
-    raw_score = (d * Decimal("0.35")) + (comp_advantage * Decimal("0.25")) + (ci * Decimal("0.25")) + (cg * Decimal("0.15"))
-    final_score = int(round(raw_score))
-
-    grade = "A+" if final_score >= 85 else ("A" if final_score >= 70 else ("B" if final_score >= 50 else "C"))
-    return {
-        "opportunity_score": final_score,
-        "grade": grade,
-        "metrics": {"demand": d, "competition": c, "commercial_intent": ci, "content_gap": cg},
-        "verdict": "HIGH_POTENTIAL" if final_score >= 70 else "MODERATE_POTENTIAL"
-    }
-
-def check_ai_research_limits(topic: str, engine=None) -> Dict[str, Any]:
-    if engine is None:
-        engine = get_db_engine()
-
-    clean_topic = sanitize_text(topic).lower()
-    topic_hash = hashlib.sha256(clean_topic.encode("utf-8")).hexdigest()[:16]
-    max_daily = int(os.getenv("MAX_DAILY_AI_RESEARCH_JOBS", "5"))
-
-    with engine.connect() as conn:
-        since_t = datetime.utcnow() - timedelta(days=1)
-        daily_count = conn.execute(text("""
-            SELECT count(*) FROM system_logs 
-            WHERE module = 'AI_RESEARCH' AND status = 'EXECUTED' AND created_at >= :t
-        """), {"t": since_t}).scalar() or 0
-
-        if daily_count >= max_daily:
-            return {"allowed": False, "reason": "RATE_LIMIT_REACHED", "daily_count": daily_count}
-
-        duplicate = conn.execute(text("""
-            SELECT id FROM system_logs 
-            WHERE module = 'AI_RESEARCH' AND message LIKE :thash
-        """), {"thash": f"%[hash:{topic_hash}]%"}).first()
-
-        if duplicate:
-            return {"allowed": False, "reason": "DUPLICATE_TOPIC", "topic_hash": topic_hash}
-
-    return {"allowed": True, "topic_hash": topic_hash}
-
-def generate_growth_recommendations(topic: str, target_niche: str, engine=None) -> Dict[str, Any]:
-    if engine is None:
-        engine = get_db_engine()
-
-    clean_topic = sanitize_text(topic)
-    clean_niche = sanitize_text(target_niche)
-
-    limit_check = check_ai_research_limits(clean_topic, engine)
-    if not limit_check["allowed"]:
-        return {"status": "BLOCKED", "reason": limit_check["reason"], "recommendation": None}
-
-    autonomy_level = int(os.getenv("AUTONOMY_LEVEL", "2"))
-    rec_payload = {
-        "topic": clean_topic,
-        "niche": clean_niche,
-        "suggested_title": f"Complete Guide to {clean_topic}",
-        "suggested_tier": "Tier 1",
-        "seo_keywords": [clean_topic.lower(), f"{clean_niche.lower()} automation", "enterprise systems"],
-        "content_angle": "Technical implementation & architectural blueprints",
-        "action_required": "STAGE_PENDING_APPROVAL"
-    }
-
-    topic_hash = limit_check["topic_hash"]
-    with engine.begin() as conn:
-        conn.execute(text("""
-            INSERT INTO system_logs (module, status, message)
-            VALUES ('AI_RESEARCH', 'EXECUTED', :msg)
-        """), {"msg": f"Researched topic: {clean_topic} [hash:{topic_hash}]"})
-
-    return {
-        "status": "SUCCESS",
-        "autonomy_level": autonomy_level,
-        "staged_for_approval": autonomy_level == 2,
-        "data": rec_payload
-    }
