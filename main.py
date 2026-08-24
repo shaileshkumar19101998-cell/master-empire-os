@@ -1,5 +1,6 @@
 import os
 import math
+import html
 import json
 import time
 import hmac
@@ -39,7 +40,7 @@ RATE_LIMIT_RECORD = defaultdict(list)
 RATE_LIMIT_WINDOW = 60
 RATE_LIMIT_MAX_REQ = 5
 
-app = FastAPI(title="Autonomous Business OS - Global Enterprise Engine", version="1.0.0")
+app = FastAPI(title="Autonomous Business OS - Global Enterprise Engine", version="1.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -56,6 +57,11 @@ class CreateOrderRequest(BaseModel):
 
 class CreatePaymentSessionRequest(BaseModel):
     order_id: str
+
+class AdminActionRequest(BaseModel):
+    approval_id: int
+    reason: Optional[str] = "Admin Decision"
+    financial_override: Optional[bool] = False
 
 def generate_signed_download_token(order_id: str, expiry_seconds: int = 86400) -> str:
     secret = os.getenv("DOWNLOAD_TOKEN_SECRET") or DOWNLOAD_TOKEN_SECRET
@@ -91,7 +97,7 @@ def verify_signed_download_token(token: str, order_id: str) -> bool:
     except Exception:
         return False
 
-# ==================== STOREFRONT & DETAIL PAGES ====================
+# ==================== STOREFRONT & SEO ====================
 
 @app.get("/", response_class=HTMLResponse)
 def get_storefront():
@@ -105,11 +111,13 @@ def get_storefront():
         is_free = p["base_price_inr"] == 0
         price_badge = '<span style="color: #10b981; font-weight: bold;">FREE</span>' if is_free else f'₹{p["base_price_inr"]}'
         cta_text = "Get Free Asset" if is_free else "Buy Now"
+        p_title = html.escape(p['title'] or '')
+        p_niche = html.escape(p['target_niche'] or '')
         cards_html += f"""
         <div style="background: #1e293b; border-radius: 12px; padding: 24px; border: 1px solid #334155; display: flex; flex-direction: column; justify-content: space-between;">
             <div>
-                <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #38bdf8; font-weight: 600;">{p['target_niche']}</span>
-                <h3 style="color: #f8fafc; margin: 10px 0 8px 0; font-size: 18px;">{p['title']}</h3>
+                <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #38bdf8; font-weight: 600;">{p_niche}</span>
+                <h3 style="color: #f8fafc; margin: 10px 0 8px 0; font-size: 18px;">{p_title}</h3>
                 <p style="color: #94a3b8; font-size: 13px; line-height: 1.5; margin-bottom: 16px;">Tier: {p['tier_level']} • Complete enterprise blueprint.</p>
             </div>
             <div>
@@ -205,7 +213,7 @@ def get_product_detail(slug: str):
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{p['title']} — Autonomous OS</title>
+    <title>{html.escape(p['title'])} — Autonomous OS</title>
     <link rel="canonical" href="https://master-empire-os.onrender.com/books/{p['slug']}">
     <style>
         body {{ font-family: -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 40px 20px; }}
@@ -215,8 +223,8 @@ def get_product_detail(slug: str):
 <body>
     <div class="box">
         <a href="/" style="color: #38bdf8; text-decoration: none; font-size: 13px;">&larr; Back to Catalog</a>
-        <h1 style="color: #f8fafc; font-size: 24px; margin-top: 16px;">{p['title']}</h1>
-        <p style="color: #94a3b8;">Category: {p['target_niche']} | Tier: {p['tier_level']}</p>
+        <h1 style="color: #f8fafc; font-size: 24px; margin-top: 16px;">{html.escape(p['title'])}</h1>
+        <p style="color: #94a3b8;">Category: {html.escape(p['target_niche'])} | Tier: {p['tier_level']}</p>
         <h2 style="color: #10b981; margin: 20px 0;">{price_str}</h2>
         <a href="/" style="display: inline-block; background: #2563eb; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">Purchase on Catalog</a>
     </div>
@@ -225,7 +233,7 @@ def get_product_detail(slug: str):
 
 @app.get("/robots.txt", response_class=PlainResponse)
 def get_robots():
-    content = "User-agent: *\nAllow: /\nDisallow: /api/download/\nDisallow: /api/payments/\nDisallow: /admin/\nSitemap: https://master-empire-os.onrender.com/sitemap.xml\n"
+    content = "User-agent: *\nAllow: /\nDisallow: /api/download/\nDisallow: /api/payments/\nDisallow: /admin/\nDisallow: /api/admin/\nSitemap: https://master-empire-os.onrender.com/sitemap.xml\n"
     return PlainResponse(content, media_type="text/plain")
 
 @app.get("/sitemap.xml", response_class=PlainResponse)
@@ -243,62 +251,243 @@ def get_sitemap():
 </urlset>"""
     return PlainResponse(xml_content, media_type="application/xml")
 
-# ==================== PHASE 1.0: BI ADMIN DASHBOARD ====================
+# ==================== PHASE 1.1: ULTRA-PREMIUM AI COMMAND CENTER ====================
 
 @app.get("/admin/bi-dashboard", response_class=HTMLResponse)
 def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(None)):
     configured_secret = (os.getenv("BI_ADMIN_SECRET") or BI_ADMIN_SECRET).strip()
     query_secret = request.query_params.get("secret", "")
-    
     provided_secret = x_admin_secret or query_secret
 
     if not configured_secret or not provided_secret or not hmac.compare_digest(provided_secret, configured_secret):
-        raise HTTPException(status_code=401, detail="Unauthorized access to BI dashboard.")
+        raise HTTPException(status_code=401, detail="Unauthorized access to Command Center.")
 
-    metrics = growth_engine.calculate_revenue_metrics(engine)
+    t_data = growth_engine.get_command_center_telemetry(engine)
+    m = t_data["metrics"]
 
-    prod_rows_html = "".join([
-        f"<tr><td style='padding: 8px; border-bottom: 1px solid #334155;'>{p['title']}</td>"
-        f"<td style='padding: 8px; border-bottom: 1px solid #334155;'>₹{p['price_inr']}</td>"
-        f"<td style='padding: 8px; border-bottom: 1px solid #334155;'>{p['orders']}</td>"
-        f"<td style='padding: 8px; border-bottom: 1px solid #334155; color: #10b981;'>₹{p['revenue_inr']}</td></tr>"
-        for p in metrics["product_breakdown"]
+    # Approvals HTML
+    approvals_html = ""
+    if not t_data["pending_approvals"]:
+        approvals_html = "<tr><td colspan='4' style='padding: 16px; text-align: center; color: #64748b;'>No items pending human approval. System autonomous queue optimal.</td></tr>"
+    else:
+        for app_item in t_data["pending_approvals"]:
+            app_title = html.escape(app_item.get('title') or 'Pending Growth Recommendation')
+            app_niche = html.escape(app_item.get('target_niche') or 'Strategy')
+            approvals_html += f"""
+            <tr style="border-bottom: 1px solid #1e293b;">
+                <td style="padding: 14px 16px; font-weight: 600; color: #f8fafc;">{app_title}<br><span style="font-size: 11px; color: #38bdf8; font-weight: normal;">Niche: {app_niche}</span></td>
+                <td style="padding: 14px 16px; color: #f59e0b; font-size: 12px;"><span style="background: rgba(245,158,11,0.1); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(245,158,11,0.3);">STAGED FOR APPROVAL</span></td>
+                <td style="padding: 14px 16px; color: #94a3b8; font-size: 12px;">{app_item['created_at']}</td>
+                <td style="padding: 14px 16px; text-align: right;">
+                    <button onclick="processApproval({app_item['id']}, 'approve')" style="background: #10b981; color: #022c22; font-weight: 700; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; margin-right: 6px; font-size: 12px;">APPROVE</button>
+                    <button onclick="processApproval({app_item['id']}, 'reject')" style="background: #ef4444; color: #450a0a; font-weight: 700; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px;">REJECT</button>
+                </td>
+            </tr>
+            """
+
+    # Transactions HTML
+    tx_html = ""
+    for tx in t_data["recent_transactions"]:
+        tx_title = html.escape(tx.get('title') or 'Enterprise Product')
+        tx_status_badge = '<span style="color:#10b981; font-weight:bold;">PAID</span>' if tx['status'] == 'PAID' else '<span style="color:#f59e0b;">PENDING</span>'
+        tx_html += f"""
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #1e293b;">
+            <div>
+                <div style="color: #f8fafc; font-size: 13px; font-weight: 600;">{tx_title}</div>
+                <div style="color: #64748b; font-size: 11px;">Ref: {str(tx['id'])[:8]}... • {tx['created_at']}</div>
+            </div>
+            <div style="text-align: right;">
+                <div style="color: #f8fafc; font-size: 13px; font-weight: 700;">₹{tx['net_amount']}</div>
+                <div style="font-size: 11px;">{tx_status_badge}</div>
+            </div>
+        </div>
+        """
+
+    # Audit Logs HTML
+    logs_html = "".join([
+        f"<div style='font-family: monospace; font-size: 11px; padding: 6px 0; border-bottom: 1px solid #1e293b; color: #94a3b8;'>"
+        f"<span style='color: #38bdf8;'>[{html.escape(l['module'])}]</span> "
+        f"<span style='color: #10b981;'>{html.escape(l['status'])}</span>: {html.escape(l['message'])}"
+        f"</div>"
+        for l in t_data["audit_logs"]
     ])
 
     return HTMLResponse(f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Autonomous BI Growth Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autonomous OS — Ultra-Premium Command Center</title>
     <style>
-        body {{ font-family: -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 40px 20px; }}
-        .container {{ max-width: 900px; margin: 0 auto; }}
-        .stat-grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 24px 0; }}
-        .stat-card {{ background: #1e293b; padding: 20px; border-radius: 8px; border: 1px solid #334155; }}
-        table {{ width: 100%; border-collapse: collapse; margin-top: 16px; background: #1e293b; border-radius: 8px; }}
-        th {{ background: #334155; padding: 10px; text-align: left; font-size: 13px; color: #94a3b8; }}
+        * {{ box-sizing: border-box; }}
+        body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0b0f19; color: #e2e8f0; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }}
+        .header {{ background: #0f172a; border-bottom: 1px solid #1e293b; padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; }}
+        .badge-live {{ background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px; }}
+        .badge-live::before {{ content: ""; width: 6px; height: 6px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981; }}
+        .badge-autonomy {{ background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600; }}
+        .container {{ max-width: 1300px; margin: 0 auto; padding: 32px 24px; }}
+        .kpi-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 28px; }}
+        .kpi-card {{ background: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; }}
+        .kpi-label {{ color: #64748b; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }}
+        .kpi-val {{ font-size: 26px; font-weight: 800; color: #f8fafc; margin: 8px 0 4px 0; font-variant-numeric: tabular-nums; }}
+        .grid-2 {{ display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 28px; }}
+        .panel {{ background: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 24px; }}
+        .panel-title {{ font-size: 15px; font-weight: 700; color: #f8fafc; margin: 0 0 16px 0; display: flex; justify-content: space-between; align-items: center; }}
+        table {{ width: 100%; border-collapse: collapse; }}
+        th {{ text-align: left; font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 16px; background: #0f172a; }}
+        .pipeline-stepper {{ display: flex; justify-content: space-between; background: #0f172a; padding: 16px; border-radius: 8px; border: 1px solid #1e293b; margin-top: 12px; }}
+        .step {{ text-align: center; font-size: 11px; color: #94a3b8; }}
+        .step-val {{ font-size: 18px; font-weight: 800; color: #f8fafc; margin-top: 4px; }}
     </style>
 </head>
 <body>
+    <div class="header">
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <h1 style="margin: 0; font-size: 18px; font-weight: 800; color: #f8fafc; letter-spacing: -0.5px;">AUTONOMOUS OS</h1>
+            <span class="badge-live">SYSTEM LIVE</span>
+            <span class="badge-autonomy">LEVEL 2: HUMAN-GATED</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 16px; font-size: 12px; color: #94a3b8;">
+            <span>AI Capacity: <strong style="color: #f8fafc;">Active (5/Day Max)</strong></span>
+            <span>Storage: <strong style="color: #10b981;">R2 Private</strong></span>
+        </div>
+    </div>
+
     <div class="container">
-        <h1 style="color: #f8fafc; font-size: 22px;">Autonomous BI & Growth Engine</h1>
-        <p style="color: #94a3b8; font-size: 13px;">Real-time deterministic revenue intelligence & opportunities</p>
-        
-        <div class="stat-grid">
-            <div class="stat-card"><span style="color:#94a3b8; font-size:12px;">GROSS REVENUE</span><h2 style="color:#10b981; margin:8px 0 0 0;">₹{metrics['gross_revenue']}</h2></div>
-            <div class="stat-card"><span style="color:#94a3b8; font-size:12px;">NET REVENUE</span><h2 style="color:#38bdf8; margin:8px 0 0 0;">₹{metrics['net_revenue']}</h2></div>
-            <div class="stat-card"><span style="color:#94a3b8; font-size:12px;">PAID ORDERS</span><h2 style="color:#f8fafc; margin:8px 0 0 0;">{metrics['paid_orders']} / {metrics['total_orders']}</h2></div>
-            <div class="stat-card"><span style="color:#94a3b8; font-size:12px;">AVG ORDER VALUE</span><h2 style="color:#f59e0b; margin:8px 0 0 0;">₹{metrics['average_order_value']}</h2></div>
+        <!-- Telemetry Row -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-label">Gross Revenue</div>
+                <div class="kpi-val" style="color: #10b981;">₹{m['gross_revenue']}</div>
+                <span style="font-size: 11px; color: #64748b;">Deterministic Settled</span>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Net Margin</div>
+                <div class="kpi-val" style="color: #38bdf8;">₹{m['net_revenue']}</div>
+                <span style="font-size: 11px; color: #64748b;">After Gateway Fees</span>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Paid Orders</div>
+                <div class="kpi-val">{m['paid_orders']} <span style="font-size: 14px; color: #64748b;">/ {m['total_orders']}</span></div>
+                <span style="font-size: 11px; color: #10b981;">Conversion: {m['conversion_rate']}</span>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Average Order Value</div>
+                <div class="kpi-val" style="color: #f59e0b;">₹{m['average_order_value']}</div>
+                <span style="font-size: 11px; color: #64748b;">Per verified buyer</span>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Health Index</div>
+                <div class="kpi-val" style="color: #a855f7;">{m['health_score']}%</div>
+                <span style="font-size: 11px; color: #10b981;">Optimal Status</span>
+            </div>
         </div>
 
-        <h3 style="color: #f8fafc; margin-top: 32px;">Product Performance Breakdown</h3>
-        <table>
-            <thead><tr><th>Product Title</th><th>Price</th><th>Orders</th><th>Revenue</th></tr></thead>
-            <tbody>{prod_rows_html}</tbody>
-        </table>
+        <!-- Action Center: Human Approval Gate -->
+        <div class="panel" style="margin-bottom: 28px; border-left: 4px solid #f59e0b;">
+            <div class="panel-title">
+                <span>ACTION CENTER — PENDING HUMAN APPROVAL</span>
+                <span style="font-size: 12px; color: #f59e0b; font-weight: normal;">Mandatory Gate (Level 2 Autonomy)</span>
+            </div>
+            <table>
+                <thead><tr><th>Generated Asset / Opportunity</th><th>Action Status</th><th>Created</th><th style="text-align: right;">Decision</th></tr></thead>
+                <tbody>{approvals_html}</tbody>
+            </table>
+        </div>
+
+        <!-- Two Column Control Matrix -->
+        <div class="grid-2">
+            <div>
+                <!-- Publishing Pipeline State Machine -->
+                <div class="panel" style="margin-bottom: 24px;">
+                    <div class="panel-title">Autonomous Publishing Pipeline</div>
+                    <div class="pipeline-stepper">
+                        <div class="step"><div>DRAFT</div><div class="step-val" style="color: #94a3b8;">{t_data['pipeline']['DRAFT']}</div></div>
+                        <div class="step"><div>PROCESSING</div><div class="step-val" style="color: #38bdf8;">{t_data['pipeline']['PROCESSING']}</div></div>
+                        <div class="step"><div>COMPLETED</div><div class="step-val" style="color: #f59e0b;">{t_data['pipeline']['COMPLETED']}</div></div>
+                        <div class="step"><div>PUBLISHED</div><div class="step-val" style="color: #10b981;">{t_data['pipeline']['PUBLISHED']}</div></div>
+                        <div class="step"><div>FAILED</div><div class="step-val" style="color: #ef4444;">{t_data['pipeline']['FAILED']}</div></div>
+                    </div>
+                </div>
+
+                <!-- AI Growth Intelligence -->
+                <div class="panel">
+                    <div class="panel-title">AI Growth Intelligence & Opportunities <span style="font-size: 11px; background: rgba(56,189,248,0.1); color: #38bdf8; padding: 2px 8px; border-radius: 4px;">AI RECOMMENDATION ONLY</span></div>
+                    <div style="background: #0f172a; padding: 16px; border-radius: 8px; border: 1px solid #1e293b; margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <strong style="color: #f8fafc; font-size: 13px;">High Potential Blueprint: Autonomous Multi-Agent SaaS</strong>
+                            <span style="color: #10b981; font-weight: bold; font-size: 12px;">Score: 84/100 (Grade A)</span>
+                        </div>
+                        <p style="color: #94a3b8; font-size: 12px; margin: 8px 0 0 0; line-height: 1.4;">
+                            Identified high demand with low direct competitive saturation in enterprise workflow niches. Staged for synthesis.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <!-- Real-time Transactions -->
+                <div class="panel" style="margin-bottom: 24px;">
+                    <div class="panel-title">Live Transaction Stream</div>
+                    {tx_html if tx_html else "<div style='color:#64748b; font-size:12px;'>No recent orders recorded.</div>"}
+                </div>
+
+                <!-- System Audit Stream -->
+                <div class="panel">
+                    <div class="panel-title">Audit Log Stream</div>
+                    {logs_html if logs_html else "<div style='color:#64748b; font-size:12px;'>No system logs available.</div>"}
+                </div>
+            </div>
+        </div>
     </div>
+
+    <script>
+        async function processApproval(approvalId, action) {{
+            const secret = prompt("Enter BI Admin Secret to authenticate action:");
+            if (!secret) return;
+            const endpoint = action === "approve" ? "/api/admin/approve" : "/api/admin/reject";
+            const res = await fetch(endpoint, {{
+                method: "POST",
+                headers: {{ "Content-Type": "application/json", "x-admin-secret": secret }},
+                body: JSON.stringify({{ approval_id: approvalId }})
+            }});
+            const data = await res.json();
+            if (res.ok) {{
+                alert(data.message);
+                window.location.reload();
+            }} else {{
+                alert("Action Failed: " + (data.detail || "Unauthorized"));
+            }}
+        }}
+    </script>
 </body>
 </html>""")
+
+# ==================== ADMIN ACTION ENDPOINTS ====================
+
+@app.post("/api/admin/approve")
+def approve_job_endpoint(req: AdminActionRequest, x_admin_secret: Optional[str] = Header(None)):
+    configured_secret = (os.getenv("BI_ADMIN_SECRET") or BI_ADMIN_SECRET).strip()
+    if not configured_secret or not x_admin_secret or not hmac.compare_digest(x_admin_secret, configured_secret):
+        raise HTTPException(status_code=401, detail="Unauthorized.")
+    if req.financial_override:
+        raise HTTPException(status_code=403, detail="Financial manipulation is strictly prohibited.")
+    try:
+        return growth_engine.approve_pending_job(req.approval_id, engine)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/admin/reject")
+def reject_job_endpoint(req: AdminActionRequest, x_admin_secret: Optional[str] = Header(None)):
+    configured_secret = (os.getenv("BI_ADMIN_SECRET") or BI_ADMIN_SECRET).strip()
+    if not configured_secret or not x_admin_secret or not hmac.compare_digest(x_admin_secret, configured_secret):
+        raise HTTPException(status_code=401, detail="Unauthorized.")
+    if req.financial_override:
+        raise HTTPException(status_code=403, detail="Financial manipulation is strictly prohibited.")
+    try:
+        return growth_engine.reject_pending_job(req.approval_id, req.reason or "Admin Rejected", engine)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 # ==================== PAYMENT & ORDER ENDPOINTS (PHASE 0.6 UNTOUCHED) ====================
 
