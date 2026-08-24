@@ -8,7 +8,7 @@ from decimal import Decimal
 from typing import Optional
 from collections import defaultdict
 
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Request, Response, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse, Response as PlainResponse
 from pydantic import BaseModel
@@ -16,6 +16,8 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 
 import storage_engine
+import growth_engine
+import ai_engine
 
 load_dotenv()
 db_url = os.getenv("DATABASE_URL", "sqlite:///./autonomous_local.db")
@@ -31,12 +33,13 @@ RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID", "")
 RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "")
 RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET", "")
 DOWNLOAD_TOKEN_SECRET = os.getenv("DOWNLOAD_TOKEN_SECRET", "")
+BI_ADMIN_SECRET = os.getenv("BI_ADMIN_SECRET", "")
 
 RATE_LIMIT_RECORD = defaultdict(list)
 RATE_LIMIT_WINDOW = 60
 RATE_LIMIT_MAX_REQ = 5
 
-app = FastAPI(title="Autonomous Business OS - Global Enterprise Engine", version="0.8.0")
+app = FastAPI(title="Autonomous Business OS - Global Enterprise Engine", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -88,6 +91,8 @@ def verify_signed_download_token(token: str, order_id: str) -> bool:
     except Exception:
         return False
 
+# ==================== STOREFRONT & DETAIL PAGES ====================
+
 @app.get("/", response_class=HTMLResponse)
 def get_storefront():
     with engine.connect() as conn:
@@ -123,12 +128,11 @@ def get_storefront():
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Autonomous OS — Digital Publishing Catalog</title>
     <link rel="canonical" href="https://master-empire-os.onrender.com/">
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
-        body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 0; }}
+        body {{ font-family: -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 0; }}
         .container {{ max-width: 1100px; margin: 0 auto; padding: 40px 20px; }}
         .grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; margin-top: 32px; }}
     </style>
@@ -203,19 +207,6 @@ def get_product_detail(slug: str):
     <meta charset="UTF-8">
     <title>{p['title']} — Autonomous OS</title>
     <link rel="canonical" href="https://master-empire-os.onrender.com/books/{p['slug']}">
-    <script type="application/ld+json">
-    {{
-      "@context": "https://schema.org",
-      "@type": "Book",
-      "name": "{p['title']}",
-      "offers": {{
-        "@type": "Offer",
-        "price": "{p['base_price_inr']}",
-        "priceCurrency": "INR",
-        "availability": "https://schema.org/InStock"
-      }}
-    }}
-    </script>
     <style>
         body {{ font-family: -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 40px 20px; }}
         .box {{ max-width: 650px; margin: 0 auto; background: #1e293b; padding: 32px; border-radius: 12px; border: 1px solid #334155; }}
@@ -234,7 +225,7 @@ def get_product_detail(slug: str):
 
 @app.get("/robots.txt", response_class=PlainResponse)
 def get_robots():
-    content = "User-agent: *\nAllow: /\nDisallow: /api/download/\nDisallow: /api/payments/\nSitemap: https://master-empire-os.onrender.com/sitemap.xml\n"
+    content = "User-agent: *\nAllow: /\nDisallow: /api/download/\nDisallow: /api/payments/\nDisallow: /admin/\nSitemap: https://master-empire-os.onrender.com/sitemap.xml\n"
     return PlainResponse(content, media_type="text/plain")
 
 @app.get("/sitemap.xml", response_class=PlainResponse)
@@ -251,6 +242,65 @@ def get_sitemap():
 {''.join(urls)}
 </urlset>"""
     return PlainResponse(xml_content, media_type="application/xml")
+
+# ==================== PHASE 1.0: BI ADMIN DASHBOARD ====================
+
+@app.get("/admin/bi-dashboard", response_class=HTMLResponse)
+def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(None)):
+    configured_secret = (os.getenv("BI_ADMIN_SECRET") or BI_ADMIN_SECRET).strip()
+    query_secret = request.query_params.get("secret", "")
+    
+    provided_secret = x_admin_secret or query_secret
+
+    if not configured_secret or not provided_secret or not hmac.compare_digest(provided_secret, configured_secret):
+        raise HTTPException(status_code=401, detail="Unauthorized access to BI dashboard.")
+
+    metrics = growth_engine.calculate_revenue_metrics(engine)
+
+    prod_rows_html = "".join([
+        f"<tr><td style='padding: 8px; border-bottom: 1px solid #334155;'>{p['title']}</td>"
+        f"<td style='padding: 8px; border-bottom: 1px solid #334155;'>₹{p['price_inr']}</td>"
+        f"<td style='padding: 8px; border-bottom: 1px solid #334155;'>{p['orders']}</td>"
+        f"<td style='padding: 8px; border-bottom: 1px solid #334155; color: #10b981;'>₹{p['revenue_inr']}</td></tr>"
+        for p in metrics["product_breakdown"]
+    ])
+
+    return HTMLResponse(f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Autonomous BI Growth Dashboard</title>
+    <style>
+        body {{ font-family: -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 40px 20px; }}
+        .container {{ max-width: 900px; margin: 0 auto; }}
+        .stat-grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 24px 0; }}
+        .stat-card {{ background: #1e293b; padding: 20px; border-radius: 8px; border: 1px solid #334155; }}
+        table {{ width: 100%; border-collapse: collapse; margin-top: 16px; background: #1e293b; border-radius: 8px; }}
+        th {{ background: #334155; padding: 10px; text-align: left; font-size: 13px; color: #94a3b8; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="color: #f8fafc; font-size: 22px;">Autonomous BI & Growth Engine</h1>
+        <p style="color: #94a3b8; font-size: 13px;">Real-time deterministic revenue intelligence & opportunities</p>
+        
+        <div class="stat-grid">
+            <div class="stat-card"><span style="color:#94a3b8; font-size:12px;">GROSS REVENUE</span><h2 style="color:#10b981; margin:8px 0 0 0;">₹{metrics['gross_revenue']}</h2></div>
+            <div class="stat-card"><span style="color:#94a3b8; font-size:12px;">NET REVENUE</span><h2 style="color:#38bdf8; margin:8px 0 0 0;">₹{metrics['net_revenue']}</h2></div>
+            <div class="stat-card"><span style="color:#94a3b8; font-size:12px;">PAID ORDERS</span><h2 style="color:#f8fafc; margin:8px 0 0 0;">{metrics['paid_orders']} / {metrics['total_orders']}</h2></div>
+            <div class="stat-card"><span style="color:#94a3b8; font-size:12px;">AVG ORDER VALUE</span><h2 style="color:#f59e0b; margin:8px 0 0 0;">₹{metrics['average_order_value']}</h2></div>
+        </div>
+
+        <h3 style="color: #f8fafc; margin-top: 32px;">Product Performance Breakdown</h3>
+        <table>
+            <thead><tr><th>Product Title</th><th>Price</th><th>Orders</th><th>Revenue</th></tr></thead>
+            <tbody>{prod_rows_html}</tbody>
+        </table>
+    </div>
+</body>
+</html>""")
+
+# ==================== PAYMENT & ORDER ENDPOINTS (PHASE 0.6 UNTOUCHED) ====================
 
 @app.post("/api/payments/create-session")
 def create_payment_session(req: CreatePaymentSessionRequest):
@@ -456,12 +506,10 @@ async def razorpay_payment_webhook(request: Request):
 
 @app.get("/api/download/{order_id}")
 def download_secure_book(order_id: str, request: Request, token: Optional[str] = None):
-    # 1. Reject invalid/expired/missing HMAC token BEFORE any storage or DB queries
     oid_clean = str(order_id).strip()
     if not token or not verify_signed_download_token(token, oid_clean):
         raise HTTPException(status_code=403, detail="Download token is invalid, expired, or missing.")
 
-    # 2. Rate Limiting Check
     client_ip = request.client.host if request.client else "127.0.0.1"
     curr_time = time.time()
     RATE_LIMIT_RECORD[client_ip] = [t for t in RATE_LIMIT_RECORD[client_ip] if curr_time - t < RATE_LIMIT_WINDOW]
@@ -491,7 +539,6 @@ def download_secure_book(order_id: str, request: Request, token: Optional[str] =
         if not pdf_object_key:
             raise HTTPException(status_code=404, detail="Digital asset object key not configured for this product.")
 
-        # 3. Generate 300-second Presigned URL via Cloudflare R2
         client = storage_engine.get_r2_client()
         if not client:
             raise HTTPException(status_code=503, detail="Persistent object storage service unavailable.")
