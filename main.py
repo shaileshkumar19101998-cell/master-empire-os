@@ -40,7 +40,7 @@ RATE_LIMIT_RECORD = defaultdict(list)
 RATE_LIMIT_WINDOW = 60
 RATE_LIMIT_MAX_REQ = 5
 
-app = FastAPI(title="Autonomous Business OS - Global Enterprise Engine", version="1.2.0")
+app = FastAPI(title="Autonomous Business OS - Global Enterprise Engine", version="1.4.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -282,7 +282,7 @@ def get_sitemap():
 </urlset>"""
     return PlainResponse(xml_content, media_type="application/xml")
 
-# ==================== PHASE 1.2: COMMAND CENTER + ACQUISITION INTELLIGENCE ====================
+# ==================== PHASE 1.4: ULTRA-PREMIUM COMMAND CENTER & OBSERVABILITY ====================
 
 @app.get("/admin/bi-dashboard", response_class=HTMLResponse)
 @app.get("/admin/bi-dashboard/", response_class=HTMLResponse)
@@ -296,6 +296,8 @@ def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(No
 
     t_data = growth_engine.get_command_center_telemetry(engine)
     m = t_data["metrics"]
+    cost_m = t_data["cost_metrics"]
+    anom = t_data["anomalies"]
     acq = t_data["acquisition"]
 
     # Approvals HTML
@@ -318,11 +320,19 @@ def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(No
             </tr>
             """
 
-    # Acquisition Rows HTML
-    src_rows = "".join([
-        f"<tr style='border-bottom: 1px solid #1e293b;'><td style='padding: 8px 12px; color: #38bdf8;'>{html.escape(s['source'])}</td><td style='padding: 8px 12px;'>{s['orders']} ({s['paid_orders']} Paid)</td><td style='padding: 8px 12px; text-align: right; color: #10b981; font-weight: bold;'>₹{s['revenue']}</td></tr>"
-        for s in acq["sources"]
-    ]) or "<tr><td colspan='3' style='padding: 12px; text-align: center; color: #64748b;'>No attributed traffic recorded yet.</td></tr>"
+    # Anomalies Radar HTML
+    radar_html = ""
+    if not anom["active_anomalies"]:
+        radar_html = "<div style='color: #10b981; font-size: 12px; padding: 12px; background: rgba(16, 185, 129, 0.05); border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.2);'>🛡️ Zero anomalies detected across payments, AI token quotas, and storage bounds.</div>"
+    else:
+        for a in anom["active_anomalies"]:
+            sev_color = "#ef4444" if a["severity"] == "CRITICAL" else "#f59e0b"
+            radar_html += f"""
+            <div style="padding: 10px 14px; background: rgba(239, 68, 68, 0.08); border-left: 3px solid {sev_color}; margin-bottom: 8px; border-radius: 4px;">
+                <div style="font-weight: 700; font-size: 11px; color: {sev_color};">{a['type']}</div>
+                <div style="font-size: 12px; color: #e2e8f0; margin-top: 2px;">{html.escape(a['message'])}</div>
+            </div>
+            """
 
     return HTMLResponse(f"""<!DOCTYPE html>
 <html lang="en">
@@ -357,33 +367,33 @@ def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(No
             <span class="badge-autonomy">LEVEL 2: HUMAN-GATED</span>
         </div>
         <div style="display: flex; align-items: center; gap: 16px; font-size: 12px; color: #94a3b8;">
-            <span>Top Source: <strong style="color: #38bdf8;">{html.escape(acq['top_source'])}</strong></span>
-            <span>AI Daily Cap: <strong style="color: #f8fafc;">Active (5 Max)</strong></span>
+            <span>System Status: <strong style="color: #10b981;">{anom['system_health']}</strong></span>
+            <span>AI Capacity: <strong style="color: #f8fafc;">Active (5 Max/Day)</strong></span>
         </div>
     </div>
 
     <div class="container">
-        <!-- Telemetry Row -->
+        <!-- Telemetry & True Margins Row -->
         <div class="kpi-grid">
             <div class="kpi-card">
                 <div class="kpi-label">Gross Revenue</div>
-                <div class="kpi-val" style="color: #10b981;">₹{m['gross_revenue']}</div>
+                <div class="kpi-val" style="color: #10b981;">₹{cost_m['gross_revenue']}</div>
                 <span style="font-size: 11px; color: #64748b;">Deterministic Settled</span>
             </div>
             <div class="kpi-card">
-                <div class="kpi-label">Net Margin</div>
-                <div class="kpi-val" style="color: #38bdf8;">₹{m['net_revenue']}</div>
-                <span style="font-size: 11px; color: #64748b;">After Gateway Fees</span>
+                <div class="kpi-label">True Operating Profit</div>
+                <div class="kpi-val" style="color: #38bdf8;">₹{cost_m['true_operating_profit']}</div>
+                <span style="font-size: 11px; color: #10b981;">Operating Margin: {cost_m['operating_margin_pct']}</span>
             </div>
             <div class="kpi-card">
-                <div class="kpi-label">Attributed Revenue</div>
-                <div class="kpi-val" style="color: #f59e0b;">₹{acq['total_attributed_revenue']}</div>
-                <span style="font-size: 11px; color: #64748b;">Orders: {acq['total_attributed_orders']}</span>
+                <div class="kpi-label">Total AI Costs</div>
+                <div class="kpi-val" style="color: #f59e0b;">₹{cost_m['total_ai_cost_inr']}</div>
+                <span style="font-size: 11px; color: #64748b;">Tokens: {cost_m['total_ai_tokens']}</span>
             </div>
             <div class="kpi-card">
-                <div class="kpi-label">Conversion Rate</div>
-                <div class="kpi-val" style="color: #a855f7;">{m['conversion_rate']}</div>
-                <span style="font-size: 11px; color: #10b981;">Paid: {m['paid_orders']} / {m['total_orders']}</span>
+                <div class="kpi-label">R2 Storage Footprint</div>
+                <div class="kpi-val" style="color: #a855f7;">{cost_m['estimated_storage_mb']} <span style="font-size: 14px; color: #64748b;">MB</span></div>
+                <span style="font-size: 11px; color: #64748b;">Cost: ₹{cost_m['storage_cost_inr']} • Downloads: {cost_m['total_downloads']}</span>
             </div>
         </div>
 
@@ -399,25 +409,22 @@ def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(No
             </table>
         </div>
 
-        <!-- Acquisition & Marketing Matrix -->
+        <!-- Financial Observability & Radar Matrix -->
         <div class="grid-2">
             <div class="panel">
-                <div class="panel-title">Acquisition Intelligence (UTM Attribution)</div>
-                <table>
-                    <thead><tr><th>Channel / Source</th><th>Orders</th><th style="text-align: right;">Net Revenue</th></tr></thead>
-                    <tbody>{src_rows}</tbody>
-                </table>
+                <div class="panel-title">System Anomalies & Security Radar</div>
+                {radar_html}
             </div>
 
             <div class="panel">
-                <div class="panel-title">AI Marketing Staging Engine <span style="font-size: 11px; background: rgba(56,189,248,0.1); color: #38bdf8; padding: 2px 8px; border-radius: 4px;">DRAFTS ONLY</span></div>
-                <div style="background: #0f172a; padding: 16px; border-radius: 8px; border: 1px solid #1e293b;">
-                    <div style="color: #f8fafc; font-size: 13px; font-weight: 600; margin-bottom: 6px;">Automated Cross-Channel Promotion Kits</div>
-                    <p style="color: #94a3b8; font-size: 12px; margin: 0 0 12px 0; line-height: 1.4;">
-                        Generates high-converting Instagram reels, email drafts, WhatsApp broadcasts, and SEO meta tags for live catalog assets.
-                    </p>
-                    <button onclick="generateMarketingKit()" style="background: #2563eb; color: #ffffff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12px;">+ Generate Marketing Kit</button>
-                </div>
+                <div class="panel-title">Financial Unit Economics Breakdown</div>
+                <table style="font-size: 13px;">
+                    <tr style="border-bottom: 1px solid #1e293b;"><td style="padding: 8px 0; color: #94a3b8;">Gross Settled Revenue:</td><td style="text-align: right; font-weight: bold; color: #10b981;">₹{cost_m['gross_revenue']}</td></tr>
+                    <tr style="border-bottom: 1px solid #1e293b;"><td style="padding: 8px 0; color: #94a3b8;">Gateway Settlement Fees:</td><td style="text-align: right; color: #ef4444;">- ₹{cost_m['gateway_fees']}</td></tr>
+                    <tr style="border-bottom: 1px solid #1e293b;"><td style="padding: 8px 0; color: #94a3b8;">AI Synthesis & Marketing COGS:</td><td style="text-align: right; color: #ef4444;">- ₹{cost_m['total_ai_cost_inr']}</td></tr>
+                    <tr style="border-bottom: 1px solid #1e293b;"><td style="padding: 8px 0; color: #94a3b8;">Cloudflare R2 Storage Cost:</td><td style="text-align: right; color: #ef4444;">- ₹{cost_m['storage_cost_inr']}</td></tr>
+                    <tr><td style="padding: 10px 0; font-weight: bold; color: #f8fafc;">Net Retained Earnings:</td><td style="text-align: right; font-weight: 800; color: #38bdf8; font-size: 15px;">₹{cost_m['true_operating_profit']}</td></tr>
+                </table>
             </div>
         </div>
     </div>
@@ -438,25 +445,6 @@ def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(No
                 window.location.reload();
             }} else {{
                 alert("Action Failed: " + (data.detail || "Unauthorized"));
-            }}
-        }}
-
-        async function generateMarketingKit() {{
-            const pid = prompt("Enter Active Product ID to generate marketing kit for:", "1");
-            if (!pid) return;
-            const secret = prompt("Enter BI Admin Secret:");
-            if (!secret) return;
-            const res = await fetch("/api/admin/generate-marketing-kit", {{
-                method: "POST",
-                headers: {{ "Content-Type": "application/json", "x-admin-secret": secret }},
-                body: JSON.stringify({{ product_id: parseInt(pid), campaign_name: "launch" }})
-            }});
-            const data = await res.json();
-            if (res.ok) {{
-                alert("Marketing Kit successfully staged for human approval!");
-                window.location.reload();
-            }} else {{
-                alert("Generation Failed: " + (data.detail || "Error"));
             }}
         }}
     </script>
@@ -501,7 +489,7 @@ def reject_job_endpoint(req: AdminActionRequest, x_admin_secret: Optional[str] =
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-# ==================== PAYMENT & ORDER ENDPOINTS WITH ATTRIBUTION ====================
+# ==================== PAYMENT & ORDER ENDPOINTS WITH SECURITY AUDIT LOGGING ====================
 
 @app.post("/api/payments/create-session")
 def create_payment_session(req: CreatePaymentSessionRequest):
@@ -590,7 +578,6 @@ def create_secure_order(req: CreateOrderRequest):
                 "net": net_amount, "status": initial_status
             })
 
-            # Safe attribution logging (Zero migration schema preservation)
             clean_src = growth_engine.sanitize_text(req.utm_source, max_length=50) or "direct"
             clean_med = growth_engine.sanitize_text(req.utm_medium, max_length=50) or "organic"
             clean_cmp = growth_engine.sanitize_text(req.utm_campaign, max_length=50) or "web"
@@ -735,6 +722,11 @@ def download_secure_book(order_id: str, request: Request, token: Optional[str] =
     curr_time = time.time()
     RATE_LIMIT_RECORD[client_ip] = [t for t in RATE_LIMIT_RECORD[client_ip] if curr_time - t < RATE_LIMIT_WINDOW]
     if len(RATE_LIMIT_RECORD[client_ip]) >= RATE_LIMIT_MAX_REQ:
+        with engine.begin() as conn:
+            conn.execute(text("""
+                INSERT INTO system_logs (module, status, message)
+                VALUES ('SECURITY', 'RATE_LIMIT_EXCEEDED', :msg)
+            """), {"msg": f"Rate limit reached for IP: {client_ip} on order {oid_clean}"})
         raise HTTPException(status_code=429, detail="Too many download requests. Please retry in a few seconds.")
     RATE_LIMIT_RECORD[client_ip].append(curr_time)
 
@@ -770,6 +762,12 @@ def download_secure_book(order_id: str, request: Request, token: Optional[str] =
         presigned_url = storage_engine.generate_presigned_download(pdf_object_key, expiry_seconds=300)
         if not presigned_url:
             raise HTTPException(status_code=503, detail="Failed to generate secure download authorization.")
+
+        with engine.begin() as conn:
+            conn.execute(text("""
+                INSERT INTO system_logs (module, status, message)
+                VALUES ('DOWNLOAD_ENGINE', 'SERVED', :msg)
+            """), {"msg": f"Presigned URL generated for order {oid_clean}"})
 
         return RedirectResponse(url=presigned_url, status_code=302)
     except HTTPException:

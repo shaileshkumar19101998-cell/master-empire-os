@@ -3,7 +3,7 @@ import hashlib
 import json
 import re
 from decimal import Decimal
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List, Optional
 from sqlalchemy import create_engine, text
 
@@ -16,7 +16,6 @@ def get_db_engine():
     return create_engine(db_url, pool_pre_ping=True)
 
 def sanitize_text(val: str, max_length: int = 120) -> str:
-    """Safe inline sanitization removing script injections and enforcing bounds."""
     if not val:
         return ""
     clean = re.sub(r"[^\w\s\-\.\,\:\?\/@]", "", str(val)).strip()
@@ -25,7 +24,6 @@ def sanitize_text(val: str, max_length: int = 120) -> str:
 # ==================== 1. REVENUE & BUSINESS TELEMETRY ====================
 
 def calculate_revenue_metrics(engine=None) -> Dict[str, Any]:
-    """Deterministic server-side analytics using Decimal / integer minor units."""
     if engine is None:
         engine = get_db_engine()
 
@@ -46,7 +44,6 @@ def calculate_revenue_metrics(engine=None) -> Dict[str, Any]:
 
         aov = (gross_rev / Decimal(str(paid_orders))).quantize(Decimal("0.01")) if paid_orders > 0 else Decimal("0.00")
 
-        # Product-wise Breakdown
         product_stats = []
         p_rows = conn.execute(text("""
             SELECT p.id, p.slug, p.title, p.base_price_inr,
@@ -67,7 +64,6 @@ def calculate_revenue_metrics(engine=None) -> Dict[str, Any]:
                 "revenue_inr": str(Decimal(str(pr["total_collected"] or "0.00")).quantize(Decimal("0.01")))
             })
 
-        # Customer Intelligence
         cust_rows = conn.execute(text("""
             SELECT count(DISTINCT customer_id) as total_customers,
                    sum(CASE WHEN order_count > 1 THEN 1 ELSE 0 END) as repeat_customers
@@ -98,10 +94,139 @@ def calculate_revenue_metrics(engine=None) -> Dict[str, Any]:
         "health_score": health_score
     }
 
-# ==================== 2. PHASE 1.2: CONVERSION & ATTRIBUTION ENGINE ====================
+# ==================== 2. PHASE 1.4: COST INTELLIGENCE & OBSERVABILITY ====================
+
+def calculate_cost_and_margin_metrics(engine=None) -> Dict[str, Any]:
+    """Calculates deterministic estimated vs actual AI costs, storage costs, and True Net Margin."""
+    if engine is None:
+        engine = get_db_engine()
+
+    total_ai_tokens = 0
+    total_ai_cost_inr = Decimal("0.00")
+    total_storage_bytes = 0
+    total_downloads = 0
+
+    # Unit cost constants (Documented Deterministic Model)
+    # Token rate: ₹0.00015 per token (~$0.0018 / 1k tokens)
+    # Marketing kit baseline: ₹2.50 per generation
+    # R2 Storage baseline: ₹0.0012 per MB/month
+    # Bandwidth egress on R2: Free (₹0.00)
+    TOKEN_COST_RATE = Decimal("0.00015")
+    MARKETING_COST_FLAT = Decimal("2.50")
+    STORAGE_PER_MB = Decimal("0.0012")
+
+    with engine.connect() as conn:
+        ai_logs = conn.execute(text("""
+            SELECT message FROM system_logs 
+            WHERE module = 'AI_TELEMETRY' OR module = 'WORKER_PIPELINE' OR module = 'MARKETING_AI'
+        """)).mappings().all()
+
+        for l in ai_logs:
+            msg = str(l["message"])
+            if "[tokens:" in msg:
+                try:
+                    match = re.search(r"\[tokens:(\d+)\]", msg)
+                    if match:
+                        toks = int(match.group(1))
+                        total_ai_tokens += toks
+                        total_ai_cost_inr += (Decimal(str(toks)) * TOKEN_COST_RATE)
+                except Exception:
+                    pass
+            elif "Generated marketing kit" in msg:
+                total_ai_cost_inr += MARKETING_COST_FLAT
+
+        # Calculate Storage Footprint from Completed Books
+        books = conn.execute(text("SELECT count(*) as total_books FROM books WHERE status = 'COMPLETED' OR status = 'PUBLISHED'")).scalar() or 0
+        estimated_storage_mb = Decimal(str(books * 1.5))  # Avg 1.5 MB per compiled blueprint
+        storage_cost_inr = (estimated_storage_mb * STORAGE_PER_MB).quantize(Decimal("0.01"))
+
+        # Download Traffic Telemetry
+        download_count = conn.execute(text("SELECT count(*) FROM system_logs WHERE module = 'DOWNLOAD_ENGINE'")).scalar() or 0
+        total_downloads = download_count
+
+    rev_metrics = calculate_revenue_metrics(engine)
+    gross_rev = Decimal(rev_metrics["gross_revenue"])
+    gateway_fees = Decimal(rev_metrics["gateway_fees"])
+    total_cogs = (total_ai_cost_inr + storage_cost_inr).quantize(Decimal("0.01"))
+    true_operating_profit = (gross_rev - gateway_fees - total_cogs).quantize(Decimal("0.01"))
+    operating_margin_pct = f"{(true_operating_profit / gross_rev * 100):.1f}%" if gross_rev > 0 else "0.0%"
+
+    return {
+        "gross_revenue": str(gross_rev),
+        "gateway_fees": str(gateway_fees),
+        "total_ai_tokens": total_ai_tokens,
+        "total_ai_cost_inr": str(total_ai_cost_inr.quantize(Decimal("0.01"))),
+        "estimated_storage_mb": str(estimated_storage_mb),
+        "storage_cost_inr": str(storage_cost_inr),
+        "total_downloads": total_downloads,
+        "total_cogs_inr": str(total_cogs),
+        "true_operating_profit": str(true_operating_profit),
+        "operating_margin_pct": operating_margin_pct,
+        "cost_model": "DETERMINISTIC_ESTIMATED"
+    }
+
+# ==================== 3. PHASE 1.4: ANOMALY DETECTION ENGINE ====================
+
+def detect_system_anomalies(engine=None) -> Dict[str, Any]:
+    """Detects payment failure spikes, AI quota exhaustion, and rate-limit anomalies."""
+    if engine is None:
+        engine = get_db_engine()
+
+    anomalies = []
+    health_status = "HEALTHY"
+
+    with engine.connect() as conn:
+        # 1. AI Quota Consumption Alert
+        since_t = datetime.now(timezone.utc) - timedelta(days=1)
+        daily_ai_count = conn.execute(text("""
+            SELECT count(*) FROM system_logs 
+            WHERE (module = 'AI_RESEARCH' OR module = 'MARKETING_AI' OR module = 'AI_TELEMETRY') 
+            AND status = 'EXECUTED' AND created_at >= :t
+        """), {"t": since_t}).scalar() or 0
+
+        max_daily = int(os.getenv("MAX_DAILY_AI_RESEARCH_JOBS", "5"))
+        if daily_ai_count >= max_daily:
+            anomalies.append({
+                "type": "QUOTA_CEILING_REACHED",
+                "severity": "WARNING",
+                "message": f"Daily AI quota reached ({daily_ai_count}/{max_daily}). AI synthesis throttled for cost protection."
+            })
+
+        # 2. Payment Failure Spike Detection
+        failed_payments = conn.execute(text("""
+            SELECT count(*) FROM orders WHERE status = 'PENDING' AND created_at >= :t
+        """), {"t": datetime.now(timezone.utc) - timedelta(hours=1)}).scalar() or 0
+
+        if failed_payments >= 5:
+            anomalies.append({
+                "type": "PAYMENT_ABANDONMENT_SPIKE",
+                "severity": "CRITICAL",
+                "message": f"Elevated pending orders detected ({failed_payments} in past hour). Investigate gateway checkout friction."
+            })
+            health_status = "ATTENTION_REQUIRED"
+
+        # 3. Rate Limit / Suspicious Download Traffic
+        rate_limit_events = conn.execute(text("""
+            SELECT count(*) FROM system_logs 
+            WHERE module = 'SECURITY' AND status = 'RATE_LIMIT_EXCEEDED' AND created_at >= :t
+        """), {"t": datetime.now(timezone.utc) - timedelta(hours=1)}).scalar() or 0
+
+        if rate_limit_events >= 3:
+            anomalies.append({
+                "type": "RATE_LIMIT_ANOMALY",
+                "severity": "WARNING",
+                "message": f"{rate_limit_events} download rate limit events triggered. Potential scraper or token abuse blocked."
+            })
+
+    return {
+        "system_health": health_status,
+        "active_anomalies": anomalies,
+        "anomaly_count": len(anomalies)
+    }
+
+# ==================== 4. CONVERSION & ATTRIBUTION METRICS ====================
 
 def calculate_acquisition_metrics(engine=None) -> Dict[str, Any]:
-    """Parse zero-migration attribution metadata from system_logs and orders."""
     if engine is None:
         engine = get_db_engine()
 
@@ -125,7 +250,6 @@ def calculate_acquisition_metrics(engine=None) -> Dict[str, Any]:
                 amt = Decimal(str(data.get("net_amount", 0)))
                 is_paid = data.get("status") == "PAID"
 
-                # Aggregate Source
                 if src not in sources_map:
                     sources_map[src] = {"orders": 0, "paid_orders": 0, "revenue": Decimal("0.00")}
                 sources_map[src]["orders"] += 1
@@ -133,7 +257,6 @@ def calculate_acquisition_metrics(engine=None) -> Dict[str, Any]:
                     sources_map[src]["paid_orders"] += 1
                     sources_map[src]["revenue"] += amt
 
-                # Aggregate Campaign
                 if cmp not in campaigns_map:
                     campaigns_map[cmp] = {"orders": 0, "paid_orders": 0, "revenue": Decimal("0.00")}
                 campaigns_map[cmp]["orders"] += 1
@@ -147,7 +270,6 @@ def calculate_acquisition_metrics(engine=None) -> Dict[str, Any]:
             except Exception:
                 continue
 
-    # Format output for UI tables
     src_summary = [
         {"source": k, "orders": v["orders"], "paid_orders": v["paid_orders"], "revenue": str(v["revenue"].quantize(Decimal("0.01")))}
         for k, v in sources_map.items()
@@ -169,10 +291,9 @@ def calculate_acquisition_metrics(engine=None) -> Dict[str, Any]:
         "total_attributed_revenue": str(total_attributed_rev.quantize(Decimal("0.01")))
     }
 
-# ==================== 3. PHASE 1.2: MARKETING CAMPAIGN GENERATOR ====================
+# ==================== 5. MARKETING CAMPAIGN GENERATOR ====================
 
 def generate_marketing_campaign_kit(product_id: int, campaign_name: str = "launch", engine=None) -> Dict[str, Any]:
-    """Generate structured multi-channel marketing kit staged for Level 2 human approval."""
     if engine is None:
         engine = get_db_engine()
 
@@ -188,17 +309,16 @@ def generate_marketing_campaign_kit(product_id: int, campaign_name: str = "launc
         if not prod:
             raise ValueError("Target product not found or not in ACTIVE catalog.")
 
-        # Check daily quota usage
-        since_t = datetime.utcnow() - timedelta(days=1)
+        since_t = datetime.now(timezone.utc) - timedelta(days=1)
         daily_count = conn.execute(text("""
             SELECT count(*) FROM system_logs 
-            WHERE (module = 'AI_RESEARCH' OR module = 'MARKETING_AI') AND status = 'EXECUTED' AND created_at >= :t
+            WHERE (module = 'AI_RESEARCH' OR module = 'MARKETING_AI' OR module = 'AI_TELEMETRY') 
+            AND status = 'EXECUTED' AND created_at >= :t
         """), {"t": since_t}).scalar() or 0
 
         if daily_count >= max_daily:
             raise ValueError(f"Daily AI budget limit reached ({daily_count}/{max_daily}).")
 
-        # Duplicate kit check
         dup_hash = hashlib.sha256(f"{prod['slug']}:{clean_campaign}".encode("utf-8")).hexdigest()[:16]
         dup = conn.execute(text("""
             SELECT id FROM system_logs 
@@ -212,7 +332,6 @@ def generate_marketing_campaign_kit(product_id: int, campaign_name: str = "launc
     p_niche = sanitize_text(prod['target_niche'], max_length=80)
     p_slug = sanitize_text(prod['slug'], max_length=80)
 
-    # Structured marketing content kit
     marketing_kit = {
         "product_id": prod["id"],
         "slug": p_slug,
@@ -234,13 +353,11 @@ def generate_marketing_campaign_kit(product_id: int, campaign_name: str = "launc
     }
 
     with engine.begin() as conn:
-        # Log to system_logs
         conn.execute(text("""
             INSERT INTO system_logs (module, status, message)
             VALUES ('MARKETING_AI', 'EXECUTED', :msg)
         """), {"msg": f"Generated marketing kit for {p_slug} ({clean_campaign}) [hash:{dup_hash}]"})
 
-        # Stage into pending_approvals (Requires Level 2 Human Approval)
         conn.execute(text("""
             INSERT INTO pending_approvals (book_id, status)
             VALUES (:bid, 'PENDING')
@@ -252,15 +369,16 @@ def generate_marketing_campaign_kit(product_id: int, campaign_name: str = "launc
         "data": marketing_kit
     }
 
-# ==================== 4. COMMAND CENTER TELEMETRY UNIFICATION ====================
+# ==================== 6. COMMAND CENTER TELEMETRY UNIFICATION ====================
 
 def get_command_center_telemetry(engine=None) -> Dict[str, Any]:
-    """Single batched query aggregator for the Ultra-Premium Command Center."""
     if engine is None:
         engine = get_db_engine()
 
     metrics = calculate_revenue_metrics(engine)
     acquisition = calculate_acquisition_metrics(engine)
+    cost_metrics = calculate_cost_and_margin_metrics(engine)
+    anomalies = detect_system_anomalies(engine)
 
     with engine.connect() as conn:
         pending_items = conn.execute(text("""
@@ -287,15 +405,11 @@ def get_command_center_telemetry(engine=None) -> Dict[str, Any]:
             SELECT module, status, message, created_at FROM system_logs ORDER BY id DESC LIMIT 8
         """)).mappings().all()
 
-        # Marketing kit queues
-        mkt_kits = conn.execute(text("""
-            SELECT message, created_at FROM system_logs 
-            WHERE module = 'MARKETING_AI' ORDER BY id DESC LIMIT 5
-        """)).mappings().all()
-
     return {
         "metrics": metrics,
         "acquisition": acquisition,
+        "cost_metrics": cost_metrics,
+        "anomalies": anomalies,
         "pending_approvals": [dict(r) for r in pending_items],
         "pipeline": {
             "DRAFT": pipeline_counts.get("DRAFT", 0),
@@ -305,11 +419,10 @@ def get_command_center_telemetry(engine=None) -> Dict[str, Any]:
             "FAILED": pipeline_counts.get("FAILED", 0)
         },
         "recent_transactions": [dict(r) for r in recent_txs],
-        "audit_logs": [dict(r) for r in audit_logs],
-        "marketing_queue": [dict(r) for r in mkt_kits]
+        "audit_logs": [dict(r) for r in audit_logs]
     }
 
-# ==================== 5. ADMINISTRATIVE APPROVAL / REJECTION ====================
+# ==================== 7. ADMINISTRATIVE APPROVAL / REJECTION ====================
 
 def approve_pending_job(approval_id: int, engine=None) -> Dict[str, Any]:
     if engine is None:
