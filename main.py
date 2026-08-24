@@ -6,15 +6,15 @@ import hmac
 import hashlib
 from decimal import Decimal
 from typing import Optional
+from collections import defaultdict
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, Response as PlainResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
-from psycopg2.errors import UniqueViolation
 
 import pdf_engine
 
@@ -30,10 +30,15 @@ else:
 
 RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID", "")
 RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "")
-RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET", "test_webhook_secret_phase06_strictly_isolated")
-DOWNLOAD_TOKEN_SECRET = os.getenv("DOWNLOAD_TOKEN_SECRET", "autonomous_os_secure_token_secret_default_key_2026")
+RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET", "")
+DOWNLOAD_TOKEN_SECRET = os.getenv("DOWNLOAD_TOKEN_SECRET", "")
 
-app = FastAPI(title="Autonomous Business OS - Global Enterprise Engine", version="9.5.0")
+# In-memory Rate Limiter for Download Endpoint (Sliding window: max 5 requests / 60 seconds per IP)
+RATE_LIMIT_RECORD = defaultdict(list)
+RATE_LIMIT_WINDOW = 60
+RATE_LIMIT_MAX_REQ = 5
+
+app = FastAPI(title="Autonomous Business OS - Global Enterprise Engine", version="0.7.0")
 
 os.makedirs(pdf_engine.PDF_STORAGE_DIR, exist_ok=True)
 app.mount("/static/pdfs", StaticFiles(directory=pdf_engine.PDF_STORAGE_DIR), name="pdfs")
@@ -54,20 +59,22 @@ class CreateOrderRequest(BaseModel):
 class CreatePaymentSessionRequest(BaseModel):
     order_id: str
 
-class ApprovalRequest(BaseModel):
-    task_id: int
-    decision: str
-
 def generate_signed_download_token(order_id: str, expiry_seconds: int = 86400) -> str:
+    secret = os.getenv("DOWNLOAD_TOKEN_SECRET") or DOWNLOAD_TOKEN_SECRET
+    if not secret:
+        raise ValueError("DOWNLOAD_TOKEN_SECRET missing. Fail closed.")
     exp_time = int(time.time()) + expiry_seconds
     version = "v1"
     oid_str = str(order_id).strip()
     raw_msg = f"{oid_str}:{exp_time}:{version}".encode("utf-8")
-    sig = hmac.new(DOWNLOAD_TOKEN_SECRET.encode("utf-8"), raw_msg, hashlib.sha256).hexdigest()
+    sig = hmac.new(secret.encode("utf-8"), raw_msg, hashlib.sha256).hexdigest()
     return f"{oid_str}.{exp_time}.{version}.{sig}"
 
 def verify_signed_download_token(token: str, order_id: str) -> bool:
     try:
+        secret = os.getenv("DOWNLOAD_TOKEN_SECRET") or DOWNLOAD_TOKEN_SECRET
+        if not secret:
+            return False
         parts = token.split(".")
         if len(parts) != 4:
             return False
@@ -81,10 +88,211 @@ def verify_signed_download_token(token: str, order_id: str) -> bool:
             return False
 
         raw_msg = f"{oid_str}:{t_exp}:{t_ver}".encode("utf-8")
-        expected_sig = hmac.new(DOWNLOAD_TOKEN_SECRET.encode("utf-8"), raw_msg, hashlib.sha256).hexdigest()
+        expected_sig = hmac.new(secret.encode("utf-8"), raw_msg, hashlib.sha256).hexdigest()
         return hmac.compare_digest(t_sig, expected_sig)
     except Exception:
         return False
+
+# ==================== STEP 1, 2 & 3: SSR STOREFRONT & SEO ====================
+
+@app.get("/", response_class=HTMLResponse)
+def get_storefront():
+    with engine.connect() as conn:
+        products = conn.execute(
+            text("SELECT id, slug, title, tier_level, target_niche, base_price_inr, base_price_usd FROM products WHERE status = 'ACTIVE'")
+        ).mappings().all()
+
+    cards_html = ""
+    for p in products:
+        is_free = p["base_price_inr"] == 0
+        price_badge = '<span style="color: #10b981; font-weight: bold;">FREE</span>' if is_free else f'₹{p["base_price_inr"]}'
+        cta_text = "Get Free Asset" if is_free else "Buy Now"
+        cards_html += f"""
+        <div style="background: #1e293b; border-radius: 12px; padding: 24px; border: 1px solid #334155; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #38bdf8; font-weight: 600;">{p['target_niche']}</span>
+                <h3 style="color: #f8fafc; margin: 10px 0 8px 0; font-size: 18px;">{p['title']}</h3>
+                <p style="color: #94a3b8; font-size: 13px; line-height: 1.5; margin-bottom: 16px;">Tier: {p['tier_level']} • Complete enterprise blueprint & technical guide.</p>
+            </div>
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <span style="font-size: 20px; font-weight: 700; color: #f8fafc;">{price_badge}</span>
+                    <a href="/books/{p['slug']}" style="color: #38bdf8; font-size: 13px; text-decoration: none;">Details &rarr;</a>
+                </div>
+                <button onclick="initiateCheckout({p['id']})" style="width: 100%; background: #2563eb; color: #ffffff; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    {cta_text}
+                </button>
+            </div>
+        </div>
+        """
+
+    return HTMLResponse(f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autonomous OS — Digital Publishing Catalog</title>
+    <meta name="description" content="Autonomous enterprise digital library and technical blueprints.">
+    <link rel="canonical" href="https://master-empire-os.onrender.com/">
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <style>
+        body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 0; }}
+        .container {{ max-width: 1100px; margin: 0 auto; padding: 40px 20px; }}
+        .grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; margin-top: 32px; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header style="border-bottom: 1px solid #334155; padding-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h1 style="color: #f8fafc; margin: 0; font-size: 24px;">Autonomous OS Library</h1>
+                <p style="color: #94a3b8; margin: 4px 0 0 0; font-size: 14px;">Instant cryptographically-authorized technical assets</p>
+            </div>
+            <a href="/docs" style="color: #38bdf8; text-decoration: none; font-size: 13px; border: 1px solid #334155; padding: 8px 16px; border-radius: 6px;">API Docs</a>
+        </header>
+        <div class="grid">
+            {cards_html}
+        </div>
+    </div>
+    <script>
+        async function initiateCheckout(productId) {{
+            const email = prompt("Enter your email for digital asset delivery:", "customer@global-enterprise.org");
+            if (!email) return;
+            const res = await fetch("/api/orders/create", {{
+                method: "POST",
+                headers: {{ "Content-Type": "application/json" }},
+                body: JSON.stringify({{ product_id: productId, customer_email: email }})
+            }});
+            const data = await res.json();
+            if (data.download_url) {{
+                window.location.href = data.download_url;
+                return;
+            }}
+            const sessRes = await fetch("/api/payments/create-session", {{
+                method: "POST",
+                headers: {{ "Content-Type": "application/json" }},
+                body: JSON.stringify({{ order_id: data.order_id }})
+            }});
+            const sess = await sessRes.json();
+            const options = {{
+                "key": sess.razorpay_key_id,
+                "amount": sess.amount_paise,
+                "currency": "INR",
+                "name": "Autonomous OS",
+                "description": "Digital Asset Purchase",
+                "order_id": sess.razorpay_order_id,
+                "handler": function (response) {{
+                    alert("Payment received! Digital asset will be available upon settlement confirmation.");
+                }}
+            }};
+            const rzp = new Razorpay(options);
+            rzp.open();
+        }}
+    </script>
+</body>
+</html>""")
+
+@app.get("/books/{slug}", response_class=HTMLResponse)
+def get_product_detail(slug: str):
+    slug_clean = slug.strip().lower()
+    with engine.connect() as conn:
+        p = conn.execute(
+            text("SELECT id, slug, title, tier_level, target_niche, base_price_inr, base_price_usd FROM products WHERE slug = :slug AND status = 'ACTIVE'"),
+            {"slug": slug_clean}
+        ).mappings().first()
+
+    if not p:
+        raise HTTPException(status_code=404, detail="Book not found in public catalog.")
+
+    is_free = p["base_price_inr"] == 0
+    price_str = "FREE" if is_free else f"₹{p['base_price_inr']}"
+
+    return HTMLResponse(f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{p['title']} — Autonomous OS</title>
+    <meta name="description" content="Technical blueprint for {p['title']}.">
+    <link rel="canonical" href="https://master-empire-os.onrender.com/books/{p['slug']}">
+    <meta property="og:title" content="{p['title']}">
+    <meta property="og:description" content="Tier {p['tier_level']} Asset.">
+    <script type="application/ld+json">
+    {{
+      "@context": "https://schema.org",
+      "@type": "Book",
+      "name": "{p['title']}",
+      "offers": {{
+        "@type": "Offer",
+        "price": "{p['base_price_inr']}",
+        "priceCurrency": "INR",
+        "availability": "https://schema.org/InStock"
+      }}
+    }}
+    </script>
+    <style>
+        body {{ font-family: -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 40px 20px; }}
+        .box {{ max-width: 650px; margin: 0 auto; background: #1e293b; padding: 32px; border-radius: 12px; border: 1px solid #334155; }}
+    </style>
+</head>
+<body>
+    <div class="box">
+        <a href="/" style="color: #38bdf8; text-decoration: none; font-size: 13px;">&larr; Back to Catalog</a>
+        <h1 style="color: #f8fafc; font-size: 24px; margin-top: 16px;">{p['title']}</h1>
+        <p style="color: #94a3b8;">Category: {p['target_niche']} | Tier: {p['tier_level']}</p>
+        <h2 style="color: #10b981; margin: 20px 0;">{price_str}</h2>
+        <a href="/" style="display: inline-block; background: #2563eb; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">Purchase on Catalog</a>
+    </div>
+</body>
+</html>""")
+
+@app.get("/robots.txt", response_class=PlainResponse)
+def get_robots():
+    content = "User-agent: *\nAllow: /\nDisallow: /api/download/\nDisallow: /api/payments/\nSitemap: https://master-empire-os.onrender.com/sitemap.xml\n"
+    return PlainResponse(content, media_type="text/plain")
+
+@app.get("/sitemap.xml", response_class=PlainResponse)
+def get_sitemap():
+    with engine.connect() as conn:
+        products = conn.execute(text("SELECT slug FROM products WHERE status = 'ACTIVE'")).mappings().all()
+
+    urls = ['<url><loc>https://master-empire-os.onrender.com/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>']
+    for p in products:
+        urls.append(f'<url><loc>https://master-empire-os.onrender.com/books/{p["slug"]}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>')
+
+    xml_content = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{''.join(urls)}
+</urlset>"""
+    return PlainResponse(xml_content, media_type="application/xml")
+
+# ==================== STEP 4: PAYMENT SESSION ====================
+
+@app.post("/api/payments/create-session")
+def create_payment_session(req: CreatePaymentSessionRequest):
+    with engine.connect() as conn:
+        order = conn.execute(
+            text("SELECT * FROM orders WHERE id = :oid"),
+            {"oid": req.order_id}
+        ).mappings().first()
+
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found.")
+    if order["status"] == "PAID":
+        raise HTTPException(status_code=400, detail="Order already paid.")
+
+    net_amt = Decimal(str(order["net_amount"]))
+    amount_paise = int(net_amt * 100)
+
+    # Return only public key_id and order info. Secrets are NEVER returned.
+    return {
+        "order_id": str(order["id"]),
+        "razorpay_order_id": order["razorpay_order_id"] or f"order_{str(order['id'])[:14]}",
+        "amount_paise": amount_paise,
+        "currency": "INR",
+        "razorpay_key_id": os.getenv("RAZORPAY_KEY_ID", "rzp_test_placeholder_key")
+    }
+
+# ==================== STEP 5, 6 & 7: DOWNLOAD GATE & VERIFIED LIFECYCLE ====================
 
 @app.post("/api/orders/create")
 def create_secure_order(req: CreateOrderRequest):
@@ -96,10 +304,7 @@ def create_secure_order(req: CreateOrderRequest):
                 {"pid": req.product_id}
             ).mappings().first()
             
-            if not product:
-                gross_amount = 999
-            else:
-                gross_amount = product["base_price_inr"]
+            gross_amount = product["base_price_inr"] if product else 999
 
             cust = conn.execute(
                 text("SELECT id FROM customers WHERE email = :email"), 
@@ -135,6 +340,9 @@ def create_secure_order(req: CreateOrderRequest):
                     if not requires_payment or discount_amount >= gross_amount:
                         order_type = "FREE"
                         requires_payment = False
+            elif gross_amount == 0:
+                order_type = "FREE"
+                requires_payment = False
 
             net_amount = max(0, gross_amount - discount_amount)
             initial_status = "PAID" if not requires_payment else "PENDING"
@@ -171,7 +379,7 @@ def create_secure_order(req: CreateOrderRequest):
 
 @app.post("/api/payments/webhook")
 async def razorpay_payment_webhook(request: Request):
-    webhook_secret = os.getenv("RAZORPAY_WEBHOOK_SECRET", "").strip()
+    webhook_secret = (os.getenv("RAZORPAY_WEBHOOK_SECRET") or RAZORPAY_WEBHOOK_SECRET).strip()
     if not webhook_secret:
         return Response(
             content=json.dumps({"error": "Webhook secret not configured on server"}),
@@ -234,11 +442,7 @@ async def razorpay_payment_webhook(request: Request):
             if gateway_amount_paise != expected_paise:
                 return Response(content=json.dumps({"error": "Payment amount mismatch"}), status_code=400, media_type="application/json")
 
-            if raw_fee is not None:
-                gateway_fee = Decimal(str(raw_fee)) / Decimal("100.0")
-            else:
-                gateway_fee = Decimal("0.00")
-
+            gateway_fee = Decimal(str(raw_fee)) / Decimal("100.0") if raw_fee is not None else Decimal("0.00")
             gross_inr = Decimal(str(order["net_amount"]))
             net_inr = gross_inr - gateway_fee
 
@@ -269,7 +473,15 @@ async def razorpay_payment_webhook(request: Request):
         return Response(content=json.dumps({"error": f"Settlement Failed: {str(e)}"}), status_code=500, media_type="application/json")
 
 @app.get("/api/download/{order_id}")
-def download_secure_book(order_id: str, token: Optional[str] = None):
+def download_secure_book(order_id: str, request: Request, token: Optional[str] = None):
+    # Step 6: Rate Limiting Enforcement
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    curr_time = time.time()
+    RATE_LIMIT_RECORD[client_ip] = [t for t in RATE_LIMIT_RECORD[client_ip] if curr_time - t < RATE_LIMIT_WINDOW]
+    if len(RATE_LIMIT_RECORD[client_ip]) >= RATE_LIMIT_MAX_REQ:
+        raise HTTPException(status_code=429, detail="Too many download requests. Please retry in a few seconds.")
+    RATE_LIMIT_RECORD[client_ip].append(curr_time)
+
     try:
         oid_clean = str(order_id).strip()
         with engine.connect() as conn:
@@ -283,22 +495,25 @@ def download_secure_book(order_id: str, token: Optional[str] = None):
             if order["status"] != "PAID":
                 raise HTTPException(status_code=403, detail="Payment pending or incomplete. Access denied.")
 
-            if token and not verify_signed_download_token(token, oid_clean):
-                raise HTTPException(status_code=403, detail="Download token is invalid or expired.")
+            if not token or not verify_signed_download_token(token, oid_clean):
+                raise HTTPException(status_code=403, detail="Download token is invalid, expired, or missing.")
 
             product = conn.execute(
                 text("SELECT * FROM products WHERE id = :pid"), 
                 {"pid": order["product_id"]}
             ).mappings().first()
             
-            pdf_rel_path = product["pdf_file_path"] if product and product["pdf_file_path"] else "default.pdf"
+            pdf_rel_path = product["pdf_file_path"] if product and product["pdf_file_path"] else None
+
+        if not pdf_rel_path:
+            raise HTTPException(status_code=404, detail="PDF asset path not configured for this product.")
 
         clean_name = os.path.basename(pdf_rel_path)
         abs_path = os.path.join(pdf_engine.PDF_STORAGE_DIR, clean_name)
+        
+        # Step 7: Zero Fake PDF Delivery in Production
         if not os.path.exists(abs_path):
-            abs_path = os.path.join(pdf_engine.PDF_STORAGE_DIR, "default.pdf")
-            with open(abs_path, "wb") as f:
-                f.write(b"%PDF-1.4 Mock Document Content")
+            raise HTTPException(status_code=404, detail="Digital asset PDF file not found on storage. Contact support.")
             
         return FileResponse(abs_path, media_type="application/pdf", filename=clean_name)
     except HTTPException:
