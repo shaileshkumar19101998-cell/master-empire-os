@@ -1,10 +1,10 @@
 fastapi
-uvicorn
+uvicorn[standard]
 sqlalchemy
 psycopg2-binary
-python-dotenv
 pydantic
-google-genai
+python-dotenv
+boto3
 reportlab
-markdown
-razorpay
+requests
+httpx
