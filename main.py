@@ -101,36 +101,44 @@ def verify_signed_download_token(token: str, order_id: str) -> bool:
 
 @app.get("/", response_class=HTMLResponse)
 def get_storefront():
-    with engine.connect() as conn:
-        products = conn.execute(
-            text("SELECT id, slug, title, tier_level, target_niche, base_price_inr, base_price_usd FROM products WHERE status = 'ACTIVE'")
-        ).mappings().all()
-
     cards_html = ""
-    for p in products:
-        is_free = p["base_price_inr"] == 0
-        price_badge = '<span style="color: #10b981; font-weight: bold;">FREE</span>' if is_free else f'₹{p["base_price_inr"]}'
-        cta_text = "Get Free Asset" if is_free else "Buy Now"
-        p_title = html.escape(p['title'] or '')
-        p_niche = html.escape(p['target_niche'] or '')
-        cards_html += f"""
-        <div style="background: #1e293b; border-radius: 12px; padding: 24px; border: 1px solid #334155; display: flex; flex-direction: column; justify-content: space-between;">
-            <div>
-                <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #38bdf8; font-weight: 600;">{p_niche}</span>
-                <h3 style="color: #f8fafc; margin: 10px 0 8px 0; font-size: 18px;">{p_title}</h3>
-                <p style="color: #94a3b8; font-size: 13px; line-height: 1.5; margin-bottom: 16px;">Tier: {p['tier_level']} • Complete enterprise blueprint.</p>
-            </div>
-            <div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <span style="font-size: 20px; font-weight: 700; color: #f8fafc;">{price_badge}</span>
-                    <a href="/books/{p['slug']}" style="color: #38bdf8; font-size: 13px; text-decoration: none;">Details &rarr;</a>
+    try:
+        with engine.connect() as conn:
+            products = conn.execute(
+                text("SELECT id, slug, title, tier_level, target_niche, base_price_inr, base_price_usd FROM products WHERE status = 'ACTIVE'")
+            ).mappings().all()
+
+        for p in products:
+            price_val = int(p.get("base_price_inr") or 0)
+            is_free = price_val == 0
+            price_badge = '<span style="color: #10b981; font-weight: bold;">FREE</span>' if is_free else f'₹{price_val}'
+            cta_text = "Get Free Asset" if is_free else "Buy Now"
+            p_title = html.escape(str(p.get('title') or ''))
+            p_niche = html.escape(str(p.get('target_niche') or ''))
+            p_tier = html.escape(str(p.get('tier_level') or 'Tier 1'))
+            p_slug = html.escape(str(p.get('slug') or ''))
+            p_id = p.get("id")
+
+            cards_html += f"""
+            <div style="background: #1e293b; border-radius: 12px; padding: 24px; border: 1px solid #334155; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #38bdf8; font-weight: 600;">{p_niche}</span>
+                    <h3 style="color: #f8fafc; margin: 10px 0 8px 0; font-size: 18px;">{p_title}</h3>
+                    <p style="color: #94a3b8; font-size: 13px; line-height: 1.5; margin-bottom: 16px;">Tier: {p_tier} • Complete enterprise blueprint.</p>
                 </div>
-                <button onclick="initiateCheckout({p['id']})" style="width: 100%; background: #2563eb; color: #ffffff; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
-                    {cta_text}
-                </button>
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <span style="font-size: 20px; font-weight: 700; color: #f8fafc;">{price_badge}</span>
+                        <a href="/books/{p_slug}" style="color: #38bdf8; font-size: 13px; text-decoration: none;">Details &rarr;</a>
+                    </div>
+                    <button onclick="initiateCheckout({p_id})" style="width: 100%; background: #2563eb; color: #ffffff; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                        {cta_text}
+                    </button>
+                </div>
             </div>
-        </div>
-        """
+            """
+    except Exception:
+        cards_html = "<div style='color: #94a3b8; padding: 20px;'>Catalog repository initializing. Check back momentarily.</div>"
 
     return HTMLResponse(f"""<!DOCTYPE html>
 <html lang="en">
@@ -238,12 +246,15 @@ def get_robots():
 
 @app.get("/sitemap.xml", response_class=PlainResponse)
 def get_sitemap():
-    with engine.connect() as conn:
-        products = conn.execute(text("SELECT slug FROM products WHERE status = 'ACTIVE'")).mappings().all()
-
     urls = ['<url><loc>https://master-empire-os.onrender.com/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>']
-    for p in products:
-        urls.append(f'<url><loc>https://master-empire-os.onrender.com/books/{p["slug"]}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>')
+    try:
+        with engine.connect() as conn:
+            products = conn.execute(text("SELECT slug FROM products WHERE status = 'ACTIVE'")).mappings().all()
+        for p in products:
+            if p.get("slug"):
+                urls.append(f'<url><loc>https://master-empire-os.onrender.com/books/{p["slug"]}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>')
+    except Exception:
+        pass
 
     xml_content = f"""<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -272,8 +283,8 @@ def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(No
         approvals_html = "<tr><td colspan='4' style='padding: 16px; text-align: center; color: #64748b;'>No items pending human approval. System autonomous queue optimal.</td></tr>"
     else:
         for app_item in t_data["pending_approvals"]:
-            app_title = html.escape(app_item.get('title') or 'Pending Growth Recommendation')
-            app_niche = html.escape(app_item.get('target_niche') or 'Strategy')
+            app_title = html.escape(str(app_item.get('title') or 'Pending Growth Recommendation'))
+            app_niche = html.escape(str(app_item.get('target_niche') or 'Strategy'))
             approvals_html += f"""
             <tr style="border-bottom: 1px solid #1e293b;">
                 <td style="padding: 14px 16px; font-weight: 600; color: #f8fafc;">{app_title}<br><span style="font-size: 11px; color: #38bdf8; font-weight: normal;">Niche: {app_niche}</span></td>
@@ -289,7 +300,7 @@ def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(No
     # Transactions HTML
     tx_html = ""
     for tx in t_data["recent_transactions"]:
-        tx_title = html.escape(tx.get('title') or 'Enterprise Product')
+        tx_title = html.escape(str(tx.get('title') or 'Enterprise Product'))
         tx_status_badge = '<span style="color:#10b981; font-weight:bold;">PAID</span>' if tx['status'] == 'PAID' else '<span style="color:#f59e0b;">PENDING</span>'
         tx_html += f"""
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #1e293b;">
@@ -307,8 +318,8 @@ def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(No
     # Audit Logs HTML
     logs_html = "".join([
         f"<div style='font-family: monospace; font-size: 11px; padding: 6px 0; border-bottom: 1px solid #1e293b; color: #94a3b8;'>"
-        f"<span style='color: #38bdf8;'>[{html.escape(l['module'])}]</span> "
-        f"<span style='color: #10b981;'>{html.escape(l['status'])}</span>: {html.escape(l['message'])}"
+        f"<span style='color: #38bdf8;'>[{html.escape(str(l['module']))}]</span> "
+        f"<span style='color: #10b981;'>{html.escape(str(l['status']))}</span>: {html.escape(str(l['message']))}"
         f"</div>"
         for l in t_data["audit_logs"]
     ])
