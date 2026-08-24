@@ -40,7 +40,7 @@ RATE_LIMIT_RECORD = defaultdict(list)
 RATE_LIMIT_WINDOW = 60
 RATE_LIMIT_MAX_REQ = 5
 
-app = FastAPI(title="Autonomous Business OS - Global Enterprise Engine", version="1.4.0")
+app = FastAPI(title="Autonomous Business OS - Global Enterprise Engine", version="2.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -71,6 +71,13 @@ class GenerateMarketingKitRequest(BaseModel):
     product_id: int
     campaign_name: Optional[str] = "launch"
     financial_override: Optional[bool] = False
+
+class DispatchCampaignRequest(BaseModel):
+    approval_id: int
+    financial_override: Optional[bool] = False
+
+class RequestMagicLinkRequest(BaseModel):
+    email: str
 
 def generate_signed_download_token(order_id: str, expiry_seconds: int = 86400) -> str:
     secret = os.getenv("DOWNLOAD_TOKEN_SECRET") or DOWNLOAD_TOKEN_SECRET
@@ -153,6 +160,7 @@ def get_storefront():
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Autonomous OS — Digital Publishing Catalog</title>
     <link rel="canonical" href="https://master-empire-os.onrender.com/">
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
@@ -169,7 +177,10 @@ def get_storefront():
                 <h1 style="color: #f8fafc; margin: 0; font-size: 24px;">Autonomous OS Library</h1>
                 <p style="color: #94a3b8; margin: 4px 0 0 0; font-size: 14px;">Instant cryptographically-authorized technical assets</p>
             </div>
-            <a href="/docs" style="color: #38bdf8; text-decoration: none; font-size: 13px; border: 1px solid #334155; padding: 8px 16px; border-radius: 6px;">API Docs</a>
+            <div>
+                <a href="/library" style="color: #10b981; text-decoration: none; font-size: 13px; border: 1px solid #10b981; padding: 8px 16px; border-radius: 6px; margin-right: 8px;">My Library</a>
+                <a href="/docs" style="color: #38bdf8; text-decoration: none; font-size: 13px; border: 1px solid #334155; padding: 8px 16px; border-radius: 6px;">API Docs</a>
+            </div>
         </header>
         <div class="grid">{cards_html}</div>
     </div>
@@ -241,6 +252,7 @@ def get_product_detail(slug: str):
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{html.escape(p['title'])} — Autonomous OS</title>
     <link rel="canonical" href="https://master-empire-os.onrender.com/books/{p['slug']}">
     <style>
@@ -261,7 +273,7 @@ def get_product_detail(slug: str):
 
 @app.get("/robots.txt", response_class=PlainResponse)
 def get_robots():
-    content = "User-agent: *\nAllow: /\nDisallow: /api/download/\nDisallow: /api/payments/\nDisallow: /admin/\nDisallow: /api/admin/\nSitemap: https://master-empire-os.onrender.com/sitemap.xml\n"
+    content = "User-agent: *\nAllow: /\nDisallow: /api/download/\nDisallow: /api/payments/\nDisallow: /admin/\nDisallow: /api/admin/\nDisallow: /library/\nSitemap: https://master-empire-os.onrender.com/sitemap.xml\n"
     return PlainResponse(content, media_type="text/plain")
 
 @app.get("/sitemap.xml", response_class=PlainResponse)
@@ -282,7 +294,155 @@ def get_sitemap():
 </urlset>"""
     return PlainResponse(xml_content, media_type="application/xml")
 
-# ==================== PHASE 1.4: ULTRA-PREMIUM COMMAND CENTER & OBSERVABILITY ====================
+# ==================== PHASE 2.0: CUSTOMER ASSET PORTAL & MAGIC LINKS ====================
+
+@app.post("/api/library/request-link")
+def request_customer_magic_link(req: RequestMagicLinkRequest):
+    email_clean = req.email.strip().lower()
+    with engine.connect() as conn:
+        cust = conn.execute(
+            text("SELECT id FROM customers WHERE email = :email"),
+            {"email": email_clean}
+        ).mappings().first()
+
+        if cust:
+            paid_count = conn.execute(
+                text("SELECT count(*) FROM orders WHERE customer_id = :cid AND status = 'PAID'"),
+                {"cid": str(cust["id"])}
+            ).scalar() or 0
+
+            if paid_count > 0:
+                token = growth_engine.generate_customer_magic_link_token(str(cust["id"]), email_clean)
+                return {
+                    "status": "SUCCESS",
+                    "message": "If an active account exists with paid assets, a secure magic access link has been generated.",
+                    "magic_link": f"/library?token={token}"
+                }
+
+    return {
+        "status": "SUCCESS",
+        "message": "If an active account exists with paid assets, a secure magic access link has been generated."
+    }
+
+@app.get("/library", response_class=HTMLResponse)
+def get_customer_library(token: Optional[str] = None):
+    if not token:
+        return HTMLResponse("""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Asset Portal — Autonomous OS</title>
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #0b0f19; color: #e2e8f0; margin: 0; padding: 40px 20px; display: flex; justify-content: center; align-items: center; min-height: 80vh; }
+        .card { background: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 32px; max-width: 420px; width: 100%; }
+        input { width: 100%; box-sizing: border-box; padding: 12px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #f8fafc; margin: 12px 0 20px 0; }
+        button { width: 100%; background: #2563eb; color: #fff; padding: 12px; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2 style="color: #f8fafc; margin-top: 0;">Access Your Library</h2>
+        <p style="color: #94a3b8; font-size: 13px; line-height: 1.5;">Enter the email address used during purchase. We'll generate a single-use, 15-minute magic link to access your blueprints.</p>
+        <input type="email" id="email" placeholder="you@company.com" required />
+        <button onclick="requestLink()">Send Magic Access Link</button>
+        <div id="status" style="margin-top: 16px; font-size: 13px;"></div>
+    </div>
+    <script>
+        async function requestLink() {
+            const email = document.getElementById("email").value;
+            if(!email) return;
+            const res = await fetch("/api/library/request-link", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: email })
+            });
+            const d = await res.json();
+            if(d.magic_link) {
+                document.getElementById("status").innerHTML = `<span style="color:#10b981;">Access link ready:</span> <a href="${d.magic_link}" style="color:#38bdf8;">Open My Library &rarr;</a>`;
+            } else {
+                document.getElementById("status").innerText = d.message;
+            }
+        }
+    </script>
+</body>
+</html>""")
+
+    auth_data = growth_engine.verify_and_consume_magic_link_token(token, engine)
+    if not auth_data:
+        raise HTTPException(status_code=401, detail="Magic access link is invalid, expired, or has already been used.")
+
+    cid = auth_data["customer_id"]
+    with engine.connect() as conn:
+        purchases = conn.execute(text("""
+            SELECT o.id as order_id, o.net_amount, o.created_at, p.id as product_id, p.title, p.slug, p.tier_level
+            FROM orders o
+            LEFT JOIN products p ON o.product_id = p.id
+            WHERE o.customer_id = :cid AND o.status = 'PAID'
+            ORDER BY o.created_at DESC
+        """), {"cid": cid}).mappings().all()
+
+    items_html = ""
+    for item in purchases:
+        dl_token = generate_signed_download_token(str(item["order_id"]), expiry_seconds=3600)
+        p_title = html.escape(str(item.get('title') or 'Technical Blueprint'))
+        p_tier = html.escape(str(item.get('tier_level') or 'Tier 1'))
+        items_html += f"""
+        <div style="background: #131b2e; border: 1px solid #1e293b; border-radius: 8px; padding: 20px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <span style="font-size: 11px; text-transform: uppercase; color: #38bdf8; font-weight: 700;">{p_tier}</span>
+                <h3 style="color: #f8fafc; margin: 6px 0 4px 0; font-size: 16px;">{p_title}</h3>
+                <div style="color: #64748b; font-size: 12px;">Order ID: {str(item['order_id'])[:8]}... • Settled on {item['created_at']}</div>
+            </div>
+            <a href="/api/download/{item['order_id']}?token={dl_token}" style="background: #10b981; color: #022c22; padding: 10px 20px; border-radius: 6px; font-weight: 700; text-decoration: none; font-size: 13px;">Download PDF</a>
+        </div>
+        """
+
+    if not purchases:
+        items_html = "<div style='color: #94a3b8; text-align: center; padding: 32px;'>No active paid purchases found for this account.</div>"
+
+    return HTMLResponse(f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Digital Library — Autonomous OS</title>
+    <style>
+        body {{ font-family: -apple-system, sans-serif; background: #0b0f19; color: #e2e8f0; margin: 0; padding: 40px 20px; }}
+        .container {{ max-width: 800px; margin: 0 auto; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header style="border-bottom: 1px solid #1e293b; padding-bottom: 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h1 style="color: #f8fafc; margin: 0; font-size: 22px;">My Digital Asset Library</h1>
+                <p style="color: #94a3b8; margin: 4px 0 0 0; font-size: 13px;">Authenticated via cryptographic magic token</p>
+            </div>
+            <a href="/" style="color: #38bdf8; text-decoration: none; font-size: 13px;">&larr; Catalog</a>
+        </header>
+        {items_html}
+    </div>
+</body>
+</html>""")
+
+# ==================== PHASE 2.0: ADMIN CAMPAIGN DISPATCH ENDPOINT ====================
+
+@app.post("/api/admin/dispatch-campaign")
+def dispatch_campaign_endpoint(req: DispatchCampaignRequest, x_admin_secret: Optional[str] = Header(None)):
+    configured_secret = (os.getenv("BI_ADMIN_SECRET") or BI_ADMIN_SECRET).strip()
+    if not configured_secret or not x_admin_secret or not hmac.compare_digest(x_admin_secret, configured_secret):
+        raise HTTPException(status_code=401, detail="Unauthorized.")
+    if req.financial_override:
+        raise HTTPException(status_code=403, detail="Financial manipulation is strictly prohibited.")
+    try:
+        return growth_engine.dispatch_approved_campaign_kit(req.approval_id, engine=engine)
+    except PermissionError as pe:
+        raise HTTPException(status_code=403, detail=str(pe))
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ==================== ULTRA-PREMIUM COMMAND CENTER ====================
 
 @app.get("/admin/bi-dashboard", response_class=HTMLResponse)
 @app.get("/admin/bi-dashboard/", response_class=HTMLResponse)
@@ -298,9 +458,7 @@ def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(No
     m = t_data["metrics"]
     cost_m = t_data["cost_metrics"]
     anom = t_data["anomalies"]
-    acq = t_data["acquisition"]
 
-    # Approvals HTML
     approvals_html = ""
     if not t_data["pending_approvals"]:
         approvals_html = "<tr><td colspan='4' style='padding: 16px; text-align: center; color: #64748b;'>No items pending human approval. System autonomous queue optimal.</td></tr>"
@@ -320,7 +478,6 @@ def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(No
             </tr>
             """
 
-    # Anomalies Radar HTML
     radar_html = ""
     if not anom["active_anomalies"]:
         radar_html = "<div style='color: #10b981; font-size: 12px; padding: 12px; background: rgba(16, 185, 129, 0.05); border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.2);'>🛡️ Zero anomalies detected across payments, AI token quotas, and storage bounds.</div>"
@@ -337,8 +494,7 @@ def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(No
     return HTMLResponse(f"""<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Autonomous OS — Ultra-Premium Command Center</title>
     <style>
         * {{ box-sizing: border-box; }}
@@ -373,7 +529,6 @@ def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(No
     </div>
 
     <div class="container">
-        <!-- Telemetry & True Margins Row -->
         <div class="kpi-grid">
             <div class="kpi-card">
                 <div class="kpi-label">Gross Revenue</div>
@@ -397,7 +552,6 @@ def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(No
             </div>
         </div>
 
-        <!-- Action Center: Human Approval Gate -->
         <div class="panel" style="margin-bottom: 28px; border-left: 4px solid #f59e0b;">
             <div class="panel-title">
                 <span>ACTION CENTER — PENDING HUMAN APPROVAL</span>
@@ -409,7 +563,6 @@ def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(No
             </table>
         </div>
 
-        <!-- Financial Observability & Radar Matrix -->
         <div class="grid-2">
             <div class="panel">
                 <div class="panel-title">System Anomalies & Security Radar</div>
@@ -451,7 +604,7 @@ def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(No
 </body>
 </html>""")
 
-# ==================== ADMIN ACTION & MARKETING ENDPOINTS ====================
+# ==================== ADMIN ACTIONS ====================
 
 @app.post("/api/admin/generate-marketing-kit")
 def generate_marketing_kit_endpoint(req: GenerateMarketingKitRequest, x_admin_secret: Optional[str] = Header(None)):
@@ -489,7 +642,7 @@ def reject_job_endpoint(req: AdminActionRequest, x_admin_secret: Optional[str] =
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-# ==================== PAYMENT & ORDER ENDPOINTS WITH SECURITY AUDIT LOGGING ====================
+# ==================== PAYMENT & ORDER ENDPOINTS ====================
 
 @app.post("/api/payments/create-session")
 def create_payment_session(req: CreatePaymentSessionRequest):

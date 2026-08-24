@@ -2,6 +2,9 @@ import os
 import hashlib
 import json
 import re
+import time
+import hmac
+import uuid
 from decimal import Decimal
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List, Optional
@@ -94,23 +97,161 @@ def calculate_revenue_metrics(engine=None) -> Dict[str, Any]:
         "health_score": health_score
     }
 
-# ==================== 2. PHASE 1.4: COST INTELLIGENCE & OBSERVABILITY ====================
+# ==================== 2. PHASE 2.0: MAGIC-LINK AUTHENTICATION ====================
+
+def generate_customer_magic_link_token(customer_id: str, email: str, expiry_seconds: int = 900) -> str:
+    secret = (os.getenv("MAGIC_LINK_SECRET") or os.getenv("DOWNLOAD_TOKEN_SECRET") or "default_magic_secret").strip()
+    exp_time = int(time.time()) + expiry_seconds
+    nonce = uuid.uuid4().hex[:12]
+    cid_str = str(customer_id).strip()
+    email_clean = str(email).strip().lower()
+
+    msg = f"{cid_str}:{email_clean}:{exp_time}:{nonce}".encode("utf-8")
+    sig = hmac.new(secret.encode("utf-8"), msg, hashlib.sha256).hexdigest()
+    return f"{cid_str}__{email_clean}__{exp_time}__{nonce}__{sig}"
+
+def verify_and_consume_magic_link_token(token: str, engine=None) -> Optional[Dict[str, Any]]:
+    if engine is None:
+        engine = get_db_engine()
+
+    try:
+        parts = token.split("__")
+        if len(parts) != 5:
+            return None
+        cid_str, email_clean, exp_time_str, nonce, sig = parts
+        exp_time = int(exp_time_str)
+
+        if time.time() > exp_time:
+            return None
+
+        secret = (os.getenv("MAGIC_LINK_SECRET") or os.getenv("DOWNLOAD_TOKEN_SECRET") or "default_magic_secret").strip()
+        msg = f"{cid_str}:{email_clean}:{exp_time}:{nonce}".encode("utf-8")
+        expected_sig = hmac.new(secret.encode("utf-8"), msg, hashlib.sha256).hexdigest()
+
+        if not hmac.compare_digest(sig, expected_sig):
+            return None
+
+        sig_hash = hashlib.sha256(sig.encode("utf-8")).hexdigest()
+        with engine.begin() as conn:
+            consumed = conn.execute(text("""
+                SELECT id FROM system_logs 
+                WHERE module = 'MAGIC_LINK' AND status = 'CONSUMED' AND message LIKE :mhash
+            """), {"mhash": f"%[token_hash:{sig_hash}]%"}).first()
+
+            if consumed:
+                return None
+
+            conn.execute(text("""
+                INSERT INTO system_logs (module, status, message)
+                VALUES ('MAGIC_LINK', 'CONSUMED', :msg)
+            """), {"msg": f"Magic link token consumed for customer {cid_str} [token_hash:{sig_hash}]"})
+
+        return {"customer_id": cid_str, "email": email_clean}
+    except Exception:
+        return None
+
+# ==================== 3. PHASE 2.0: OUTBOUND MARKETING PROVIDERS ====================
+
+class BaseMarketingProvider:
+    def dispatch(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        raise NotImplementedError
+
+class WebhookDispatchProvider(BaseMarketingProvider):
+    def dispatch(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        url = os.getenv("OUTBOUND_WEBHOOK_URL", "").strip()
+        secret = os.getenv("OUTBOUND_DISPATCH_SECRET", "").strip()
+        
+        if not url:
+            return {"provider": "LOCAL_FALLBACK", "dispatched": True, "target": "internal_queue", "status_code": 200}
+
+        import urllib.request
+        import urllib.error
+        
+        req_bytes = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(
+            url,
+            data=req_bytes,
+            headers={
+                "Content-Type": "application/json",
+                "X-Dispatch-Signature": hmac.new(secret.encode("utf-8"), req_bytes, hashlib.sha256).hexdigest() if secret else ""
+            },
+            method="POST"
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=5.0) as resp:
+                return {"provider": "WEBHOOK", "dispatched": True, "status_code": resp.status}
+        except Exception as e:
+            raise RuntimeError(f"Outbound webhook delivery failed: {str(e)}")
+
+def dispatch_approved_campaign_kit(approval_id: int, provider: Optional[BaseMarketingProvider] = None, engine=None) -> Dict[str, Any]:
+    if engine is None:
+        engine = get_db_engine()
+    if provider is None:
+        provider = WebhookDispatchProvider()
+
+    with engine.connect() as conn:
+        approval = conn.execute(
+            text("SELECT * FROM pending_approvals WHERE id = :id"),
+            {"id": approval_id}
+        ).mappings().first()
+
+        if not approval:
+            raise ValueError(f"Approval record ID {approval_id} not found.")
+        if approval["status"] != "APPROVED":
+            raise PermissionError(f"Dispatch blocked: Item ID {approval_id} has status '{approval['status']}'. Level 2 Human Approval is mandatory.")
+
+        mkt_log = conn.execute(text("""
+            SELECT message FROM system_logs 
+            WHERE module = 'MARKETING_AI' AND status = 'EXECUTED'
+            ORDER BY id DESC LIMIT 1
+        """)).scalar()
+
+        if not mkt_log:
+            raise ValueError("No eligible marketing kit content found for dispatch.")
+
+        dispatch_hash = hashlib.sha256(f"{approval_id}:{mkt_log}".encode("utf-8")).hexdigest()
+        already_dispatched = conn.execute(text("""
+            SELECT id FROM system_logs 
+            WHERE module = 'MARKETING_DISPATCH' AND status = 'SENT' AND message LIKE :dhash
+        """), {"dhash": f"%[dispatch_hash:{dispatch_hash}]%"}).first()
+
+        if already_dispatched:
+            raise ValueError(f"Campaign for approval ID {approval_id} already dispatched (Duplicate prevented).")
+
+    max_retries = 3
+    last_err = None
+    for attempt in range(1, max_retries + 1):
+        try:
+            res = provider.dispatch({"approval_id": approval_id, "content": mkt_log, "dispatch_hash": dispatch_hash})
+            with engine.begin() as conn:
+                conn.execute(text("""
+                    INSERT INTO system_logs (module, status, message)
+                    VALUES ('MARKETING_DISPATCH', 'SENT', :msg)
+                """), {"msg": f"Campaign ID {approval_id} successfully sent [dispatch_hash:{dispatch_hash}] via {res.get('provider')}"})
+            return {"status": "SUCCESS", "dispatch_hash": dispatch_hash, "attempt": attempt, "provider_result": res}
+        except Exception as e:
+            last_err = str(e)
+            if attempt < max_retries:
+                time.sleep(0.1 * (2 ** attempt))
+
+    with engine.begin() as conn:
+        conn.execute(text("""
+            INSERT INTO system_logs (module, status, message)
+            VALUES ('MARKETING_DISPATCH', 'FAILED', :msg)
+        """), {"msg": f"Campaign ID {approval_id} failed after {max_retries} attempts [dispatch_hash:{dispatch_hash}]. Error: {last_err}"})
+
+    raise RuntimeError(f"Campaign dispatch failed after {max_retries} retries: {last_err}")
+
+# ==================== 4. MARKETING GENERATION & OBSERVABILITY ====================
 
 def calculate_cost_and_margin_metrics(engine=None) -> Dict[str, Any]:
-    """Calculates deterministic estimated vs actual AI costs, storage costs, and True Net Margin."""
     if engine is None:
         engine = get_db_engine()
 
     total_ai_tokens = 0
     total_ai_cost_inr = Decimal("0.00")
-    total_storage_bytes = 0
     total_downloads = 0
 
-    # Unit cost constants (Documented Deterministic Model)
-    # Token rate: ₹0.00015 per token (~$0.0018 / 1k tokens)
-    # Marketing kit baseline: ₹2.50 per generation
-    # R2 Storage baseline: ₹0.0012 per MB/month
-    # Bandwidth egress on R2: Free (₹0.00)
     TOKEN_COST_RATE = Decimal("0.00015")
     MARKETING_COST_FLAT = Decimal("2.50")
     STORAGE_PER_MB = Decimal("0.0012")
@@ -135,12 +276,10 @@ def calculate_cost_and_margin_metrics(engine=None) -> Dict[str, Any]:
             elif "Generated marketing kit" in msg:
                 total_ai_cost_inr += MARKETING_COST_FLAT
 
-        # Calculate Storage Footprint from Completed Books
         books = conn.execute(text("SELECT count(*) as total_books FROM books WHERE status = 'COMPLETED' OR status = 'PUBLISHED'")).scalar() or 0
-        estimated_storage_mb = Decimal(str(books * 1.5))  # Avg 1.5 MB per compiled blueprint
+        estimated_storage_mb = Decimal(str(books * 1.5))
         storage_cost_inr = (estimated_storage_mb * STORAGE_PER_MB).quantize(Decimal("0.01"))
 
-        # Download Traffic Telemetry
         download_count = conn.execute(text("SELECT count(*) FROM system_logs WHERE module = 'DOWNLOAD_ENGINE'")).scalar() or 0
         total_downloads = download_count
 
@@ -165,10 +304,7 @@ def calculate_cost_and_margin_metrics(engine=None) -> Dict[str, Any]:
         "cost_model": "DETERMINISTIC_ESTIMATED"
     }
 
-# ==================== 3. PHASE 1.4: ANOMALY DETECTION ENGINE ====================
-
 def detect_system_anomalies(engine=None) -> Dict[str, Any]:
-    """Detects payment failure spikes, AI quota exhaustion, and rate-limit anomalies."""
     if engine is None:
         engine = get_db_engine()
 
@@ -176,7 +312,6 @@ def detect_system_anomalies(engine=None) -> Dict[str, Any]:
     health_status = "HEALTHY"
 
     with engine.connect() as conn:
-        # 1. AI Quota Consumption Alert
         since_t = datetime.now(timezone.utc) - timedelta(days=1)
         daily_ai_count = conn.execute(text("""
             SELECT count(*) FROM system_logs 
@@ -192,7 +327,6 @@ def detect_system_anomalies(engine=None) -> Dict[str, Any]:
                 "message": f"Daily AI quota reached ({daily_ai_count}/{max_daily}). AI synthesis throttled for cost protection."
             })
 
-        # 2. Payment Failure Spike Detection
         failed_payments = conn.execute(text("""
             SELECT count(*) FROM orders WHERE status = 'PENDING' AND created_at >= :t
         """), {"t": datetime.now(timezone.utc) - timedelta(hours=1)}).scalar() or 0
@@ -205,7 +339,6 @@ def detect_system_anomalies(engine=None) -> Dict[str, Any]:
             })
             health_status = "ATTENTION_REQUIRED"
 
-        # 3. Rate Limit / Suspicious Download Traffic
         rate_limit_events = conn.execute(text("""
             SELECT count(*) FROM system_logs 
             WHERE module = 'SECURITY' AND status = 'RATE_LIMIT_EXCEEDED' AND created_at >= :t
@@ -223,8 +356,6 @@ def detect_system_anomalies(engine=None) -> Dict[str, Any]:
         "active_anomalies": anomalies,
         "anomaly_count": len(anomalies)
     }
-
-# ==================== 4. CONVERSION & ATTRIBUTION METRICS ====================
 
 def calculate_acquisition_metrics(engine=None) -> Dict[str, Any]:
     if engine is None:
@@ -290,8 +421,6 @@ def calculate_acquisition_metrics(engine=None) -> Dict[str, Any]:
         "total_attributed_orders": total_attributed_orders,
         "total_attributed_revenue": str(total_attributed_rev.quantize(Decimal("0.01")))
     }
-
-# ==================== 5. MARKETING CAMPAIGN GENERATOR ====================
 
 def generate_marketing_campaign_kit(product_id: int, campaign_name: str = "launch", engine=None) -> Dict[str, Any]:
     if engine is None:
@@ -369,8 +498,6 @@ def generate_marketing_campaign_kit(product_id: int, campaign_name: str = "launc
         "data": marketing_kit
     }
 
-# ==================== 6. COMMAND CENTER TELEMETRY UNIFICATION ====================
-
 def get_command_center_telemetry(engine=None) -> Dict[str, Any]:
     if engine is None:
         engine = get_db_engine()
@@ -421,8 +548,6 @@ def get_command_center_telemetry(engine=None) -> Dict[str, Any]:
         "recent_transactions": [dict(r) for r in recent_txs],
         "audit_logs": [dict(r) for r in audit_logs]
     }
-
-# ==================== 7. ADMINISTRATIVE APPROVAL / REJECTION ====================
 
 def approve_pending_job(approval_id: int, engine=None) -> Dict[str, Any]:
     if engine is None:
