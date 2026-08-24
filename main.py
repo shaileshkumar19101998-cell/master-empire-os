@@ -254,6 +254,7 @@ def get_sitemap():
 # ==================== PHASE 1.1: ULTRA-PREMIUM AI COMMAND CENTER ====================
 
 @app.get("/admin/bi-dashboard", response_class=HTMLResponse)
+@app.get("/admin/bi-dashboard/", response_class=HTMLResponse)
 def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(None)):
     configured_secret = (os.getenv("BI_ADMIN_SECRET") or BI_ADMIN_SECRET).strip()
     query_secret = request.query_params.get("secret", "")
