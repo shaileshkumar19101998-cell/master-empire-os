@@ -167,7 +167,6 @@ def ensure_tables_and_seed():
                 );
             """))
 
-            # Seed Live Test Product
             conn.execute(text("""
                 INSERT INTO products (slug, title, tier_level, target_niche, base_price_inr, base_price_usd, pdf_file_path, status)
                 VALUES ('saas-architecture-handbook', 'SaaS Architecture & Scale Handbook', 'Tier 1', 'Cloud Architecture', 1, 1, 'books/saas/v1.pdf', 'ACTIVE')
@@ -239,7 +238,7 @@ def verify_signed_download_token(token: str, order_id: str) -> bool:
     except Exception:
         return False
 
-# ==================== STOREFRONT & SEO ====================
+# ==================== STOREFRONT ====================
 
 @app.get("/", response_class=HTMLResponse)
 def get_storefront():
@@ -252,12 +251,9 @@ def get_storefront():
             ).mappings().all()
 
         for p in products:
-            price_val = int(p.get("base_price_inr") or 0)
-            is_free = price_val == 0
-            price_badge = '<span style="color: #10b981; font-weight: bold;">FREE</span>' if is_free else f'₹{price_val}'
-            cta_text = "Get Free Asset" if is_free else "Buy Now"
-            p_title = html.escape(str(p.get('title') or ''))
-            p_niche = html.escape(str(p.get('target_niche') or ''))
+            price_val = int(p.get("base_price_inr") or 1)
+            p_title = html.escape(str(p.get('title') or 'SaaS Architecture & Scale Handbook'))
+            p_niche = html.escape(str(p.get('target_niche') or 'Cloud Architecture'))
             p_tier = html.escape(str(p.get('tier_level') or 'Tier 1'))
             p_slug = html.escape(str(p.get('slug') or ''))
             p_id = p.get("id")
@@ -267,21 +263,21 @@ def get_storefront():
                 <div>
                     <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #38bdf8; font-weight: 600;">{p_niche}</span>
                     <h3 style="color: #f8fafc; margin: 10px 0 8px 0; font-size: 18px;">{p_title}</h3>
-                    <p style="color: #94a3b8; font-size: 13px; line-height: 1.5; margin-bottom: 16px;">Tier: {p_tier} • Complete enterprise blueprint.</p>
+                    <p style="color: #94a3b8; font-size: 13px; line-height: 1.5; margin-bottom: 16px;">Tier: {p_tier} • Production-grade architecture blueprint.</p>
                 </div>
                 <div>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                        <span style="font-size: 20px; font-weight: 700; color: #f8fafc;">{price_badge}</span>
+                        <span style="font-size: 22px; font-weight: 700; color: #10b981;">₹{price_val}</span>
                         <a href="/books/{p_slug}" style="color: #38bdf8; font-size: 13px; text-decoration: none;">Details &rarr;</a>
                     </div>
-                    <button onclick="initiateCheckout({p_id})" style="width: 100%; background: #2563eb; color: #ffffff; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
-                        {cta_text}
+                    <button onclick="initiateCheckout({p_id}, '{p_title}', {price_val})" style="width: 100%; background: #2563eb; color: #ffffff; padding: 12px; border: none; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer;">
+                        Buy Now (₹{price_val})
                     </button>
                 </div>
             </div>
             """
     except Exception as ex:
-        cards_html = f"<div style='color: #94a3b8; padding: 20px;'>Catalog repository initializing: {html.escape(str(ex))}</div>"
+        cards_html = f"<div style='color: #94a3b8; padding: 20px;'>Catalog initializing: {html.escape(str(ex))}</div>"
 
     return HTMLResponse(f"""<!DOCTYPE html>
 <html lang="en">
@@ -292,9 +288,9 @@ def get_storefront():
     <link rel="canonical" href="https://master-empire-os.onrender.com/">
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
-        body {{ font-family: -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 0; }}
+        body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 0; }}
         .container {{ max-width: 1100px; margin: 0 auto; padding: 40px 20px; }}
-        .grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; margin-top: 32px; }}
+        .grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; margin-top: 32px; }}
     </style>
 </head>
 <body>
@@ -322,35 +318,41 @@ def get_storefront():
             }};
         }}
 
-        async function initiateCheckout(productId) {{
-            const email = prompt("Enter your email for digital asset delivery:", "customer@global-enterprise.org");
+        async function initiateCheckout(productId, title, priceInr) {{
+            const email = prompt("Enter your email address for asset delivery:", "customer@global-enterprise.org");
             if (!email) return;
+
+            const phone = prompt("Enter phone number for payment gateway receipt (optional):", "9876543210") || "9999999999";
             const utm = getUTMParams();
+
             const res = await fetch("/api/orders/create", {{
                 method: "POST",
                 headers: {{ "Content-Type": "application/json" }},
                 body: JSON.stringify({{ product_id: productId, customer_email: email, ...utm }})
             }});
             const data = await res.json();
-            if (data.download_url) {{
-                window.location.href = data.download_url;
-                return;
-            }}
+            
             const sessRes = await fetch("/api/payments/create-session", {{
                 method: "POST",
                 headers: {{ "Content-Type": "application/json" }},
                 body: JSON.stringify({{ order_id: data.order_id }})
             }});
             const sess = await sessRes.json();
+
             const options = {{
                 "key": sess.razorpay_key_id,
                 "amount": sess.amount_paise,
                 "currency": "INR",
                 "name": "Autonomous OS",
-                "description": "Digital Asset Purchase",
-                "order_id": sess.razorpay_order_id,
+                "description": title,
+                "prefill": {{
+                    "name": "Customer",
+                    "email": email,
+                    "contact": phone
+                }},
+                "theme": {{ "color": "#2563eb" }},
                 "handler": function (response) {{
-                    alert("Payment received! Digital asset will be available upon settlement confirmation.");
+                    alert("Payment received successfully! Transaction reference: " + (response.razorpay_payment_id || "captured"));
                     window.location.href = "/library";
                 }}
             }};
@@ -374,9 +376,6 @@ def get_product_detail(slug: str):
     if not p:
         raise HTTPException(status_code=404, detail="Book not found in public catalog.")
 
-    is_free = p["base_price_inr"] == 0
-    price_str = "FREE" if is_free else f"₹{p['base_price_inr']}"
-
     return HTMLResponse(f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -394,7 +393,7 @@ def get_product_detail(slug: str):
         <a href="/" style="color: #38bdf8; text-decoration: none; font-size: 13px;">&larr; Back to Catalog</a>
         <h1 style="color: #f8fafc; font-size: 24px; margin-top: 16px;">{html.escape(p['title'])}</h1>
         <p style="color: #94a3b8;">Category: {html.escape(p['target_niche'])} | Tier: {p['tier_level']}</p>
-        <h2 style="color: #10b981; margin: 20px 0;">{price_str}</h2>
+        <h2 style="color: #10b981; margin: 20px 0;">₹{p['base_price_inr']}</h2>
         <a href="/" style="display: inline-block; background: #2563eb; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">Purchase on Catalog</a>
     </div>
 </body>
@@ -423,7 +422,7 @@ def get_sitemap():
 </urlset>"""
     return PlainResponse(xml_content, media_type="application/xml")
 
-# ==================== PHASE 2.0: CUSTOMER ASSET PORTAL & MAGIC LINKS ====================
+# ==================== CUSTOMER PORTAL ====================
 
 @app.post("/api/library/request-link")
 def request_customer_magic_link(req: RequestMagicLinkRequest):
@@ -555,7 +554,7 @@ def get_customer_library(token: Optional[str] = None):
 </body>
 </html>""")
 
-# ==================== PHASE 2.0: ADMIN CAMPAIGN DISPATCH ENDPOINT ====================
+# ==================== ADMIN DISPATCH ====================
 
 @app.post("/api/admin/dispatch-campaign")
 def dispatch_campaign_endpoint(req: DispatchCampaignRequest, x_admin_secret: Optional[str] = Header(None)):
@@ -573,7 +572,7 @@ def dispatch_campaign_endpoint(req: DispatchCampaignRequest, x_admin_secret: Opt
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# ==================== ULTRA-PREMIUM COMMAND CENTER ====================
+# ==================== COMMAND CENTER ====================
 
 @app.get("/admin/bi-dashboard", response_class=HTMLResponse)
 @app.get("/admin/bi-dashboard/", response_class=HTMLResponse)
