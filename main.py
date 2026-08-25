@@ -50,30 +50,122 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.on_event("startup")
-def init_db_catalog():
+def ensure_tables_and_seed():
     try:
         with engine.begin() as conn:
             conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS books (
+                    id SERIAL PRIMARY KEY,
+                    slug VARCHAR(120) UNIQUE,
+                    title VARCHAR(255),
+                    target_niche VARCHAR(120),
+                    status VARCHAR(50),
+                    version INTEGER DEFAULT 1,
+                    retry_count INTEGER DEFAULT 0,
+                    error_message TEXT,
+                    pdf_file_path VARCHAR(255),
+                    sha256_hash VARCHAR(64),
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """))
+            conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS products (
                     id SERIAL PRIMARY KEY,
-                    slug VARCHAR(120) UNIQUE NOT NULL,
-                    title VARCHAR(255) NOT NULL,
+                    slug VARCHAR(120) UNIQUE,
+                    title VARCHAR(255),
                     tier_level VARCHAR(50) DEFAULT 'Tier 1',
-                    target_niche VARCHAR(120) NOT NULL,
-                    base_price_inr INTEGER NOT NULL DEFAULT 999,
-                    base_price_usd INTEGER NOT NULL DEFAULT 12,
+                    target_niche VARCHAR(120),
+                    base_price_inr INTEGER DEFAULT 1,
+                    base_price_usd INTEGER DEFAULT 1,
                     pdf_file_path VARCHAR(255),
                     status VARCHAR(50) DEFAULT 'ACTIVE'
                 );
             """))
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS customers (
+                    id VARCHAR(64) PRIMARY KEY,
+                    email VARCHAR(255) UNIQUE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """))
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS orders (
+                    id VARCHAR(64) PRIMARY KEY,
+                    customer_id VARCHAR(64),
+                    product_id INTEGER,
+                    coupon_id INTEGER,
+                    order_type VARCHAR(50) DEFAULT 'PAID',
+                    gross_amount NUMERIC DEFAULT 0,
+                    discount_amount NUMERIC DEFAULT 0,
+                    net_amount NUMERIC DEFAULT 0,
+                    currency VARCHAR(10) DEFAULT 'INR',
+                    status VARCHAR(50) DEFAULT 'PENDING',
+                    razorpay_order_id VARCHAR(100),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """))
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS payments (
+                    id SERIAL PRIMARY KEY,
+                    order_id VARCHAR(64),
+                    payment_method VARCHAR(50),
+                    transaction_ref VARCHAR(100) UNIQUE,
+                    amount NUMERIC,
+                    currency VARCHAR(10) DEFAULT 'INR',
+                    status VARCHAR(50),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """))
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS revenue_ledger (
+                    id SERIAL PRIMARY KEY,
+                    transaction_ref VARCHAR(100) UNIQUE,
+                    gross_amount NUMERIC,
+                    gateway_fee NUMERIC,
+                    net_revenue NUMERIC,
+                    currency VARCHAR(10) DEFAULT 'INR',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """))
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS coupons (
+                    id SERIAL PRIMARY KEY,
+                    code VARCHAR(50) UNIQUE,
+                    discount_type VARCHAR(20),
+                    discount_value NUMERIC,
+                    requires_payment INTEGER DEFAULT 1,
+                    is_active INTEGER DEFAULT 1,
+                    expires_at TIMESTAMP,
+                    used_count INTEGER DEFAULT 0
+                );
+            """))
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS system_logs (
+                    id SERIAL PRIMARY KEY,
+                    module VARCHAR(50),
+                    status VARCHAR(50),
+                    message TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """))
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS pending_approvals (
+                    id SERIAL PRIMARY KEY,
+                    book_id INTEGER,
+                    status VARCHAR(50) DEFAULT 'PENDING',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """))
+
+            # Seed Live Test Product
             conn.execute(text("""
                 INSERT INTO products (slug, title, tier_level, target_niche, base_price_inr, base_price_usd, pdf_file_path, status)
                 VALUES ('saas-architecture-handbook', 'SaaS Architecture & Scale Handbook', 'Tier 1', 'Cloud Architecture', 1, 1, 'books/saas/v1.pdf', 'ACTIVE')
                 ON CONFLICT (slug) DO UPDATE SET base_price_inr = 1, status = 'ACTIVE';
             """))
     except Exception as e:
-        print(f"Startup DB init error: {e}")
+        print(f"Table auto-seed notice: {e}")
 
 class CreateOrderRequest(BaseModel):
     product_id: int
@@ -142,6 +234,7 @@ def verify_signed_download_token(token: str, order_id: str) -> bool:
 
 @app.get("/", response_class=HTMLResponse)
 def get_storefront():
+    ensure_tables_and_seed()
     cards_html = ""
     try:
         with engine.connect() as conn:
@@ -178,8 +271,8 @@ def get_storefront():
                 </div>
             </div>
             """
-    except Exception:
-        cards_html = "<div style='color: #94a3b8; padding: 20px;'>Catalog repository initializing. Check back momentarily.</div>"
+    except Exception as ex:
+        cards_html = f"<div style='color: #94a3b8; padding: 20px;'>Catalog repository initializing: {html.escape(str(ex))}</div>"
 
     return HTMLResponse(f"""<!DOCTYPE html>
 <html lang="en">
@@ -249,6 +342,7 @@ def get_storefront():
                 "order_id": sess.razorpay_order_id,
                 "handler": function (response) {{
                     alert("Payment received! Digital asset will be available upon settlement confirmation.");
+                    window.location.href = "/library";
                 }}
             }};
             const rzp = new Razorpay(options);
@@ -260,6 +354,7 @@ def get_storefront():
 
 @app.get("/books/{slug}", response_class=HTMLResponse)
 def get_product_detail(slug: str):
+    ensure_tables_and_seed()
     slug_clean = slug.strip().lower()
     with engine.connect() as conn:
         p = conn.execute(
@@ -323,6 +418,7 @@ def get_sitemap():
 
 @app.post("/api/library/request-link")
 def request_customer_magic_link(req: RequestMagicLinkRequest):
+    ensure_tables_and_seed()
     email_clean = req.email.strip().lower()
     with engine.connect() as conn:
         cust = conn.execute(
@@ -351,6 +447,7 @@ def request_customer_magic_link(req: RequestMagicLinkRequest):
 
 @app.get("/library", response_class=HTMLResponse)
 def get_customer_library(token: Optional[str] = None):
+    ensure_tables_and_seed()
     if not token:
         return HTMLResponse("""<!DOCTYPE html>
 <html lang="en">
@@ -479,6 +576,7 @@ def get_bi_dashboard(request: Request, x_admin_secret: Optional[str] = Header(No
     if not configured_secret or not provided_secret or not hmac.compare_digest(provided_secret, configured_secret):
         raise HTTPException(status_code=401, detail="Unauthorized access to Command Center.")
 
+    ensure_tables_and_seed()
     t_data = growth_engine.get_command_center_telemetry(engine)
     m = t_data["metrics"]
     cost_m = t_data["cost_metrics"]
@@ -703,7 +801,7 @@ def create_secure_order(req: CreateOrderRequest):
                 {"pid": req.product_id}
             ).mappings().first()
             
-            gross_amount = product["base_price_inr"] if product else 999
+            gross_amount = product["base_price_inr"] if product else 1
 
             cust = conn.execute(
                 text("SELECT id FROM customers WHERE email = :email"), 
