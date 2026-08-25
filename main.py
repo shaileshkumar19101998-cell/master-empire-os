@@ -319,45 +319,62 @@ def get_storefront():
         }}
 
         async function initiateCheckout(productId, title, priceInr) {{
-            const email = prompt("Enter your email address for asset delivery:", "customer@global-enterprise.org");
-            if (!email) return;
+            try {{
+                const email = prompt("Enter your email address for asset delivery:", "customer@global-enterprise.org");
+                if (!email) return;
 
-            const phone = prompt("Enter phone number for payment gateway receipt (optional):", "9876543210") || "9999999999";
-            const utm = getUTMParams();
+                const phone = prompt("Enter phone number for UPI/Card payment:", "9876543210") || "9999999999";
+                const utm = getUTMParams();
 
-            const res = await fetch("/api/orders/create", {{
-                method: "POST",
-                headers: {{ "Content-Type": "application/json" }},
-                body: JSON.stringify({{ product_id: productId, customer_email: email, ...utm }})
-            }});
-            const data = await res.json();
-            
-            const sessRes = await fetch("/api/payments/create-session", {{
-                method: "POST",
-                headers: {{ "Content-Type": "application/json" }},
-                body: JSON.stringify({{ order_id: data.order_id }})
-            }});
-            const sess = await sessRes.json();
+                const res = await fetch("/api/orders/create", {{
+                    method: "POST",
+                    headers: {{ "Content-Type": "application/json" }},
+                    body: JSON.stringify({{ product_id: productId, customer_email: email, ...utm }})
+                }});
+                const data = await res.json();
+                
+                const sessRes = await fetch("/api/payments/create-session", {{
+                    method: "POST",
+                    headers: {{ "Content-Type": "application/json" }},
+                    body: JSON.stringify({{ order_id: data.order_id }})
+                }});
+                const sess = await sessRes.json();
 
-            const options = {{
-                "key": sess.razorpay_key_id,
-                "amount": sess.amount_paise,
-                "currency": "INR",
-                "name": "Autonomous OS",
-                "description": title,
-                "prefill": {{
-                    "name": "Customer",
-                    "email": email,
-                    "contact": phone
-                }},
-                "theme": {{ "color": "#2563eb" }},
-                "handler": function (response) {{
-                    alert("Payment received successfully! Transaction reference: " + (response.razorpay_payment_id || "captured"));
-                    window.location.href = "/library";
+                const options = {{
+                    "key": sess.razorpay_key_id,
+                    "amount": sess.amount_paise,
+                    "currency": "INR",
+                    "name": "Autonomous OS",
+                    "description": title,
+                    "prefill": {{
+                        "name": "Valued Customer",
+                        "email": email,
+                        "contact": phone
+                    }},
+                    "theme": {{ "color": "#2563eb" }},
+                    "modal": {{
+                        "ondismiss": function() {{
+                            console.log("Checkout modal dismissed.");
+                        }}
+                    }},
+                    "handler": function (response) {{
+                        alert("Payment successful! Transaction reference: " + (response.razorpay_payment_id || "captured"));
+                        window.location.href = "/library";
+                    }}
+                }};
+                
+                if (window.Razorpay) {{
+                    const rzp = new Razorpay(options);
+                    rzp.on('payment.failed', function (resp){{
+                        alert("Payment Failed: " + (resp.error.description || "Unknown error"));
+                    }});
+                    rzp.open();
+                }} else {{
+                    alert("Razorpay SDK is loading. Please click Buy Now again in 3 seconds.");
                 }}
-            }};
-            const rzp = new Razorpay(options);
-            rzp.open();
+            }} catch (err) {{
+                alert("Checkout initialization failed: " + err.message);
+            }}
         }}
     </script>
 </body>
