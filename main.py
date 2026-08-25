@@ -21,6 +21,14 @@ import growth_engine
 import ai_engine
 
 load_dotenv()
+
+# ==============================================================================
+# अपनी RAZORPAY KEY ID और SECRET यहाँ इनवर्टेड कॉमा (" ") के अंदर पेस्ट करें:
+# ==============================================================================
+MY_DIRECT_RAZORPAY_KEY_ID = "rzp_live_TTtC04wQnGkJNc"
+MY_DIRECT_RAZORPAY_KEY_SECRET = "qafHnDeNyjkJqY5uBSIvjcdS"
+# ==============================================================================
+
 raw_db_url = os.getenv("DATABASE_URL", "sqlite:///./autonomous_local.db")
 
 def get_db_engine():
@@ -39,11 +47,11 @@ def get_db_engine():
 
 engine = get_db_engine()
 
-RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID", "")
-RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "")
+RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID") or MY_DIRECT_RAZORPAY_KEY_ID
+RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET") or MY_DIRECT_RAZORPAY_KEY_SECRET
 RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET", "")
-DOWNLOAD_TOKEN_SECRET = os.getenv("DOWNLOAD_TOKEN_SECRET", "")
-BI_ADMIN_SECRET = os.getenv("BI_ADMIN_SECRET", "")
+DOWNLOAD_TOKEN_SECRET = os.getenv("DOWNLOAD_TOKEN_SECRET", "super_secure_token_secret_key_prod_2026")
+BI_ADMIN_SECRET = os.getenv("BI_ADMIN_SECRET", "empire_bi_secret_access_2026")
 
 RATE_LIMIT_RECORD = defaultdict(list)
 RATE_LIMIT_WINDOW = 60
@@ -813,7 +821,7 @@ def create_payment_session(req: CreatePaymentSessionRequest):
         "razorpay_order_id": order["razorpay_order_id"] or f"order_{str(order['id'])[:14]}",
         "amount_paise": amount_paise,
         "currency": "INR",
-        "razorpay_key_id": os.getenv("RAZORPAY_KEY_ID", "")
+        "razorpay_key_id": RAZORPAY_KEY_ID
     }
 
 @app.post("/api/orders/create")
@@ -920,7 +928,7 @@ def create_secure_order(req: CreateOrderRequest):
 
 @app.post("/api/payments/webhook")
 async def razorpay_payment_webhook(request: Request):
-    webhook_secret = (os.getenv("RAZORPAY_WEBHOOK_SECRET") or RAZORPAY_WEBHOOK_SECRET).strip()
+    webhook_secret = (os.getenv("RAZORPAY_WEBHOOK_SECRET") or RAZORPAY_WEBHOOK_SECRET or RAZORPAY_KEY_SECRET).strip()
     if not webhook_secret:
         return Response(
             content=json.dumps({"error": "Webhook secret not configured on server"}),
