@@ -717,3 +717,10 @@ try:
     app.include_router(setup_phase3_routes(engine))
 except Exception as p3_err:
     print(f"Phase 3 Router Warning: {str(p3_err)}")
+
+try:
+    from phase3_router import setup_phase3_routes
+    app.include_router(setup_phase3_routes(engine))
+    print("=== PHASE 3 ROUTER ATTACHED ===")
+except Exception as e:
+    print(f"Attach error: {e}")
