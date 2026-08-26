@@ -1,205 +1,40 @@
-import os
-import time
-import math
-import random
-import hashlib
-import json
-from datetime import datetime, timezone, timedelta
-from typing import Optional, Dict, Any, List
-from sqlalchemy import create_engine, text
+import asyncio, logging, sqlite3
+from pipeline_orchestrator import execute_full_pipeline_cycle
 
-import ai_engine
-import pdf_engine
-import storage_engine
-from dotenv import load_dotenv
+logger = logging.getLogger("autonomous_worker")
+_worker_running = False
+_worker_task = None
 
-load_dotenv()
-
-MAX_WORKER_RETRIES = int(os.getenv("MAX_WORKER_RETRIES", "3"))
-JOB_TIMEOUT_SECONDS = int(os.getenv("JOB_TIMEOUT_SECONDS", "900"))
-
-def get_db_engine():
-    db_url = os.getenv("DATABASE_URL", "sqlite:///./autonomous_local.db")
-    if db_url and db_url.startswith("postgres://"):
-        db_url = db_url.replace("postgres://", "postgresql://", 1)
-    if "sqlite" in db_url:
-        return create_engine(db_url, connect_args={"check_same_thread": False})
-    return create_engine(db_url, pool_pre_ping=True)
-
-# ==================== 1. FAULT-TOLERANT ORCHESTRATION & LOCKING ====================
-
-def calculate_backoff_with_jitter(retry_count: int, base_seconds: float = 1.0, max_seconds: float = 30.0) -> float:
-    exp_delay = min(max_seconds, base_seconds * (2 ** max(0, retry_count)))
-    jitter = random.uniform(0.1, 0.5)
-    return round(exp_delay + jitter, 2)
-
-def reclaim_stuck_processing_jobs(engine=None) -> int:
-    if engine is None:
-        engine = get_db_engine()
-
-    reclaimed_count = 0
-    cutoff_time = datetime.now(timezone.utc) - timedelta(seconds=JOB_TIMEOUT_SECONDS)
-
-    with engine.begin() as conn:
-        stuck_jobs = conn.execute(text("""
-            SELECT id, slug, retry_count FROM books 
-            WHERE status = 'PROCESSING' AND updated_at <= :cutoff
-        """), {"cutoff": cutoff_time}).mappings().all()
-
-        for job in stuck_jobs:
-            jid = job["id"]
-            rc = int(job["retry_count"] or 0)
-            if rc >= MAX_WORKER_RETRIES:
-                conn.execute(text("""
-                    UPDATE books SET status = 'FAILED', 
-                    error_message = '[POISON_ISOLATED] Processing timeout exceeded maximum retry limit.', 
-                    updated_at = CURRENT_TIMESTAMP WHERE id = :id
-                """), {"id": jid})
-                conn.execute(text("""
-                    INSERT INTO system_logs (module, status, message)
-                    VALUES ('WORKER_ORCHESTRATION', 'POISON_ISOLATED', :msg)
-                """), {"msg": f"Stuck book {job['slug']} (ID: {jid}) permanently isolated after {rc} retries."})
-            else:
-                conn.execute(text("""
-                    UPDATE books SET status = 'DRAFT', retry_count = retry_count + 1,
-                    error_message = 'Job reclaimed from abandoned processing state.',
-                    updated_at = CURRENT_TIMESTAMP WHERE id = :id
-                """), {"id": jid})
-                conn.execute(text("""
-                    INSERT INTO system_logs (module, status, message)
-                    VALUES ('WORKER_ORCHESTRATION', 'RECLAIMED', :msg)
-                """), {"msg": f"Stuck book {job['slug']} (ID: {jid}) reclaimed to DRAFT for retry {rc + 1}."})
-            reclaimed_count += 1
-
-    return reclaimed_count
-
-def claim_next_draft_job(engine=None) -> Optional[Dict[str, Any]]:
-    if engine is None:
-        engine = get_db_engine()
-
-    with engine.begin() as conn:
-        candidate = conn.execute(text("""
-            SELECT id, slug, title, target_niche, retry_count 
-            FROM books 
-            WHERE status = 'DRAFT' AND retry_count < :max_retries
-            ORDER BY id ASC LIMIT 1
-        """), {"max_retries": MAX_WORKER_RETRIES}).mappings().first()
-
-        if not candidate:
-            return None
-
-        res = conn.execute(text("""
-            UPDATE books SET status = 'PROCESSING', updated_at = CURRENT_TIMESTAMP 
-            WHERE id = :id AND status = 'DRAFT'
-        """), {"id": candidate["id"]})
-
-        if res.rowcount == 1:
-            return dict(candidate)
-        return None
-
-# ==================== 2. END-TO-END EXECUTION PIPELINE WITH TOKEN TELEMETRY ====================
-
-def execute_book_generation_job(book_id: int, engine=None) -> Dict[str, Any]:
-    if engine is None:
-        engine = get_db_engine()
-
-    with engine.connect() as conn:
-        book = conn.execute(text("SELECT * FROM books WHERE id = :id"), {"id": book_id}).mappings().first()
-        if not book:
-            raise ValueError(f"Book ID {book_id} not found.")
-
-    slug = book["slug"]
-    title = book["title"]
-    niche = book["target_niche"]
-    retry_count = int(book["retry_count"] or 0)
-
+async def run_autonomous_business_worker(interval_seconds: int = 60):
+    global _worker_running
+    _worker_running = True
+    logger.info("=== SINGLE AUTONOMOUS SUPERVISOR WORKER STARTED ===")
     try:
-        # Step 1: AI Synthesis Data & Deterministic Token Telemetry
-        chapters_data = [
-            {"chapter_number": 1, "title": f"Introduction to {title}", "content": f"Executive architectural foundation for {niche}."},
-            {"chapter_number": 2, "title": "Core Implementation Patterns", "content": "Production patterns, resilience strategies, and fault domains."},
-            {"chapter_number": 3, "title": "Verification & Scale Blueprints", "content": "Automated telemetry, compliance verification, and operational runbooks."}
-        ]
+        while _worker_running:
+            try:
+                results = await asyncio.to_thread(execute_full_pipeline_cycle)
+                logger.info(f"Autonomous pipeline cycle finished: {len(results)} items verified.")
+            except Exception as e:
+                logger.error(f"Pipeline worker cycle error: {e}")
+            await asyncio.sleep(interval_seconds)
+    except asyncio.CancelledError:
+        logger.info("Autonomous worker received cancellation signal. Clean shutdown.")
+    finally:
+        _worker_running = False
 
-        total_tokens_consumed = sum([len(c["title"]) + len(c["content"]) for c in chapters_data]) * 4  # Approximation (~1200 tokens)
+def start_worker_supervisor(interval: int = 60):
+    global _worker_task
+    if _worker_task is None or _worker_task.done():
+        loop = asyncio.get_event_loop()
+        _worker_task = loop.create_task(run_autonomous_business_worker(interval))
+    return _worker_task
 
-        with engine.begin() as conn:
-            conn.execute(text("DELETE FROM book_chapters WHERE book_id = :bid"), {"bid": book_id})
-            for ch in chapters_data:
-                conn.execute(text("""
-                    INSERT INTO book_chapters (book_id, chapter_number, title, content, status)
-                    VALUES (:bid, :cnum, :ctitle, :ccontent, 'COMPLETED')
-                """), {"bid": book_id, "cnum": ch["chapter_number"], "ctitle": ch["title"], "ccontent": ch["content"]})
-
-            # Record AI token consumption to system_logs
-            conn.execute(text("""
-                INSERT INTO system_logs (module, status, message)
-                VALUES ('AI_TELEMETRY', 'EXECUTED', :msg)
-            """), {"msg": f"AI Synthesis completed for book {slug} [tokens:{total_tokens_consumed}]"})
-
-        # Step 2: PDF Compilation
-        pdf_bytes = pdf_engine.compile_book_pdf(title, niche, chapters_data)
-        if not pdf_bytes or len(pdf_bytes) < 10:
-            raise ValueError("PDF generation produced empty or invalid buffer.")
-
-        sha256_hash = hashlib.sha256(pdf_bytes).hexdigest()
-        r2_object_key = f"books/{slug}/v1_{sha256_hash[:8]}.pdf"
-
-        # Step 3: Cloudflare R2 Upload & Integrity Verification via HeadObject
-        upload_ok = storage_engine.upload_pdf_bytes(pdf_bytes, r2_object_key, sha256_hash)
-        if not upload_ok:
-            raise ValueError(f"R2 storage upload or HeadObject integrity verification failed for key {r2_object_key}.")
-
-        # Step 4: Advance State & Stage into pending_approvals (Level 2 Autonomy)
-        with engine.begin() as conn:
-            conn.execute(text("""
-                UPDATE books SET status = 'COMPLETED', pdf_file_path = :r2_key, sha256_hash = :sha,
-                                 updated_at = CURRENT_TIMESTAMP, error_message = NULL
-                WHERE id = :bid
-            """), {"bid": book_id, "r2_key": r2_object_key, "sha": sha256_hash})
-
-            existing_approval = conn.execute(text("""
-                SELECT id FROM pending_approvals WHERE book_id = :bid AND status = 'PENDING'
-            """), {"bid": book_id}).first()
-
-            if not existing_approval:
-                conn.execute(text("""
-                    INSERT INTO pending_approvals (book_id, status)
-                    VALUES (:bid, 'PENDING')
-                """), {"bid": book_id})
-
-            conn.execute(text("""
-                INSERT INTO system_logs (module, status, message)
-                VALUES ('WORKER_PIPELINE', 'STAGED', :msg)
-            """), {"msg": f"Book {slug} (ID: {book_id}) completed & verified in R2. Staged for Level 2 Human Approval."})
-
-        return {"status": "SUCCESS", "book_id": book_id, "r2_key": r2_object_key, "staged": True, "tokens": total_tokens_consumed}
-
-    except Exception as e:
-        err_msg = str(e)
-        new_retry = retry_count + 1
-        is_poison = new_retry >= MAX_WORKER_RETRIES
-
-        with engine.begin() as conn:
-            if is_poison:
-                conn.execute(text("""
-                    UPDATE books SET status = 'FAILED', retry_count = :rc,
-                                     error_message = :err, updated_at = CURRENT_TIMESTAMP
-                    WHERE id = :bid
-                """), {"bid": book_id, "rc": new_retry, "err": f"[POISON_ISOLATED] {err_msg}"[:250]})
-                conn.execute(text("""
-                    INSERT INTO system_logs (module, status, message)
-                    VALUES ('WORKER_PIPELINE', 'POISON_ISOLATED', :msg)
-                """), {"msg": f"Book {slug} (ID: {book_id}) failed permanently after {new_retry} retries. Error: {err_msg}"})
-            else:
-                conn.execute(text("""
-                    UPDATE books SET status = 'DRAFT', retry_count = :rc,
-                                     error_message = :err, updated_at = CURRENT_TIMESTAMP
-                    WHERE id = :bid
-                """), {"bid": book_id, "rc": new_retry, "err": f"Retry {new_retry}: {err_msg}"[:250]})
-                conn.execute(text("""
-                    INSERT INTO system_logs (module, status, message)
-                    VALUES ('WORKER_PIPELINE', 'RETRY_SCHEDULED', :msg)
-                """), {"msg": f"Book {slug} scheduled for retry {new_retry}. Error: {err_msg}"})
-
-        return {"status": "FAILED", "is_poison": is_poison, "error": err_msg, "retry_count": new_retry}
+async def stop_worker_supervisor():
+    global _worker_running, _worker_task
+    _worker_running = False
+    if _worker_task and not _worker_task.done():
+        _worker_task.cancel()
+        try:
+            await _worker_task
+        except asyncio.CancelledError:
+            pass
