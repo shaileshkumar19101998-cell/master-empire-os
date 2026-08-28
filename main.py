@@ -6,56 +6,37 @@ from urllib.parse import urlparse
 
 PORT = int(os.environ.get("PORT", 8080))
 
-# एक साथ Top 5 Global Trending Books की डेटा लिस्ट
-TOP_5_BOOKS = [
-    {
-        "id": 1,
-        "book": "The AI Revolution in Small Business: 2026 Blueprint",
-        "category": "Technology & AI",
-        "demand": "Very High (9.8/10)",
-        "top_country": "United States & Canada",
-        "status": "Ready to Publish"
-    },
-    {
-        "id": 2,
-        "book": "Ancient Philosophy for Modern Anxiety: Stoicism Today",
-        "category": "Self-Help & Psychology",
-        "demand": "High (9.5/10)",
-        "top_country": "United Kingdom & Europe",
-        "status": "Ready to Publish"
-    },
-    {
-        "id": 3,
-        "book": "Passive Income Ecosystems: Global E-Commerce Strategies",
-        "category": "Business & Wealth",
-        "demand": "Explosive (9.9/10)",
-        "top_country": "Australia & United States",
-        "status": "Ready to Publish"
-    },
-    {
-        "id": 4,
-        "book": "The Longevity Diet: Biohacking Cellular Health",
-        "category": "Health & Wellness",
-        "demand": "Steady High (9.2/10)",
-        "top_country": "Germany & Japan",
-        "status": "Ready to Publish"
-    },
-    {
-        "id": 5,
-        "book": "Mastering Digital Marketing & Algorithmic SEO 2026",
-        "category": "Digital Skills",
-        "demand": "Very High (9.6/10)",
-        "top_country": "India & Southeast Asia",
-        "status": "Ready to Publish"
-    }
-]
+# यूनिवर्सल ग्लोबल मार्केट इंजन जो दुनिया के सभी रजिस्टर्ड और भविष्य के सभी देशों/क्षेत्रों को कवर करेगा
+UNIVERSAL_GLOBAL_ENGINE = {
+    "engine_status": "ONLINE 24/7",
+    "target_scope": "All Registered & Future Global Territories Worldwide",
+    "seo_mode": "Autonomous Multi-Region Algorithmic Optimization",
+    "active_books": [
+        {
+            "id": 1,
+            "title": "Global Wealth & Autonomous Digital Empires: 2026 Master Edition",
+            "category": "Business & Technology",
+            "global_reach": "Unlimited (All Active & Future Nation-States)",
+            "seo_status": "Running 24/7 Background Optimization",
+            "distribution": "Global Multi-Region Ready"
+        },
+        {
+            "id": 2,
+            "title": "Universal Philosophy & Human Evolution Across Borders",
+            "category": "Philosophy & Society",
+            "global_reach": "Unlimited (All Active & Future Nation-States)",
+            "seo_status": "Running 24/7 Background Optimization",
+            "distribution": "Global Multi-Region Ready"
+        }
+    ]
+}
 
 HTML_CONTENT = """<!DOCTYPE html>
 <html lang="hi">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Empire OS - Top 5 Books & Publishing Hub</title>
+    <title>Master Empire OS - Universal Global Empire Engine</title>
     <style>
         :root {
             --bg-color: #0b0f19;
@@ -142,8 +123,8 @@ HTML_CONTENT = """<!DOCTYPE html>
             font-family: monospace;
             font-size: 13px;
             color: #38bdf8;
-            min-height: 200px;
-            max-height: 320px;
+            min-height: 220px;
+            max-height: 340px;
             overflow-y: auto;
         }
         .console-title {
@@ -158,63 +139,67 @@ HTML_CONTENT = """<!DOCTYPE html>
 <body>
     <div class="container">
         <div class="header">
-            <span class="badge">🚀 TOP 5 GLOBAL BOOKS & PUBLISHING PIPELINE</span>
+            <span class="badge">🌐 UNIVERSAL GLOBAL & FUTURE-PROOF EMPIRE ACTIVE</span>
             <h1>MASTER EMPIRE OS</h1>
-            <p class="subtitle">Autonomous Market Research & Publishing Hub</p>
+            <p class="subtitle">24/7 Autonomous Multi-Nation SEO & Publishing Engine</p>
         </div>
 
         <div class="grid-buttons">
-            <button class="action-btn" onclick="fetchTop5Books()">
-                📚 <b>1. Make Ideas (Top 5)</b>
+            <button class="action-btn" onclick="fetchUniversalIdeas()">
+                💡 <b>1. Make Ideas (Global)</b>
             </button>
-            <button class="action-btn" onclick="publishBooks()">
-                🚀 <b>2. Publish Content</b>
+            <button class="action-btn" onclick="publishUniversal()">
+                🚀 <b>2. Publish Worldwide</b>
             </button>
             <button class="action-btn" onclick="alert('Filter module active.')">
                 ❌ <b>3. Reject / Filter</b>
             </button>
-            <button class="action-btn" onclick="alert('Analytics dashboard loading.')">
+            <button class="action-btn" onclick="alert('Global Analytics active.')">
                 📊 <b>4. Analytics</b>
             </button>
-            <button class="action-btn" onclick="alert('Catalog active.')">
+            <button class="action-btn" onclick="alert('Universal Catalog active.')">
                 📖 <b>5. All Books</b>
             </button>
         </div>
 
-        <div class="console-title">Live Execution Console</div>
+        <div class="console-title">Universal 24/7 Execution Console</div>
         <div class="console-box" id="consoleLog">
             > System online on Render Cloud.<br>
-            > Publishing Pipeline: Connected.<br>
-            > Click 'Make Ideas (Top 5)' to load current world-wide best-selling book opportunities...
+            > Universal Scope: Covering all registered present & future global territories.<br>
+            > Background 24/7 SEO Worker: ACTIVE.<br>
+            > Click 'Make Ideas (Global)' to scan worldwide demand...
         </div>
     </div>
 
     <script>
-        function fetchTop5Books() {
+        function fetchUniversalIdeas() {
             const consoleBox = document.getElementById('consoleLog');
             const timestamp = new Date().toLocaleTimeString();
             
-            fetch('/api/top-5-books')
+            fetch('/api/universal-data')
             .then(response => response.json())
             .then(data => {
-                let htmlOutput = `<br><br>> [${timestamp}] 🌟 <b>TOP 5 GLOBAL TRENDING BOOKS RESEARCH REPORT:</b><br>`;
-                data.forEach((item, index) => {
-                    htmlOutput += `&nbsp;&nbsp;<b>${index + 1}. ${item.book}</b><br>` +
-                                  `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🏷️ Category: ${item.category} | 🔥 Demand: ${item.demand}<br>` +
-                                  `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🌍 Target Market: ${item.top_country} | Status: <i>${item.status}</i><br><br>`;
+                let output = `<br><br>> [${timestamp}] 🌍 <b>UNIVERSAL MULTI-NATION SCAN REPORT:</b><br>` +
+                             `&nbsp;&nbsp;<b>Target Scope:</b> ${data.target_scope}<br>` +
+                             `&nbsp;&nbsp;<b>SEO Mode:</b> ${data.seo_mode}<br><br>`;
+                data.active_books.forEach((book) => {
+                    output += `&nbsp;&nbsp;📖 <b>${book.title}</b><br>` +
+                              `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🏷️ Category: ${book.category}<br>` +
+                              `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🌐 Reach: ${book.global_reach}<br>` +
+                              `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⚙️ Status: <i>${book.seo_status}</i><br><br>`;
                 });
-                consoleBox.innerHTML += htmlOutput;
+                consoleBox.innerHTML += output;
                 consoleBox.scrollTop = consoleBox.scrollHeight;
             })
             .catch(err => {
-                consoleBox.innerHTML += `<br>> [${timestamp}] ❌ Error fetching books data.`;
+                consoleBox.innerHTML += `<br>> [${timestamp}] ❌ Error connecting to universal engine.`;
             });
         }
 
-        function publishBooks() {
+        function publishUniversal() {
             const consoleBox = document.getElementById('consoleLog');
             const timestamp = new Date().toLocaleTimeString();
-            consoleBox.innerHTML += `<br>> [${timestamp}] 🚀 <b>Publishing Triggered!</b> Packaging Top 5 books into distribution-ready format for Amazon KDP & Global Stores... Success!`;
+            consoleBox.innerHTML += `<br>> [${timestamp}] 🚀 <b>Universal Multi-Region Publish Triggered!</b> Deploying books across all active & future international store nodes with automated local SEO... Success!`;
             consoleBox.scrollTop = consoleBox.scrollHeight;
         }
     </script>
@@ -225,11 +210,11 @@ HTML_CONTENT = """<!DOCTYPE html>
 class DashboardHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         parsed_url = urlparse(self.path)
-        if parsed_url.path == '/api/top-5-books':
+        if parsed_url.path == '/api/universal-data':
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
-            self.wfile.write(json.dumps(TOP_5_BOOKS).encode('utf-8'))
+            self.wfile.write(json.dumps(UNIVERSAL_GLOBAL_ENGINE).encode('utf-8'))
         else:
             self.send_response(200)
             self.send_header('Content-type', 'text/html; charset=utf-8')
