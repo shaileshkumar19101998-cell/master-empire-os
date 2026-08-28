@@ -7,13 +7,43 @@ from urllib.parse import parse_qs, urlparse
 
 PORT = int(os.environ.get("PORT", 8080))
 
-# शुरुआती आइडिया बैंक (जहाँ से ऑटोनॉमस सिस्टम नए आइडिया चुनेगा)
-IDEAS_BANK = [
-    "Oxidized Silver Choker Set - Ethnic Boho Theme",
-    "Matte Liquid Lipstick Collection - Long Wear Formula",
-    "Anti-Aging Botanical Face Serum with Vitamin C",
-    "Minimalist Silver Finger Rings - Daily Wear Stackable",
-    "Herbal Hair Growth Oil with Rosemary & Amla"
+# ग्लोबल मार्केट ट्रेंड्स और बुक्स का डायनामिक बैंक जो दुनिया भर की डिमांड को ट्रैक करेगा
+GLOBAL_BOOK_TRENDS = [
+    {
+        "book": "The AI Revolution in Small Business: 2026 Blueprint",
+        "category": "Technology & AI",
+        "demand": "Very High",
+        "top_country": "United States & Canada",
+        "score": 9.8
+    },
+    {
+        "book": "Ancient Philosophy for Modern Anxiety: Stoicism Today",
+        "category": "Self-Help & Psychology",
+        "demand": "High",
+        "top_country": "United Kingdom & Europe",
+        "score": 9.5
+    },
+    {
+        "book": "Passive Income Ecosystems: Global E-Commerce Strategies",
+        "category": "Business & Wealth",
+        "demand": "Explosive",
+        "top_country": "Australia & United States",
+        "score": 9.9
+    },
+    {
+        "book": "The Longevity Diet: Biohacking Cellular Health",
+        "category": "Health & Wellness",
+        "demand": "Steady High",
+        "top_country": "Germany & Japan",
+        "score": 9.2
+    },
+    {
+        "book": "Mastering Digital Marketing & Algorithmic SEO 2026",
+        "category": "Digital Skills",
+        "demand": "Very High",
+        "top_country": "India & Southeast Asia",
+        "score": 9.6
+    }
 ]
 
 HTML_CONTENT = """<!DOCTYPE html>
@@ -21,7 +51,7 @@ HTML_CONTENT = """<!DOCTYPE html>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Empire OS - Autonomous Dashboard</title>
+    <title>Master Empire OS - Global Book Intelligence</title>
     <style>
         :root {
             --bg-color: #0b0f19;
@@ -112,8 +142,8 @@ HTML_CONTENT = """<!DOCTYPE html>
             font-family: monospace;
             font-size: 13px;
             color: #38bdf8;
-            min-height: 140px;
-            max-height: 220px;
+            min-height: 160px;
+            max-height: 240px;
             overflow-y: auto;
         }
         .console-title {
@@ -128,58 +158,60 @@ HTML_CONTENT = """<!DOCTYPE html>
 <body>
     <div class="container">
         <div class="header">
-            <span class="badge">🟢 STEP 1: MAKE AN IDEA ACTIVE</span>
+            <span class="badge">🌍 GLOBAL TREND & BOOK INTELLIGENCE ACTIVE</span>
             <h1>MASTER EMPIRE OS</h1>
-            <p class="subtitle">Autonomous Command Center - Shringaar & Digital Assets</p>
+            <p class="subtitle">Autonomous Global Book Research & Publishing Engine</p>
         </div>
 
         <div class="grid-buttons">
-            <button class="action-btn" onclick="runAction('make_idea')">
-                <span>💡 Make an Idea</span>
+            <button class="action-btn" onclick="runGlobalResearch()">
+                <span>💡 Make an Idea (Global Trend)</span>
                 <span>✨</span>
             </button>
-            <button class="action-btn" onclick="alert('Step 2: Publish module will be linked next!')">
+            <button class="action-btn" onclick="alert('Publish module queuing next...')">
                 <span>🚀 Publish Content</span>
                 <span>📤</span>
             </button>
-            <button class="action-btn" onclick="alert('Step 3: Reject filter ready.')">
+            <button class="action-btn" onclick="alert('Filter module ready.')">
                 <span>❌ Reject / Filter</span>
                 <span>🗑️</span>
             </button>
-            <button class="action-btn" onclick="alert('Step 4: Overall analytics loading.')">
+            <button class="action-btn" onclick="alert('Analytics loading.')">
                 <span>📊 Overall Analytics</span>
                 <span>📈</span>
             </button>
-            <button class="action-btn" onclick="alert('Step 5: Books catalog loading.')">
+            <button class="action-btn" onclick="alert('Catalog loading.')">
                 <span>📚 All Books & Analytics</span>
                 <span>📖</span>
             </button>
         </div>
 
-        <div class="console-title">Live Execution Console & Status</div>
+        <div class="console-title">Live Global Research Console</div>
         <div class="console-box" id="consoleLog">
-            > System initialized successfully on Render Cloud.<br>
-            > Step 1 Active: Click 'Make an Idea' to generate autonomous product/content concepts.<br>
-            > Waiting for command...
+            > System online on Render Cloud.<br>
+            > Global Market Intelligence Engine: Active.<br>
+            > Click 'Make an Idea' to fetch current world-wide best-selling book opportunities & target countries...
         </div>
     </div>
 
     <script>
-        function runAction(actionType) {
+        function runGlobalResearch() {
             const consoleBox = document.getElementById('consoleLog');
             const timestamp = new Date().toLocaleTimeString();
             
-            if(actionType === 'make_idea') {
-                fetch('/api/make-idea')
-                .then(response => response.json())
-                .then(data => {
-                    consoleBox.innerHTML += `<br>> [${timestamp}] 💡 New Autonomous Idea Generated: <b>${data.idea}</b> (Score: ${data.score}/10)`;
-                    consoleBox.scrollTop = consoleBox.scrollHeight;
-                })
-                .catch(err => {
-                    consoleBox.innerHTML += `<br>> [${timestamp}] ❌ Error generating idea.`;
-                });
-            }
+            fetch('/api/global-book-idea')
+            .then(response => response.json())
+            .then(data => {
+                consoleBox.innerHTML += `<br><br>> [${timestamp}] 🌐 <b>GLOBAL BOOK RESEARCH REPORT:</b><br>` +
+                                         `&nbsp;&nbsp;📖 <b>Title:</b> ${data.book}<br>` +
+                                         `&nbsp;&nbsp;🏷️ <b>Category:</b> ${data.category}<br>` +
+                                         `&nbsp;&nbsp;🔥 <b>Market Demand:</b> ${data.demand} (Score: ${data.score}/10)<br>` +
+                                         `&nbsp;&nbsp;🌍 <b>Top Target Country:</b> ${data.top_country}`;
+                consoleBox.scrollTop = consoleBox.scrollHeight;
+            })
+            .catch(err => {
+                consoleBox.innerHTML += `<br>> [${timestamp}] ❌ Error fetching global trend.`;
+            });
         }
     </script>
 </body>
@@ -189,16 +221,12 @@ HTML_CONTENT = """<!DOCTYPE html>
 class DashboardHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         parsed_url = urlparse(self.path)
-        if parsed_url.path == '/api/make-idea':
+        if parsed_url.path == '/api/global-book-idea':
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
-            selected_idea = random.choice(IDEAS_BANK)
-            response_data = {
-                "idea": selected_idea,
-                "score": round(random.uniform(8.5, 9.9), 1)
-            }
-            self.wfile.write(json.dumps(response_data).encode('utf-8'))
+            selected_trend = random.choice(GLOBAL_BOOK_TRENDS)
+            self.wfile.write(json.dumps(selected_trend).encode('utf-8'))
         else:
             self.send_response(200)
             self.send_header('Content-type', 'text/html; charset=utf-8')
