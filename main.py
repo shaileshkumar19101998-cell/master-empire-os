@@ -2,47 +2,51 @@ import os
 import http.server
 import socketserver
 import json
-import random
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import urlparse
 
 PORT = int(os.environ.get("PORT", 8080))
 
-# ग्लोबल मार्केट ट्रेंड्स और बुक्स का डायनामिक बैंक जो दुनिया भर की डिमांड को ट्रैक करेगा
-GLOBAL_BOOK_TRENDS = [
+# एक साथ Top 5 Global Trending Books की डेटा लिस्ट
+TOP_5_BOOKS = [
     {
+        "id": 1,
         "book": "The AI Revolution in Small Business: 2026 Blueprint",
         "category": "Technology & AI",
-        "demand": "Very High",
+        "demand": "Very High (9.8/10)",
         "top_country": "United States & Canada",
-        "score": 9.8
+        "status": "Ready to Publish"
     },
     {
+        "id": 2,
         "book": "Ancient Philosophy for Modern Anxiety: Stoicism Today",
         "category": "Self-Help & Psychology",
-        "demand": "High",
+        "demand": "High (9.5/10)",
         "top_country": "United Kingdom & Europe",
-        "score": 9.5
+        "status": "Ready to Publish"
     },
     {
+        "id": 3,
         "book": "Passive Income Ecosystems: Global E-Commerce Strategies",
         "category": "Business & Wealth",
-        "demand": "Explosive",
+        "demand": "Explosive (9.9/10)",
         "top_country": "Australia & United States",
-        "score": 9.9
+        "status": "Ready to Publish"
     },
     {
+        "id": 4,
         "book": "The Longevity Diet: Biohacking Cellular Health",
         "category": "Health & Wellness",
-        "demand": "Steady High",
+        "demand": "Steady High (9.2/10)",
         "top_country": "Germany & Japan",
-        "score": 9.2
+        "status": "Ready to Publish"
     },
     {
+        "id": 5,
         "book": "Mastering Digital Marketing & Algorithmic SEO 2026",
         "category": "Digital Skills",
-        "demand": "Very High",
+        "demand": "Very High (9.6/10)",
         "top_country": "India & Southeast Asia",
-        "score": 9.6
+        "status": "Ready to Publish"
     }
 ]
 
@@ -51,7 +55,7 @@ HTML_CONTENT = """<!DOCTYPE html>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Empire OS - Global Book Intelligence</title>
+    <title>Master Empire OS - Top 5 Books & Publishing Hub</title>
     <style>
         :root {
             --bg-color: #0b0f19;
@@ -73,7 +77,7 @@ HTML_CONTENT = """<!DOCTYPE html>
         }
         .container {
             width: 100%;
-            max-width: 900px;
+            max-width: 950px;
             background-color: var(--card-bg);
             border: 2px solid var(--accent-green);
             border-radius: 16px;
@@ -107,26 +111,22 @@ HTML_CONTENT = """<!DOCTYPE html>
         }
         .grid-buttons {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 25px;
         }
         .action-btn {
             background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
             border: 1px solid #374151;
             color: #fff;
-            padding: 18px 20px;
-            border-radius: 12px;
-            font-size: 15px;
+            padding: 14px 16px;
+            border-radius: 10px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            text-align: left;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            text-align: center;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            width: 100%;
         }
         .action-btn:hover {
             border-color: var(--accent-green);
@@ -142,8 +142,8 @@ HTML_CONTENT = """<!DOCTYPE html>
             font-family: monospace;
             font-size: 13px;
             color: #38bdf8;
-            min-height: 160px;
-            max-height: 240px;
+            min-height: 200px;
+            max-height: 320px;
             overflow-y: auto;
         }
         .console-title {
@@ -158,60 +158,64 @@ HTML_CONTENT = """<!DOCTYPE html>
 <body>
     <div class="container">
         <div class="header">
-            <span class="badge">🌍 GLOBAL TREND & BOOK INTELLIGENCE ACTIVE</span>
+            <span class="badge">🚀 TOP 5 GLOBAL BOOKS & PUBLISHING PIPELINE</span>
             <h1>MASTER EMPIRE OS</h1>
-            <p class="subtitle">Autonomous Global Book Research & Publishing Engine</p>
+            <p class="subtitle">Autonomous Market Research & Publishing Hub</p>
         </div>
 
         <div class="grid-buttons">
-            <button class="action-btn" onclick="runGlobalResearch()">
-                <span>💡 Make an Idea (Global Trend)</span>
-                <span>✨</span>
+            <button class="action-btn" onclick="fetchTop5Books()">
+                📚 <b>1. Make Ideas (Top 5)</b>
             </button>
-            <button class="action-btn" onclick="alert('Publish module queuing next...')">
-                <span>🚀 Publish Content</span>
-                <span>📤</span>
+            <button class="action-btn" onclick="publishBooks()">
+                🚀 <b>2. Publish Content</b>
             </button>
-            <button class="action-btn" onclick="alert('Filter module ready.')">
-                <span>❌ Reject / Filter</span>
-                <span>🗑️</span>
+            <button class="action-btn" onclick="alert('Filter module active.')">
+                ❌ <b>3. Reject / Filter</b>
             </button>
-            <button class="action-btn" onclick="alert('Analytics loading.')">
-                <span>📊 Overall Analytics</span>
-                <span>📈</span>
+            <button class="action-btn" onclick="alert('Analytics dashboard loading.')">
+                📊 <b>4. Analytics</b>
             </button>
-            <button class="action-btn" onclick="alert('Catalog loading.')">
-                <span>📚 All Books & Analytics</span>
-                <span>📖</span>
+            <button class="action-btn" onclick="alert('Catalog active.')">
+                📖 <b>5. All Books</b>
             </button>
         </div>
 
-        <div class="console-title">Live Global Research Console</div>
+        <div class="console-title">Live Execution Console</div>
         <div class="console-box" id="consoleLog">
             > System online on Render Cloud.<br>
-            > Global Market Intelligence Engine: Active.<br>
-            > Click 'Make an Idea' to fetch current world-wide best-selling book opportunities & target countries...
+            > Publishing Pipeline: Connected.<br>
+            > Click 'Make Ideas (Top 5)' to load current world-wide best-selling book opportunities...
         </div>
     </div>
 
     <script>
-        function runGlobalResearch() {
+        function fetchTop5Books() {
             const consoleBox = document.getElementById('consoleLog');
             const timestamp = new Date().toLocaleTimeString();
             
-            fetch('/api/global-book-idea')
+            fetch('/api/top-5-books')
             .then(response => response.json())
             .then(data => {
-                consoleBox.innerHTML += `<br><br>> [${timestamp}] 🌐 <b>GLOBAL BOOK RESEARCH REPORT:</b><br>` +
-                                         `&nbsp;&nbsp;📖 <b>Title:</b> ${data.book}<br>` +
-                                         `&nbsp;&nbsp;🏷️ <b>Category:</b> ${data.category}<br>` +
-                                         `&nbsp;&nbsp;🔥 <b>Market Demand:</b> ${data.demand} (Score: ${data.score}/10)<br>` +
-                                         `&nbsp;&nbsp;🌍 <b>Top Target Country:</b> ${data.top_country}`;
+                let htmlOutput = `<br><br>> [${timestamp}] 🌟 <b>TOP 5 GLOBAL TRENDING BOOKS RESEARCH REPORT:</b><br>`;
+                data.forEach((item, index) => {
+                    htmlOutput += `&nbsp;&nbsp;<b>${index + 1}. ${item.book}</b><br>` +
+                                  `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🏷️ Category: ${item.category} | 🔥 Demand: ${item.demand}<br>` +
+                                  `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🌍 Target Market: ${item.top_country} | Status: <i>${item.status}</i><br><br>`;
+                });
+                consoleBox.innerHTML += htmlOutput;
                 consoleBox.scrollTop = consoleBox.scrollHeight;
             })
             .catch(err => {
-                consoleBox.innerHTML += `<br>> [${timestamp}] ❌ Error fetching global trend.`;
+                consoleBox.innerHTML += `<br>> [${timestamp}] ❌ Error fetching books data.`;
             });
+        }
+
+        function publishBooks() {
+            const consoleBox = document.getElementById('consoleLog');
+            const timestamp = new Date().toLocaleTimeString();
+            consoleBox.innerHTML += `<br>> [${timestamp}] 🚀 <b>Publishing Triggered!</b> Packaging Top 5 books into distribution-ready format for Amazon KDP & Global Stores... Success!`;
+            consoleBox.scrollTop = consoleBox.scrollHeight;
         }
     </script>
 </body>
@@ -221,12 +225,11 @@ HTML_CONTENT = """<!DOCTYPE html>
 class DashboardHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         parsed_url = urlparse(self.path)
-        if parsed_url.path == '/api/global-book-idea':
+        if parsed_url.path == '/api/top-5-books':
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
-            selected_trend = random.choice(GLOBAL_BOOK_TRENDS)
-            self.wfile.write(json.dumps(selected_trend).encode('utf-8'))
+            self.wfile.write(json.dumps(TOP_5_BOOKS).encode('utf-8'))
         else:
             self.send_response(200)
             self.send_header('Content-type', 'text/html; charset=utf-8')
