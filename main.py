@@ -6,10 +6,10 @@ from urllib.parse import urlparse
 
 PORT = int(os.environ.get("PORT", 8080))
 
-# Master Autonomous Business OS - Global Pricing Grid & Full Access Reader Edition
+# Master Autonomous Business OS - Permanent 11 Elite Books Edition
 OS_DATABASE = {
-    "system_name": "MASTER AUTONOMOUS BUSINESS OS (GLOBAL ACCESS EDITION)",
-    "status": "Global Multi-Currency Pricing + Full Book Reader ACTIVE",
+    "system_name": "MASTER AUTONOMOUS BUSINESS OS (PERMANENT CATALOG)",
+    "status": "Multi-Currency Pricing + Permanent 11 Books Catalog ACTIVE",
     "seo_architecture": "Autonomous Multi-Region Indexing & Currency Routing",
     "stats": {
         "impressions": "0",
@@ -21,44 +21,101 @@ OS_DATABASE = {
         {
             "id": 1,
             "title": "High-Ticket AI Automation & Global Scaling Ecosystem — Enterprise Mega Level",
-            "tier": "Enterprise Mega Level",
             "discount": "60% OFF WORLDWIDE LAUNCH 👑",
-            "pricing": {
-                "inr": "₹1,999 INR (India)",
-                "usd": "$24 USD (USA & Americas)",
-                "eur": "€22 EUR (Europe)",
-                "gbp": "£19 GBP (United Kingdom)"
-            },
-            "old_price": "₹5,999 ($129)",
-            "views": "0",
-            "orders": "0",
-            "revenue": "₹0",
+            "pricing": {"inr": "₹1,999 INR", "usd": "$24 USD", "eur": "€22 EUR", "gbp": "£19 GBP"},
             "quality": "⭐ 4.98 / 5.0 Elite Certified",
-            "future_seo_loop": "Active: Global Multi-Region Indexing",
-            "chapters": [
-                "Module 1: Architectural Foundations of High-Ticket AI Ecosystems",
-                "Module 2: Autonomous Cross-Border Infrastructure & Multi-Region Deployment",
-                "Module 3: Zero-Human Operations, Automated Funnels & Fulfillment",
-                "Module 4: Maximizing Enterprise Profit Margins Across 195+ Nations",
-                "Module 5: Advanced Legal Compliance & International Tax Structures",
-                "Module 6: Scaling to Daily International Sales Velocity & Automation Loops"
-            ],
-            "full_text": """[FULL UNRESTRICTED ACCESS GRANTED TO FOUNDER SHAILESH KUMAR]
-
-Introduction: The Sovereign Digital Asset Blueprint
-In the modern digital economy, true sovereignty belongs exclusively to those who engineer autonomous systems. This comprehensive volume provides an exhaustive, unedited framework for deploying, scaling, and monetizing multi-region assets across worldwide digital storefronts without manual overhead.
-
-Module 1: Architectural Foundations of High-Ticket AI Ecosystems
-High-ticket digital products demand absolute structural perfection. When selling to international enterprises and high-net-worth buyers across the US, Europe, and Asia, your value proposition must be airtight. We break down the exact psychological triggers and algorithmic funnels required to convert cold international traffic into high-ticket buyers on autopilot.
-
-Module 2: Autonomous Cross-Border Infrastructure
-Operating across 195+ nations requires a decentralized distribution matrix. By integrating secure payment bridges (such as Razorpay multi-currency routing) and automated content delivery nodes, your business operates 24/7 without geographical friction.
-
-Module 3: Zero-Human Operations & Automated Fulfillment
-True passive income is a myth; automated systems are reality. This module details how to connect your storefront to automated delivery pipelines, ensuring customers receive their elite digital assets instantly upon checkout completion.
-
-Conclusion: Sustaining Long-Term Market Dominance
-By maintaining strict 4.9+ star quality benchmarks and perpetual per-book SEO indexing, your digital empire will continue capturing organic buyer traffic indefinitely."""
+            "chapters": ["Module 1: Foundations", "Module 2: Cross-Border Infra", "Module 3: Zero-Human Operations"],
+            "full_text": "Comprehensive masterclass on High-Ticket AI Automation and Global Scaling. Fully optimized for 195+ nations."
+        },
+        {
+            "id": 2,
+            "title": "Artificial Intelligence & Autonomous Wealth Systems — 2026 Edition",
+            "discount": "70% OFF GLOBAL LAUNCH 🌟",
+            "pricing": {"inr": "₹1,999 INR", "usd": "$24 USD", "eur": "€22 EUR", "gbp": "£19 GBP"},
+            "quality": "⭐ 4.99 / 5.0 Elite Certified",
+            "chapters": ["Module 1: AI Systems", "Module 2: Wealth Generation", "Module 3: Automation Loops"],
+            "full_text": "Masterclass on Artificial Intelligence and Autonomous Wealth Systems designed for worldwide digital storefronts."
+        },
+        {
+            "id": 3,
+            "title": "Advanced Digital Marketing & 195+ Nation SEO Mastery",
+            "discount": "70% OFF GLOBAL LAUNCH 🌟",
+            "pricing": {"inr": "₹1,999 INR", "usd": "$24 USD", "eur": "€22 EUR", "gbp": "£19 GBP"},
+            "quality": "⭐ 4.99 / 5.0 Elite Certified",
+            "chapters": ["Module 1: Global SEO", "Module 2: Traffic Multipliers", "Module 3: Conversion Loops"],
+            "full_text": "Deep-dive manual into advanced digital marketing and perpetual global SEO indexing across 195+ countries."
+        },
+        {
+            "id": 4,
+            "title": "E-Commerce & High-Ticket Dropshipping Dominance",
+            "discount": "70% OFF GLOBAL LAUNCH 🌟",
+            "pricing": {"inr": "₹1,999 INR", "usd": "$24 USD", "eur": "€22 EUR", "gbp": "£19 GBP"},
+            "quality": "⭐ 4.99 / 5.0 Elite Certified",
+            "chapters": ["Module 1: Product Research", "Module 2: Storefront Architecture", "Module 3: Scaling Ads"],
+            "full_text": "The ultimate guide to building, scaling, and automating high-ticket e-commerce and dropshipping brands."
+        },
+        {
+            "id": 5,
+            "title": "Biohacking, Longevity & Peak Human Performance",
+            "discount": "70% OFF GLOBAL LAUNCH 🌟",
+            "pricing": {"inr": "₹1,999 INR", "usd": "$24 USD", "eur": "€22 EUR", "gbp": "£19 GBP"},
+            "quality": "⭐ 4.99 / 5.0 Elite Certified",
+            "chapters": ["Module 1: Cellular Health", "Module 2: Circadian Alignment", "Module 3: Vitality Routine"],
+            "full_text": "Science-backed protocols and biological engineering blueprints for absolute physical and mental peak performance."
+        },
+        {
+            "id": 6,
+            "title": "Cryptocurrency, Web3 & Decentralized Financial Empires",
+            "discount": "70% OFF GLOBAL LAUNCH 🌟",
+            "pricing": {"inr": "₹1,999 INR", "usd": "$24 USD", "eur": "€22 EUR", "gbp": "£19 GBP"},
+            "quality": "⭐ 4.99 / 5.0 Elite Certified",
+            "chapters": ["Module 1: Web3 Foundations", "Module 2: Decentralized Assets", "Module 3: Security Protocols"],
+            "full_text": "Comprehensive analysis of cryptocurrency ecosystems, smart contracts, and decentralized financial growth."
+        },
+        {
+            "id": 7,
+            "title": "Psychology of Mass Influence & High-Conversion Copywriting",
+            "discount": "70% OFF GLOBAL LAUNCH 🌟",
+            "pricing": {"inr": "₹1,999 INR", "usd": "$24 USD", "eur": "€22 EUR", "gbp": "£19 GBP"},
+            "quality": "⭐ 4.99 / 5.0 Elite Certified",
+            "chapters": ["Module 1: Behavioral Triggers", "Module 2: Persuasive Copy", "Module 3: Conversion Funnels"],
+            "full_text": "Master the art of persuasive communication and mass psychological triggers to drive unstoppable sales conversions."
+        },
+        {
+            "id": 8,
+            "title": "Algorithmic Trading & Automated Passive Income Portfolios",
+            "discount": "70% OFF GLOBAL LAUNCH 🌟",
+            "pricing": {"inr": "₹1,999 INR", "usd": "$24 USD", "eur": "€22 EUR", "gbp": "£19 GBP"},
+            "quality": "⭐ 4.99 / 5.0 Elite Certified",
+            "chapters": ["Module 1: Algo Basics", "Module 2: Risk Management", "Module 3: Portfolio Automation"],
+            "full_text": "A rigorous technical guide on deploying algorithmic trading bots and managing automated financial portfolios."
+        },
+        {
+            "id": 9,
+            "title": "Global Leadership & Scaling Cross-Border Organizations",
+            "discount": "70% OFF GLOBAL LAUNCH 🌟",
+            "pricing": {"inr": "₹1,999 INR", "usd": "$24 USD", "eur": "€22 EUR", "gbp": "£19 GBP"},
+            "quality": "⭐ 4.99 / 5.0 Elite Certified",
+            "chapters": ["Module 1: Cross-Border Teams", "Module 2: Remote Leadership", "Module 3: Organizational Scaling"],
+            "full_text": "Frameworks for leading international teams and scaling distributed organizations without geographical bottlenecks."
+        },
+        {
+            "id": 10,
+            "title": "The 4.9+ Star Masterclass in Personal Brand Authority",
+            "discount": "70% OFF GLOBAL LAUNCH 🌟",
+            "pricing": {"inr": "₹1,999 INR", "usd": "$24 USD", "eur": "€22 EUR", "gbp": "£19 GBP"},
+            "quality": "⭐ 4.99 / 5.0 Elite Certified",
+            "chapters": ["Module 1: Brand Positioning", "Module 2: Authority Content", "Module 3: Monetization Loops"],
+            "full_text": "Build unshakeable personal brand authority and command premium pricing across global digital markets."
+        },
+        {
+            "id": 11,
+            "title": "Zero-Human Digital Asset Creation & Automated Distribution",
+            "discount": "70% OFF GLOBAL LAUNCH 🌟",
+            "pricing": {"inr": "₹1,999 INR", "usd": "$24 USD", "eur": "€22 EUR", "gbp": "£19 GBP"},
+            "quality": "⭐ 4.99 / 5.0 Elite Certified",
+            "chapters": ["Module 1: Zero-Human Pipelines", "Module 2: Automated Assets", "Module 3: Global Delivery"],
+            "full_text": "The pinnacle manual on deploying zero-human operational pipelines for completely automated digital publishing."
         }
     ]
 }
@@ -68,7 +125,7 @@ HTML_CONTENT = """<!DOCTYPE html>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Autonomous Business OS - Global Access Hub</title>
+    <title>Master Autonomous Business OS - Permanent Catalog</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -203,7 +260,7 @@ HTML_CONTENT = """<!DOCTYPE html>
 </head>
 <body>
     <div class="main-wrapper">
-        <div class="top-badge">👑 GLOBAL MULTI-CURRENCY PRICING & FULL BOOK ACCESS</div>
+        <div class="top-badge">👑 PERMANENT 11-BOOKS ELITE CATALOG</div>
         <h1>MASTER AUTONOMOUS BUSINESS OS</h1>
 
         <!-- Navigation Tabs -->
@@ -221,72 +278,131 @@ HTML_CONTENT = """<!DOCTYPE html>
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-title">Global Impressions</div>
-                    <div class="stat-value" id="impCount">0</div>
+                    <div class="stat-value">0</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-title">Total Max Views</div>
-                    <div class="stat-value green" id="viewCount">0</div>
+                    <div class="stat-value green">0</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-title">Total Orders</div>
-                    <div class="stat-value" id="orderCount">0</div>
+                    <div class="stat-value">0</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-title">Global Revenue</div>
-                    <div class="stat-value gold" id="revCount">₹0</div>
+                    <div class="stat-value gold">₹0</div>
                 </div>
             </div>
 
             <div class="seo-box" style="border-color: #22c55e;">
-                <h3 style="color: #22c55e;">🌍 Global Pricing & Full Reader Unlocked</h3>
-                <p>Every book now displays world-tier pricing across India, USA, Europe, and UK. Full unrestricted reading access is granted for your review.</p>
+                <h3 style="color: #22c55e;">📚 Permanent 11-Books Catalog Loaded</h3>
+                <p>All 11 elite books are now permanently hardcoded and locked into the store. They will never disappear on refresh.</p>
             </div>
         </div>
     </div>
 
     <script>
-        let defaultBooks = [
+        const permanentBooks = [
             {
                 id: 1,
                 title: "High-Ticket AI Automation & Global Scaling Ecosystem — Enterprise Mega Level",
                 discount: "60% OFF WORLDWIDE LAUNCH 👑",
-                pricing: {
-                    inr: "₹1,999 INR (India)",
-                    usd: "$24 USD (USA & Americas)",
-                    eur: "€22 EUR (Europe)",
-                    gbp: "£19 GBP (United Kingdom)"
-                },
-                old_price: "₹5,999 ($129)",
+                pricing: {"inr": "₹1,999 INR", "usd": "$24 USD", "eur": "€22 EUR", "gbp": "£19 GBP"},
                 quality: "⭐ 4.98 / 5.0 Elite Certified",
-                chapters: [
-                    "Module 1: Architectural Foundations of High-Ticket AI Ecosystems",
-                    "Module 2: Autonomous Cross-Border Infrastructure & Multi-Region Deployment",
-                    "Module 3: Zero-Human Operations, Automated Funnels & Fulfillment",
-                    "Module 4: Maximizing Enterprise Profit Margins Across 195+ Nations",
-                    "Module 5: Advanced Legal Compliance & International Tax Structures",
-                    "Module 6: Scaling to Daily International Sales Velocity & Automation Loops"
-                ],
-                full_text: `[FULL UNRESTRICTED ACCESS GRANTED TO FOUNDER SHAILESH KUMAR]
-
-Introduction: The Sovereign Digital Asset Blueprint
-In the modern digital economy, true sovereignty belongs exclusively to those who engineer autonomous systems. This comprehensive volume provides an exhaustive, unedited framework for deploying, scaling, and monetizing multi-region assets across worldwide digital storefronts without manual overhead.
-
-Module 1: Architectural Foundations of High-Ticket AI Ecosystems
-High-ticket digital products demand absolute structural perfection. When selling to international enterprises and high-net-worth buyers across the US, Europe, and Asia, your value proposition must be airtight. We break down the exact psychological triggers and algorithmic funnels required to convert cold international traffic into high-ticket buyers on autopilot.
-
-Module 2: Autonomous Cross-Border Infrastructure
-Operating across 195+ nations requires a decentralized distribution matrix. By integrating secure payment bridges (such as Razorpay multi-currency routing) and automated content delivery nodes, your business operates 24/7 without geographical friction.
-
-Module 3: Zero-Human Operations & Automated Fulfillment
-True passive income is a myth; automated systems are reality. This module details how to connect your storefront to automated delivery pipelines, ensuring customers receive their elite digital assets instantly upon checkout completion.
-
-Conclusion: Sustaining Long-Term Market Dominance
-By maintaining strict 4.9+ star quality benchmarks and perpetual per-book SEO indexing, your digital empire will continue capturing organic buyer traffic indefinitely.`
+                chapters: ["Module 1: Foundations", "Module 2: Cross-Border Infra", "Module 3: Zero-Human Operations"],
+                full_text: "Comprehensive masterclass on High-Ticket AI Automation and Global Scaling. Fully optimized for 195+ nations."
+            },
+            {
+                id: 2,
+                title: "Artificial Intelligence & Autonomous Wealth Systems — 2026 Edition",
+                discount: "70% OFF GLOBAL LAUNCH 🌟",
+                pricing: {"inr": "₹1,999 INR", "usd": "$24 USD", "eur": "€22 EUR", "gbp": "£19 GBP"},
+                quality: "⭐ 4.99 / 5.0 Elite Certified",
+                chapters: ["Module 1: AI Systems", "Module 2: Wealth Generation", "Module 3: Automation Loops"],
+                full_text: "Masterclass on Artificial Intelligence and Autonomous Wealth Systems designed for worldwide digital storefronts."
+            },
+            {
+                id: 3,
+                title: "Advanced Digital Marketing & 195+ Nation SEO Mastery",
+                discount: "70% OFF GLOBAL LAUNCH 🌟",
+                pricing: {"inr": "₹1,999 INR", "usd": "$24 USD", "eur": "€22 EUR", "gbp": "£19 GBP"},
+                quality: "⭐ 4.99 / 5.0 Elite Certified",
+                chapters: ["Module 1: Global SEO", "Module 2: Traffic Multipliers", "Module 3: Conversion Loops"],
+                full_text: "Deep-dive manual into advanced digital marketing and perpetual global SEO indexing across 195+ countries."
+            },
+            {
+                id: 4,
+                title: "E-Commerce & High-Ticket Dropshipping Dominance",
+                discount: "70% OFF GLOBAL LAUNCH 🌟",
+                pricing: {"inr": "₹1,999 INR", "usd": "$24 USD", "eur": "€22 EUR", "gbp": "£19 GBP"},
+                quality: "⭐ 4.99 / 5.0 Elite Certified",
+                chapters: ["Module 1: Product Research", "Module 2: Storefront Architecture", "Module 3: Scaling Ads"],
+                full_text: "The ultimate guide to building, scaling, and automating high-ticket e-commerce and dropshipping brands."
+            },
+            {
+                id: 5,
+                title: "Biohacking, Longevity & Peak Human Performance",
+                discount: "70% OFF GLOBAL LAUNCH 🌟",
+                pricing: {"inr": "₹1,999 INR", "usd": "$24 USD", "eur": "€22 EUR", "gbp": "£19 GBP"},
+                quality: "⭐ 4.99 / 5.0 Elite Certified",
+                chapters: ["Module 1: Cellular Health", "Module 2: Circadian Alignment", "Module 3: Vitality Routine"],
+                full_text: "Science-backed protocols and biological engineering blueprints for absolute physical and mental peak performance."
+            },
+            {
+                id: 6,
+                title: "Cryptocurrency, Web3 & Decentralized Financial Empires",
+                discount: "70% OFF GLOBAL LAUNCH 🌟",
+                pricing: {"inr": "₹1,999 INR", "usd": "$24 USD", "eur": "€22 EUR", "gbp": "£19 GBP"},
+                quality: "⭐ 4.99 / 5.0 Elite Certified",
+                chapters: ["Module 1: Web3 Foundations", "Module 2: Decentralized Assets", "Module 3: Security Protocols"],
+                full_text: "Comprehensive analysis of cryptocurrency ecosystems, smart contracts, and decentralized financial growth."
+            },
+            {
+                id: 7,
+                title: "Psychology of Mass Influence & High-Conversion Copywriting",
+                discount: "70% OFF GLOBAL LAUNCH 🌟",
+                pricing: {"inr": "₹1,999 INR", "usd": "$24 USD", "eur": "€22 EUR", "gbp": "£19 GBP"},
+                quality: "⭐ 4.99 / 5.0 Elite Certified",
+                chapters: ["Module 1: Behavioral Triggers", "Module 2: Persuasive Copy", "Module 3: Conversion Funnels"],
+                full_text: "Master the art of persuasive communication and mass psychological triggers to drive unstoppable sales conversions."
+            },
+            {
+                id: 8,
+                title: "Algorithmic Trading & Automated Passive Income Portfolios",
+                discount: "70% OFF GLOBAL LAUNCH 🌟",
+                pricing: {"inr": "₹1,999 INR", "usd": "$24 USD", "eur": "€22 EUR", "gbp": "£19 GBP"},
+                quality: "⭐ 4.99 / 5.0 Elite Certified",
+                chapters: ["Module 1: Algo Basics", "Module 2: Risk Management", "Module 3: Portfolio Automation"],
+                full_text: "A rigorous technical guide on deploying algorithmic trading bots and managing automated financial portfolios."
+            },
+            {
+                id: 9,
+                title: "Global Leadership & Scaling Cross-Border Organizations",
+                discount: "70% OFF GLOBAL LAUNCH 🌟",
+                pricing: {"inr": "₹1,999 INR", "usd": "$24 USD", "eur": "€22 EUR", "gbp": "£19 GBP"},
+                quality: "⭐ 4.99 / 5.0 Elite Certified",
+                chapters: ["Module 1: Cross-Border Teams", "Module 2: Remote Leadership", "Module 3: Organizational Scaling"],
+                full_text: "Frameworks for leading international teams and scaling distributed organizations without geographical bottlenecks."
+            },
+            {
+                id: 10,
+                title: "The 4.9+ Star Masterclass in Personal Brand Authority",
+                discount: "70% OFF GLOBAL LAUNCH 🌟",
+                pricing: {"inr": "₹1,999 INR", "usd": "$24 USD", "eur": "€22 EUR", "gbp": "£19 GBP"},
+                quality: "⭐ 4.99 / 5.0 Elite Certified",
+                chapters: ["Module 1: Brand Positioning", "Module 2: Authority Content", "Module 3: Monetization Loops"],
+                full_text: "Build unshakeable personal brand authority and command premium pricing across global digital markets."
+            },
+            {
+                id: 11,
+                title: "Zero-Human Digital Asset Creation & Automated Distribution",
+                discount: "70% OFF GLOBAL LAUNCH 🌟",
+                pricing: {"inr": "₹1,999 INR", "usd": "$24 USD", "eur": "€22 EUR", "gbp": "£19 GBP"},
+                quality: "⭐ 4.99 / 5.0 Elite Certified",
+                chapters: ["Module 1: Zero-Human Pipelines", "Module 2: Automated Assets", "Module 3: Global Delivery"],
+                full_text: "The pinnacle manual on deploying zero-human operational pipelines for completely automated digital publishing."
             }
         ];
-
-        let storedBooks = localStorage.getItem('master_os_full_access_v1');
-        let publishedBooks = storedBooks ? JSON.parse(storedBooks) : defaultBooks;
 
         function switchTab(tabName) {
             const buttons = document.querySelectorAll('.nav-btn');
@@ -304,8 +420,8 @@ By maintaining strict 4.9+ star quality benchmarks and perpetual per-book SEO in
                         <div class="stat-card"><div class="stat-title">Global Revenue</div><div class="stat-value gold">₹0</div></div>
                     </div>
                     <div class="seo-box" style="border-color: #22c55e;">
-                        <h3 style="color: #22c55e;">🌍 Global Pricing & Full Reader Unlocked</h3>
-                        <p>Every book now displays world-tier pricing across India, USA, Europe, and UK. Full unrestricted reading access is granted for your review.</p>
+                        <h3 style="color: #22c55e;">📚 Permanent 11-Books Catalog Loaded</h3>
+                        <p>All 11 elite books are permanently locked into the store and will never disappear.</p>
                     </div>`;
             } 
             else if (tabName === 'store') {
@@ -314,16 +430,15 @@ By maintaining strict 4.9+ star quality benchmarks and perpetual per-book SEO in
             else if (tabName === 'studio') {
                 area.innerHTML = `
                     <div class="seo-box" style="border-color:#f59e0b;">
-                        <h3>🚀 AI Studio & Global Mass Publisher</h3>
-                        <p>Batch-publish elite books instantly with multi-region world-tier pricing and full unrestricted reader access.</p>
-                        <button class="btn-buy" style="margin-top:15px; width:100%; padding:14px; font-size:14px;" onclick="publishGlobalBatch()">⚡ PUBLISH 10+ GLOBAL MULTI-CURRENCY BOOKS</button>
+                        <h3>🚀 AI Studio & Permanent Catalog</h3>
+                        <p>All 11 books are permanently active in Max Store with multi-currency pricing and live SEO.</p>
                     </div>`;
             }
             else if (tabName === 'stats') {
                 area.innerHTML = `
                     <div class="seo-box">
-                        <h3>📊 Multi-Region Currency & SEO Stats</h3>
-                        <p><b>Active Currencies:</b> INR, USD, EUR, GBP<br><b>Global Reach:</b> 195+ Nations<br><b>Status:</b> Full reader mode active.</p>
+                        <h3>📊 Permanent Catalog Stats</h3>
+                        <p><b>Total Active Books:</b> 11<br><b>Currencies:</b> INR, USD, EUR, GBP<br><b>Status:</b> Locked & Permanent.</p>
                     </div>`;
             }
             else if (tabName === 'customers') {
@@ -336,12 +451,8 @@ By maintaining strict 4.9+ star quality benchmarks and perpetual per-book SEO in
         }
 
         function renderStore(area) {
-            if (publishedBooks.length === 0) {
-                area.innerHTML = `<div class="seo-box"><h3>No Books Published Yet</h3><p>Go to 🚀 <b>AI Studio</b> tab!</p></div>`;
-                return;
-            }
-            let html = `<h3 style="color:#f59e0b; font-size:14px; margin-bottom:12px;">📚 Max Store Catalog (Global Pricing Active: ${publishedBooks.length})</h3>`;
-            publishedBooks.forEach(book => {
+            let html = `<h3 style="color:#f59e0b; font-size:14px; margin-bottom:12px;">📚 Permanent Max Store Catalog (11 Books)</h3>`;
+            permanentBooks.forEach(book => {
                 html += `
                 <div class="book-item-card">
                     <span class="discount-tag">${book.discount}</span>
@@ -362,48 +473,8 @@ By maintaining strict 4.9+ star quality benchmarks and perpetual per-book SEO in
             area.innerHTML = html;
         }
 
-        function publishGlobalBatch() {
-            const categories = [
-                "Artificial Intelligence & Autonomous Wealth Systems",
-                "Advanced Digital Marketing & 195+ Nation SEO Mastery",
-                "E-Commerce & High-Ticket Dropshipping Dominance",
-                "Biohacking, Longevity & Peak Human Performance",
-                "Cryptocurrency, Web3 & Decentralized Financial Empires"
-            ];
-
-            categories.forEach((cat, index) => {
-                const newBook = {
-                    id: Date.now() + index,
-                    title: `${cat} — 2026 Global Multi-Currency Edition`,
-                    discount: "70% OFF WORLDWIDE LAUNCH 🌟",
-                    pricing: {
-                        inr: "₹1,999 INR (India)",
-                        usd: "$24 USD (USA & Americas)",
-                        eur: "€22 EUR (Europe)",
-                        gbp: "£19 GBP (United Kingdom)"
-                    },
-                    old_price: "₹5,999 ($129)",
-                    quality: "⭐ 4.99 / 5.0 Elite Certified",
-                    future_seo_loop: "Active: Global Multi-Region Indexing",
-                    chapters: [
-                        "Module 1: Global Market Analysis & Multi-Region Setup",
-                        "Module 2: Automated Cross-Border Funnels & Fulfillment",
-                        "Module 3: Scaling International Revenue & Direct Payouts"
-                    ],
-                    full_text: `[FULL UNRESTRICTED ACCESS GRANTED TO FOUNDER SHAILESH KUMAR]
-
-Comprehensive masterclass on ${cat}. Engineered for absolute market dominance across worldwide digital storefronts. Every chapter is meticulously written to maintain a strict 4.9+ reading satisfaction standard, ensuring high repeat purchase rates and elite customer trust across all 195+ nations.`
-                };
-                publishedBooks.unshift(newBook);
-            });
-
-            localStorage.setItem('master_os_full_access_v1', JSON.stringify(publishedBooks));
-            alert("⚡ SUCCESS! Global multi-currency books published with full reading access unlocked!");
-            switchTab('store');
-        }
-
         function readFullBook(bookId) {
-            const book = publishedBooks.find(b => b.id == bookId);
+            const book = permanentBooks.find(b => b.id == bookId);
             const readerDiv = document.getElementById(`reader-${bookId}`);
             let list = "<ul style='padding-left: 15px; margin: 8px 0;'>";
             book.chapters.forEach(c => list += `<li style='margin-bottom: 4px;'>${c}</li>`);
@@ -419,7 +490,7 @@ Comprehensive masterclass on ${cat}. Engineered for absolute market dominance ac
         }
 
         function simulateCheckout(bookId) {
-            alert("💳 256-Bit Razorpay Checkout Initialized! Multi-currency routing active for INR, USD, EUR, and GBP. Webhook ready for live order tracking.");
+            alert("💳 256-Bit Razorpay Checkout Initialized! Multi-currency routing active for INR, USD, EUR, and GBP.");
         }
     </script>
 </body>
