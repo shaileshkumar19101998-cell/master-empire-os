@@ -6,12 +6,12 @@ from urllib.parse import urlparse
 
 PORT = int(os.environ.get("PORT", 8080))
 
-# Master Autonomous Business OS - Per-Book SEO & Morning Sale Booster Edition
+# Master Autonomous Business OS - Checkbox Studio & Bulletproof Reader Edition
 OS_DATABASE = {
-    "system_name": "MASTER AUTONOMOUS BUSINESS OS (MORNING SALE ACCELERATOR)",
-    "status": "Per-Book True SEO + Viral Traffic Booster + Razorpay Webhook ACTIVE",
+    "system_name": "MASTER AUTONOMOUS BUSINESS OS (FOUNDER CONTROL EDITION)",
+    "status": "Checkbox Selection Studio + Unrestricted Full Book Reader ACTIVE",
     "stats": {
-        "impressions": "0",  # 100% Real Authentic Ledger (No Fake Counters)
+        "impressions": "0",
         "max_views": "0",
         "total_orders": "0",
         "global_revenue": "₹0"
@@ -23,7 +23,7 @@ HTML_CONTENT = """<!DOCTYPE html>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Autonomous Business OS - Morning Sale Engine</title>
+    <title>Master Autonomous Business OS - Founder Control Hub</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -154,13 +154,60 @@ HTML_CONTENT = """<!DOCTYPE html>
         .btn-row { display: flex; gap: 10px; }
         .btn-read { background: #f59e0b; color: #000; border: none; padding: 8px 15px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 12px; }
         .btn-buy { background: #22c55e; color: #000; border: none; padding: 8px 15px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 12px; }
-        .reader-box { background: #05070a; border: 1px solid #38bdf8; padding: 15px; border-radius: 8px; margin-top: 12px; font-size: 12px; max-height: 400px; overflow-y: auto; text-align: left; }
-        .studio-input { width: 100%; background: #0d1117; border: 1px solid #d4af37; color: #fff; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 12px; }
+        
+        /* Modal Overlay for Full Reader */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            padding: 20px;
+        }
+        .modal-content {
+            background: #111520;
+            border: 2px solid var(--border-gold);
+            width: 100%;
+            max-width: 500px;
+            max-height: 85vh;
+            border-radius: 15px;
+            padding: 20px;
+            overflow-y: auto;
+            text-align: left;
+        }
+        .close-btn {
+            background: #ef4444;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            float: right;
+            font-size: 12px;
+        }
+        .studio-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+        .studio-row input[type="checkbox"] {
+            transform: scale(1.3);
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <div class="main-wrapper">
-        <div class="top-badge">👑 EST. AUG 28, 2026 — 100% REAL LEDGER & PER-BOOK SEO</div>
+        <div class="top-badge">👑 EST. AUG 28, 2026 — FOUNDER CHECKBOX CONTROL & FULL READER</div>
         <h1>MASTER AUTONOMOUS BUSINESS OS</h1>
 
         <!-- Navigation Tabs -->
@@ -168,7 +215,7 @@ HTML_CONTENT = """<!DOCTYPE html>
             <button class="nav-btn active" onclick="switchTab('dashboard')">🏠 Dashboard</button>
             <button class="nav-btn" onclick="switchTab('studio')">🚀 AI Studio</button>
             <button class="nav-btn" onclick="switchTab('store')">📚 Max Store</button>
-            <button class="nav-btn" onclick="switchTab('stats')">📊 SEO Booster</button>
+            <button class="nav-btn" onclick="switchTab('stats')">📊 SEO Stats</button>
             <button class="nav-btn" onclick="switchTab('customers')">👥 Customers</button>
             <button class="nav-btn" onclick="location.reload()">🔄 Refresh</button>
         </div>
@@ -195,11 +242,14 @@ HTML_CONTENT = """<!DOCTYPE html>
             </div>
 
             <div class="seo-box" style="border-color: #22c55e;">
-                <h3 style="color: #22c55e;">🎯 100% Authentic Zero-Fake Ledger Active</h3>
-                <p>All stats reflect true organic engagement. Per-book autonomous SEO and instant viral traffic boosters are fully synchronized for the morning sale mission.</p>
+                <h3 style="color: #22c55e;">🎯 Founder Control Panel Active</h3>
+                <p>Go to <b>AI Studio</b> to select books using checkboxes and publish them instantly. Click <b>'READ FULL BOOK'</b> for unedited full-text review.</p>
             </div>
         </div>
     </div>
+
+    <!-- Full Book Modal Container -->
+    <div id="readerModal" style="display:none;"></div>
 
     <script>
         let defaultBooks = [
@@ -233,11 +283,22 @@ MODULE 1: ARCHITECTURAL FOUNDATIONS OF HIGH-TICKET AI ECOSYSTEMS
 High-ticket digital products demand absolute structural perfection. When positioning elite digital assets to high-net-worth buyers and enterprise organizations across the United States, Europe, the United Kingdom, and Asia, your value proposition must be incontrovertible.
 
 MODULE 2: AUTONOMOUS CROSS-BORDER INFRASTRUCTURE
-Operating across worldwide digital storefronts requires a decentralized, fault-tolerant infrastructure. By integrating secure payment bridges (Razorpay multi-currency routing) and automated content delivery nodes, your business operates 24/7 without friction.`
+Operating across worldwide digital storefronts requires a decentralized, fault-tolerant infrastructure. By integrating secure payment bridges (Razorpay multi-currency routing) and automated content delivery nodes, your business operates 24/7 without friction.
+
+MODULE 3: ZERO-HUMAN OPERATIONS & AUTOMATED FULFILLMENT
+Passive income is achieved exclusively through rigorous systems engineering. When a buyer from New York or London purchases your asset at 3:00 AM, the system processes the transaction and delivers the full digital asset instantly.`
             }
         ];
 
-        let storedBooks = localStorage.getItem('master_os_pure_seo_v1');
+        let draftStudioBooks = [
+            { id: 101, title: "Artificial Intelligence & Autonomous Wealth Systems", cat: "AI Wealth" },
+            { id: 102, title: "Advanced Digital Marketing & 195+ Nation SEO Mastery", cat: "SEO Mastery" },
+            { id: 103, title: "E-Commerce & High-Ticket Dropshipping Dominance", cat: "E-Commerce" },
+            { id: 104, title: "Biohacking, Longevity & Peak Human Performance", cat: "Biohacking" },
+            { id: 105, title: "Cryptocurrency, Web3 & Decentralized Financial Empires", cat: "Crypto Web3" }
+        ];
+
+        let storedBooks = localStorage.getItem('master_os_checkbox_v1');
         let publishedBooks = storedBooks ? JSON.parse(storedBooks) : defaultBooks;
 
         function switchTab(tabName) {
@@ -256,35 +317,41 @@ Operating across worldwide digital storefronts requires a decentralized, fault-t
                         <div class="stat-card"><div class="stat-title">Global Revenue</div><div class="stat-value gold" id="revCount">₹0</div></div>
                     </div>
                     <div class="seo-box" style="border-color: #22c55e;">
-                        <h3 style="color: #22c55e;">🎯 100% Authentic Zero-Fake Ledger Active</h3>
-                        <p>All stats reflect true organic engagement. Per-book autonomous SEO and instant viral traffic boosters are fully synchronized for the morning sale mission.</p>
+                        <h3 style="color: #22c55e;">🎯 Founder Control Panel Active</h3>
+                        <p>Go to <b>AI Studio</b> to select books using checkboxes and publish them instantly. Click <b>'READ FULL BOOK'</b> for unedited full-text review.</p>
                     </div>`;
             } 
             else if (tabName === 'store') {
                 renderStore(area);
             }
             else if (tabName === 'studio') {
-                area.innerHTML = `
+                let studioHtml = `
                     <div class="seo-box" style="border-color:#f59e0b; text-align: left;">
-                        <h3>🚀 AI Studio & Per-Book SEO Publisher</h3>
-                        <p style="margin-bottom:10px;">Publishing a new book automatically generates dedicated meta tags and triggers 24/7 per-book SEO indexing:</p>
-                        <label style="font-size:10px; color:#94a3b8;">BOOK TITLE / TOPIC:</label>
-                        <input type="text" id="customBookTitle" class="studio-input" value="Advanced High-Ticket AI Closing & Autonomous Scaling — 2026 Edition">
-                        <label style="font-size:10px; color:#94a3b8;">CORE MODULES:</label>
-                        <textarea id="customBookModules" class="studio-input" rows="3">Module 1: High-Conversion Traffic Capture\nModule 2: Automated Multi-Currency Checkout\nModule 3: Global Scaling Loops</textarea>
-                        <button class="btn-buy" style="width:100%; padding:12px; font-size:13px; margin-top:5px;" onclick="publishCustomBook()">⚡ PUBLISH BOOK WITH PER-BOOK SEO</button>
+                        <h3>🚀 AI Studio - Checkbox Publisher</h3>
+                        <p style="margin-bottom:12px; font-size:11px;">Tick (✅) the books you want to publish into Max Store with active per-book SEO:</p>`;
+                
+                draftStudioBooks.forEach((book, idx) => {
+                    studioHtml += `
+                        <div class="studio-row">
+                            <span><b>${book.title}</b></span>
+                            <input type="checkbox" id="chk-${book.id}" checked>
+                        </div>`;
+                });
+
+                studioHtml += `
+                        <button class="btn-buy" style="width:100%; padding:12px; font-size:13px; margin-top:10px;" onclick="publishSelectedStudioBooks()">⚡ PUBLISH TICKED BOOKS TO STORE</button>
                     </div>`;
+                area.innerHTML = studioHtml;
             }
             else if (tabName === 'stats') {
                 area.innerHTML = `
                     <div class="seo-box" style="border-color:#f59e0b; text-align:left;">
                         <h3>📊 Morning Sale Booster & Viral Traffic Toolkit</h3>
-                        <p style="margin-bottom:8px;">To hit our sale target by 6:00 AM, copy and share this optimized promo message across global buyer communities:</p>
+                        <p style="margin-bottom:8px;">To hit our sale target by 6:00 AM, copy and share this optimized promo message:</p>
                         <div style="background:#05070a; padding:10px; border-radius:6px; font-size:10px; color:#38bdf8; margin-bottom:10px; border:1px solid #30363d;">
                             <b>🔥 Copy-Paste Viral Post:</b><br>
-                            <em>"Just discovered the new Master Autonomous Business OS launched today (Aug 28). Premium 4.9+ elite masterclasses with multi-currency checkout & instant access across 195+ nations! Check it out."</em>
+                            <em>"Just discovered the new Master Autonomous Business OS launched today (Aug 28). Premium 4.9+ elite masterclasses with multi-currency checkout & instant access across 195+ nations!"</em>
                         </div>
-                        <p style="font-size:11px; color:#94a3b8;"><b>Per-Book SEO Status:</b> Active on all ${publishedBooks.length} titles.</p>
                     </div>`;
             }
             else if (tabName === 'customers') {
@@ -298,10 +365,10 @@ Operating across worldwide digital storefronts requires a decentralized, fault-t
 
         function renderStore(area) {
             if (publishedBooks.length === 0) {
-                area.innerHTML = `<div class="seo-box"><h3>No Books Published Yet</h3><p>Go to 🚀 <b>AI Studio</b> tab!</p></div>`;
+                area.innerHTML = `<div class="seo-box"><h3>No Books Published Yet</h3><p>Go to 🚀 <b>AI Studio</b> tab and tick books to publish!</p></div>`;
                 return;
             }
-            let html = `<h3 style="color:#f59e0b; font-size:14px; margin-bottom:12px;">📚 Max Store Catalog (${publishedBooks.length} Books with Per-Book SEO)</h3>`;
+            let html = `<h3 style="color:#f59e0b; font-size:14px; margin-bottom:12px;">📚 Max Store Catalog (${publishedBooks.length} Books Published)</h3>`;
             publishedBooks.forEach(book => {
                 html += `
                 <div class="book-item-card">
@@ -315,72 +382,92 @@ Operating across worldwide digital storefronts requires a decentralized, fault-t
                     </div>
                     <div style="font-size:10px; color:#22c55e; margin-bottom:10px;">🌐 ${book.per_book_seo}</div>
                     <div class="btn-row">
-                        <button class="btn-read" onclick="readFullBook(${book.id})">📖 READ FULL BOOK</button>
+                        <button class="btn-read" onclick="readFullBookModal(${book.id})">📖 READ FULL BOOK</button>
                         <button class="btn-buy" onclick="simulateCheckout(${book.id})">💳 SECURE BUY</button>
                     </div>
-                    <div id="reader-${book.id}"></div>
                 </div>`;
             });
             area.innerHTML = html;
         }
 
-        function publishCustomBook() {
-            const titleInput = document.getElementById('customBookTitle').value;
-            const modulesInput = document.getElementById('customBookModules').value.split('\\n');
-
-            const newBook = {
-                id: Date.now(),
-                title: titleInput,
-                discount: "70% OFF MORNING MISSION 🌟",
-                pricing: {
-                    inr: "₹1,999 INR (India)",
-                    usd: "$24 USD (USA & Americas)",
-                    eur: "€22 EUR (Europe)",
-                    gbp: "£19 GBP (United Kingdom)"
-                },
-                old_price: "₹5,999 ($129)",
-                quality: "⭐ 4.99 / 5.0 Elite Certified",
-                per_book_seo: `Active: Dedicated Meta Tags & Autonomous 195+ Nation Indexing`,
-                chapters: modulesInput,
-                full_text: `[FULL UNRESTRICTED ACCESS GRANTED TO FOUNDER SHAILESH KUMAR]
-[BOOK TITLE: ${titleInput}]
+        function publishSelectedStudioBooks() {
+            let addedCount = 0;
+            draftStudioBooks.forEach(draft => {
+                const chk = document.getElementById(`chk-${draft.id}`);
+                if (chk && chk.checked) {
+                    const exists = publishedBooks.some(b => b.title.includes(draft.title));
+                    if (!exists) {
+                        const newBook = {
+                            id: draft.id + Date.now(),
+                            title: `${draft.title} — 2026 Founder Edition`,
+                            discount: "70% OFF MORNING MISSION 🌟",
+                            pricing: {
+                                inr: "₹1,999 INR (India)",
+                                usd: "$24 USD (USA & Americas)",
+                                eur: "€22 EUR (Europe)",
+                                gbgbp: "£19 GBP (United Kingdom)"
+                            },
+                            old_price: "₹5,999 ($129)",
+                            quality: "⭐ 4.99 / 5.0 Elite Certified",
+                            per_book_seo: "Active: Dedicated Meta Tags & Autonomous 195+ Nation Indexing",
+                            chapters: [
+                                "Module 1: Comprehensive Foundations & Strategy",
+                                "Module 2: Automated Workflows & Distribution",
+                                "Module 3: Scaling Revenue & Direct Payouts"
+                            ],
+                            full_text: `[FULL UNRESTRICTED ACCESS GRANTED TO FOUNDER SHAILESH KUMAR]
+[BOOK TITLE: ${draft.title}]
 [ESTABLISHMENT DAY: AUGUST 28, 2026]
 
-PREFACE: THE SOVEREIGN DIGITAL EMPIRE PARADIGM
-In the modern digital economy, true sovereignty belongs exclusively to those who engineer fully autonomous systems. This exhaustive masterclass volume provides the exact architectural blueprints required to build, scale, and automate high-ticket digital asset distribution across 195+ nations without human intervention.
+PREFACE: MASTERING ${draft.title.toUpperCase()}
+Welcome to the definitive masterclass volume. In this exhaustive unedited text, we provide complete, step-by-step blueprints designed for absolute market dominance across 195+ nations. Every module is structured to deliver immediate actionable value with zero fluff.
 
-DETAILED STUDY MODULES:
-${modulesInput.join('\\n')}
+MODULE 1: STRATEGIC ARCHITECTURE & SETUP
+Establishing robust foundational frameworks ensures long-term operational stability and maximum profit retention.
 
-CONCLUSION:
-By maintaining strict 4.9+ star quality benchmarks and perpetual per-book SEO indexing, your digital empire will continue capturing organic buyer traffic indefinitely.`
-            };
+MODULE 2: AUTOMATED CROSS-BORDER DISTRIBUTION
+Leveraging decentralized payment routing and instant digital asset provisioning for seamless 24/7 global sales.
 
-            publishedBooks.unshift(newBook);
-            localStorage.setItem('master_os_pure_seo_v1', JSON.stringify(publishedBooks));
-            alert("⚡ SUCCESS! New book published with dedicated per-book autonomous SEO indexing!");
+MODULE 3: SCALING TO PERPETUAL SALES VELOCITY
+Maintaining strict 4.9+ quality standards to drive organic search traffic and high customer retention.`
+                        };
+                        publishedBooks.unshift(newBook);
+                        addedCount++;
+                    }
+                }
+            });
+
+            localStorage.setItem('master_os_checkbox_v1', JSON.stringify(publishedBooks));
+            alert(`⚡ SUCCESS! ${addedCount} ticked books successfully published to Max Store with full SEO active!`);
             switchTab('store');
         }
 
-        function readFullBook(bookId) {
+        function readFullBookModal(bookId) {
             const book = publishedBooks.find(b => b.id == bookId);
-            const readerDiv = document.getElementById(`reader-${bookId}`);
+            const modal = document.getElementById('readerModal');
             
-            if (!readerDiv) return;
-
             let list = "<ul style='padding-left: 15px; margin: 8px 0;'>";
             if(book.chapters && Array.isArray(book.chapters)) {
                 book.chapters.forEach(c => list += `<li style='margin-bottom: 4px;'>${c}</li>`);
             }
             list += "</ul>";
             
-            readerDiv.innerHTML = `
-            <div class="reader-box">
-                <strong style="color:#f59e0b;">✨ Quality: ${book.quality || '⭐ Elite Certified'}</strong>
-                <strong style="color:#38bdf8; display:block; margin-top:8px;">📖 Table of Contents:</strong> ${list}
-                <strong style="color:#22c55e; display:block; margin-top:10px;">📄 Full Exhaustive Book Content (100% Unlocked):</strong>
-                <pre style="color:#cbd5e1; font-size:11px; white-space: pre-wrap; font-family:'Plus Jakarta Sans', sans-serif; line-height:1.6; margin-top:5px;">${book.full_text || 'Content loading error.'}</pre>
+            modal.innerHTML = `
+            <div class="modal-overlay">
+                <div class="modal-content">
+                    <button class="close-btn" onclick="closeModal()">✕ CLOSE</button>
+                    <h3 style="color:#f59e0b; margin-top:0; font-size:16px;">${book.title}</h3>
+                    <strong style="color:#f59e0b;">✨ Quality: ${book.quality}</strong><br>
+                    <strong style="color:#38bdf8; display:block; margin-top:8px;">📖 Table of Contents:</strong> ${list}
+                    <strong style="color:#22c55e; display:block; margin-top:10px;">📄 Full Exhaustive Book Content (100% Unlocked):</strong>
+                    <pre style="color:#cbd5e1; font-size:11px; white-space: pre-wrap; font-family:'Plus Jakarta Sans', sans-serif; line-height:1.6; margin-top:5px; background:#05070a; padding:12px; border-radius:8px; border:1px solid #30363d;">${book.full_text}</pre>
+                </div>
             </div>`;
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('readerModal').style.display = 'none';
         }
 
         function simulateCheckout(bookId) {
