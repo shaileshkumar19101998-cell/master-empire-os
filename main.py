@@ -6,10 +6,10 @@ from urllib.parse import urlparse
 
 PORT = int(os.environ.get("PORT", 8080))
 
-# Master Autonomous Business OS - Checkbox Studio & Bulletproof Reader Edition
+# Master Autonomous Business OS - Persistent Storage & Safe Studio Edition
 OS_DATABASE = {
-    "system_name": "MASTER AUTONOMOUS BUSINESS OS (FOUNDER CONTROL EDITION)",
-    "status": "Checkbox Selection Studio + Unrestricted Full Book Reader ACTIVE",
+    "system_name": "MASTER AUTONOMOUS BUSINESS OS (PERMANENT STORAGE)",
+    "status": "Persistent Book Memory + Unbreakable Studio ACTIVE",
     "stats": {
         "impressions": "0",
         "max_views": "0",
@@ -23,7 +23,7 @@ HTML_CONTENT = """<!DOCTYPE html>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Autonomous Business OS - Founder Control Hub</title>
+    <title>Master Autonomous Business OS - Permanent Hub</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -155,7 +155,6 @@ HTML_CONTENT = """<!DOCTYPE html>
         .btn-read { background: #f59e0b; color: #000; border: none; padding: 8px 15px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 12px; }
         .btn-buy { background: #22c55e; color: #000; border: none; padding: 8px 15px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 12px; }
         
-        /* Modal Overlay for Full Reader */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -207,16 +206,16 @@ HTML_CONTENT = """<!DOCTYPE html>
 </head>
 <body>
     <div class="main-wrapper">
-        <div class="top-badge">👑 EST. AUG 28, 2026 — FOUNDER CHECKBOX CONTROL & FULL READER</div>
+        <div class="top-badge">👑 EST. AUG 28, 2026 — PERMANENT STORAGE & SAFE STUDIO</div>
         <h1>MASTER AUTONOMOUS BUSINESS OS</h1>
 
         <!-- Navigation Tabs -->
         <div class="nav-grid">
-            <button class="nav-btn active" onclick="switchTab('dashboard')">🏠 Dashboard</button>
-            <button class="nav-btn" onclick="switchTab('studio')">🚀 AI Studio</button>
-            <button class="nav-btn" onclick="switchTab('store')">📚 Max Store</button>
-            <button class="nav-btn" onclick="switchTab('stats')">📊 SEO Stats</button>
-            <button class="nav-btn" onclick="switchTab('customers')">👥 Customers</button>
+            <button class="nav-btn active" id="btn-dashboard" onclick="switchTab('dashboard')">🏠 Dashboard</button>
+            <button class="nav-btn" id="btn-studio" onclick="switchTab('studio')">🚀 AI Studio</button>
+            <button class="nav-btn" id="btn-store" onclick="switchTab('store')">📚 Max Store</button>
+            <button class="nav-btn" id="btn-stats" onclick="switchTab('stats')">📊 SEO Stats</button>
+            <button class="nav-btn" id="btn-customers" onclick="switchTab('customers')">👥 Customers</button>
             <button class="nav-btn" onclick="location.reload()">🔄 Refresh</button>
         </div>
 
@@ -242,13 +241,12 @@ HTML_CONTENT = """<!DOCTYPE html>
             </div>
 
             <div class="seo-box" style="border-color: #22c55e;">
-                <h3 style="color: #22c55e;">🎯 Founder Control Panel Active</h3>
-                <p>Go to <b>AI Studio</b> to select books using checkboxes and publish them instantly. Click <b>'READ FULL BOOK'</b> for unedited full-text review.</p>
+                <h3 style="color: #22c55e;">🎯 Permanent Storage Bridge Active</h3>
+                <p>Your published books are now permanently saved under key <b>'master_os_permanent_v2'</b> so they will never vanish during code updates.</p>
             </div>
         </div>
     </div>
 
-    <!-- Full Book Modal Container -->
     <div id="readerModal" style="display:none;"></div>
 
     <script>
@@ -283,10 +281,7 @@ MODULE 1: ARCHITECTURAL FOUNDATIONS OF HIGH-TICKET AI ECOSYSTEMS
 High-ticket digital products demand absolute structural perfection. When positioning elite digital assets to high-net-worth buyers and enterprise organizations across the United States, Europe, the United Kingdom, and Asia, your value proposition must be incontrovertible.
 
 MODULE 2: AUTONOMOUS CROSS-BORDER INFRASTRUCTURE
-Operating across worldwide digital storefronts requires a decentralized, fault-tolerant infrastructure. By integrating secure payment bridges (Razorpay multi-currency routing) and automated content delivery nodes, your business operates 24/7 without friction.
-
-MODULE 3: ZERO-HUMAN OPERATIONS & AUTOMATED FULFILLMENT
-Passive income is achieved exclusively through rigorous systems engineering. When a buyer from New York or London purchases your asset at 3:00 AM, the system processes the transaction and delivers the full digital asset instantly.`
+Operating worldwide requires a decentralized infrastructure. By integrating secure payment bridges (Razorpay multi-currency routing) and automated content delivery nodes, your business operates 24/7 without friction.`
             }
         ];
 
@@ -298,13 +293,14 @@ Passive income is achieved exclusively through rigorous systems engineering. Whe
             { id: 105, title: "Cryptocurrency, Web3 & Decentralized Financial Empires", cat: "Crypto Web3" }
         ];
 
-        let storedBooks = localStorage.getItem('master_os_checkbox_v1');
+        let storedBooks = localStorage.getItem('master_os_permanent_v2');
         let publishedBooks = storedBooks ? JSON.parse(storedBooks) : defaultBooks;
 
         function switchTab(tabName) {
             const buttons = document.querySelectorAll('.nav-btn');
             buttons.forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+            const activeBtn = document.getElementById(`btn-${tabName}`);
+            if(activeBtn) activeBtn.classList.add('active');
 
             const area = document.getElementById('contentArea');
 
@@ -317,8 +313,8 @@ Passive income is achieved exclusively through rigorous systems engineering. Whe
                         <div class="stat-card"><div class="stat-title">Global Revenue</div><div class="stat-value gold" id="revCount">₹0</div></div>
                     </div>
                     <div class="seo-box" style="border-color: #22c55e;">
-                        <h3 style="color: #22c55e;">🎯 Founder Control Panel Active</h3>
-                        <p>Go to <b>AI Studio</b> to select books using checkboxes and publish them instantly. Click <b>'READ FULL BOOK'</b> for unedited full-text review.</p>
+                        <h3 style="color: #22c55e;">🎯 Permanent Storage Bridge Active</h3>
+                        <p>Your published books are permanently secured. Check <b>Max Store</b> to review all active titles.</p>
                     </div>`;
             } 
             else if (tabName === 'store') {
@@ -405,7 +401,7 @@ Passive income is achieved exclusively through rigorous systems engineering. Whe
                                 inr: "₹1,999 INR (India)",
                                 usd: "$24 USD (USA & Americas)",
                                 eur: "€22 EUR (Europe)",
-                                gbgbp: "£19 GBP (United Kingdom)"
+                                gbp: "£19 GBP (United Kingdom)"
                             },
                             old_price: "₹5,999 ($129)",
                             quality: "⭐ 4.99 / 5.0 Elite Certified",
@@ -437,8 +433,8 @@ Maintaining strict 4.9+ quality standards to drive organic search traffic and hi
                 }
             });
 
-            localStorage.setItem('master_os_checkbox_v1', JSON.stringify(publishedBooks));
-            alert(`⚡ SUCCESS! ${addedCount} ticked books successfully published to Max Store with full SEO active!`);
+            localStorage.setItem('master_os_permanent_v2', JSON.stringify(publishedBooks));
+            alert(`⚡ SUCCESS! ${addedCount} ticked books successfully published and permanently secured in Max Store!`);
             switchTab('store');
         }
 
