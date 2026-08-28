@@ -1,0 +1,23 @@
+{
+  "backup_id": "bkp-1787819177-a5a34a",
+  "created_at": 1787819177.3389077,
+  "backup_format_version": "1.0.0",
+  "database_filename": "autonomous_local.db.bak",
+  "journal_mode": "delete",
+  "git_commit": "7c5ae7086e0e3ac5d6bb6c1a1be29cdbd3f0bce8",
+  "schema_fingerprint": "cd9369bd99d2d2b11332b044f30ad1f6431990a5665036cf6a2252307288b2a5",
+  "artifacts": {
+    "database": {
+      "filename": "autonomous_local.db.bak",
+      "size_bytes": 274432,
+      "sha256": "bec7344e11c39a8cd312135b4dd8718376159d6ae8d9b9533d3e68fa62c11068"
+    },
+    "assets": {
+      "filename": "assets.zip",
+      "size_bytes": 34133,
+      "sha256": "8bbb9ac0b5f85bdc905c1a6d819597551fac38087dda558b61154b6b62f410e6"
+    }
+  },
+  "included_assets_count": 15,
+  "status": "VALID"
+}

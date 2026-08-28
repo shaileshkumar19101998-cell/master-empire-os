@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1200" width="800" height="1200">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+  </defs>
+  <rect width="800" height="1200" fill="url(#bg)" />
+  <rect x="40" y="40" width="720" height="1120" fill="none" stroke="#38bdf8" stroke-width="2" opacity="0.3"/>
+  <text x="400" y="250" font-family="system-ui, sans-serif" font-size="20" font-weight="600" fill="#38bdf8" text-anchor="middle" letter-spacing="4">EXECUTIVE PLAYBOOK</text>
+  <text x="400" y="450" font-family="system-ui, sans-serif" font-size="42" font-weight="800" fill="#ffffff" text-anchor="middle">DISTRIBUTED CLOUD ARCHITECTURE</text>
+  <text x="400" y="520" font-family="system-ui, sans-serif" font-size="22" font-weight="400" fill="#94a3b8" text-anchor="middle">Operational Blueprint &amp; Execution Framework</text>
+  <line x1="200" y1="580" x2="600" y2="580" stroke="#38bdf8" stroke-width="2" opacity="0.5"/>
+  <text x="400" y="800" font-family="system-ui, sans-serif" font-size="18" fill="#cbd5e1" text-anchor="middle">Target: Practitioners & Operators in Distributed Cloud Architecture</text>
+  <text x="400" y="840" font-family="system-ui, sans-serif" font-size="16" fill="#64748b" text-anchor="middle">Jurisdiction: US | Language: en</text>
+  <text x="400" y="1050" font-family="system-ui, sans-serif" font-size="14" fill="#475569" text-anchor="middle">MASTER EMPIRE OS • DETERMINISTIC BLUEPRINT</text>
+</svg>

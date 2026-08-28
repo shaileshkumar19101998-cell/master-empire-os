@@ -1,167 +1,88 @@
 import hashlib
-import json
-from typing import List, Dict, Any
+from typing import Dict, Any, List, Optional
 
-WEIGHT_DEMAND = 0.30
-WEIGHT_VELOCITY = 0.20
-WEIGHT_MONETIZATION = 0.25
-WEIGHT_SEO_GAP = 0.15
-WEIGHT_COMPETITION = 0.10
+class OpportunityEngine:
+    FORMULA_VERSION = "SERP_V1_DETERMINISTIC"
 
-SEED_OPPORTUNITIES = [
-    {
-        "niche": "Cloud & DevOps Architecture",
-        "country": "USA",
-        "title": "Zero-Downtime Multi-Region Kubernetes & Infrastructure Handbook",
-        "target_audience": "Senior DevOps Engineers, Cloud Architects, Technical Leads",
-        "problem_statement": "Deploying cross-region resilient clusters with state replication without incurring catastrophic multi-cloud egress costs.",
-        "demand_score": 92.0,
-        "velocity_score": 88.0,
-        "monetization_score": 95.0,
-        "seo_gap_score": 82.0,
-        "competition_score": 45.0,
-        "suggested_price": 29.0,
-        "suggested_format": "PDF + Interactive Checklists",
-        "risk_level": "LOW",
-        "recommended_action": "PRIORITIZE_FOR_HUMAN_REVIEW"
-    },
-    {
-        "niche": "AI Application Engineering",
-        "country": "India",
-        "title": "Autonomous RAG Systems with Local Vector Databases Architecture Guide",
-        "target_audience": "Full-Stack AI Developers, Enterprise Tech Leads in Tier-1 Tech Hubs",
-        "problem_statement": "Preventing retrieval hallucination and high LLM API latency in production enterprise search setups.",
-        "demand_score": 96.0,
-        "velocity_score": 94.0,
-        "monetization_score": 89.0,
-        "seo_gap_score": 91.0,
-        "competition_score": 38.0,
-        "suggested_price": 499.0,
-        "suggested_format": "E-Book + Code Repositories",
-        "risk_level": "LOW",
-        "recommended_action": "PRIORITIZE_FOR_HUMAN_REVIEW"
-    },
-    {
-        "niche": "Personal Finance & Solopreneurship",
-        "country": "UK",
-        "title": "UK Solopreneur & Micro-SaaS VAT / Corporation Tax Optimization Playbook",
-        "target_audience": "Freelancers, Agency Owners, Digital Nomads in the UK",
-        "problem_statement": "Navigating modern digital sales tax, Cross-border VAT exemptions, and allowable business deductions legally.",
-        "demand_score": 84.0,
-        "velocity_score": 79.0,
-        "monetization_score": 92.0,
-        "seo_gap_score": 78.0,
-        "competition_score": 42.0,
-        "suggested_price": 24.0,
-        "suggested_format": "PDF + Spreadsheet Templates",
-        "risk_level": "MEDIUM",
-        "recommended_action": "QUEUE_FOR_RESEARCH"
-    },
-    {
-        "niche": "Cybersecurity Compliance",
-        "country": "Europe",
-        "title": "GDPR & EU AI Act Compliance Blueprint for Early-Stage Startups",
-        "target_audience": "Startup Founders, Data Protection Officers, CTOs operating in EU",
-        "problem_statement": "Rapidly implementing compliant user data consent, telemetry retention, and model auditing without slowing feature velocity.",
-        "demand_score": 89.0,
-        "velocity_score": 92.0,
-        "monetization_score": 94.0,
-        "seo_gap_score": 85.0,
-        "competition_score": 35.0,
-        "suggested_price": 39.0,
-        "suggested_format": "Handbook + Audit Matrices",
-        "risk_level": "LOW",
-        "recommended_action": "PRIORITIZE_FOR_HUMAN_REVIEW"
-    },
-    {
-        "niche": "Health & Bio-Optimization",
-        "country": "Australia",
-        "title": "Circadian Synchronization & Evidence-Based Sleep Architecture Manual",
-        "target_audience": "Shift Workers, High-Stress Executives, Endurance Athletes",
-        "problem_statement": "Managing deep sleep fragmentation and recovery metrics in high-stress work patterns.",
-        "demand_score": 81.0,
-        "velocity_score": 83.0,
-        "monetization_score": 80.0,
-        "seo_gap_score": 75.0,
-        "competition_score": 52.0,
-        "suggested_price": 19.0,
-        "suggested_format": "Illustrated PDF + Habit Trackers",
-        "risk_level": "LOW",
-        "recommended_action": "QUEUE_FOR_RESEARCH"
-    }
-]
+    @staticmethod
+    def calculate_serp_opportunity_score(market_signals: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        if not market_signals or market_signals.get("source_type") != "LIVE_EXTERNAL_SIGNAL":
+            return None
 
-def generate_deterministic_id(niche: str, country: str, title: str) -> str:
-    raw_key = f"{niche.strip().lower()}:{country.strip().lower()}:{title.strip().lower()}"
-    return f"opp_{hashlib.sha256(raw_key.encode('utf-8')).hexdigest()[:12]}"
+        evidence_str = market_signals.get("evidence_source", "")
+        organic_count = 0
+        paa_count = 0
+        related_count = 0
 
-def validate_and_clamp_score(score: float) -> float:
-    try:
-        val = float(score)
-        return max(0.0, min(100.0, val))
-    except (ValueError, TypeError):
-        return 0.0
+        try:
+            if "Organic:" in evidence_str:
+                parts = evidence_str.split("Organic:")[1].split(",")
+                organic_count = int(parts[0].strip())
+            if "PAA:" in evidence_str:
+                parts = evidence_str.split("PAA:")[1].split(",")
+                paa_count = int(parts[0].strip())
+            if "Related:" in evidence_str:
+                parts = evidence_str.split("Related:")[1].replace(")", "").strip()
+                related_count = int(parts)
+        except Exception:
+            pass
 
-def calculate_opportunity_score(
-    demand: float,
-    velocity: float,
-    monetization: float,
-    seo_gap: float,
-    competition: float
-) -> float:
-    d = validate_and_clamp_score(demand)
-    v = validate_and_clamp_score(velocity)
-    m = validate_and_clamp_score(monetization)
-    sg = validate_and_clamp_score(seo_gap)
-    c = validate_and_clamp_score(competition)
+        is_commercial = market_signals.get("search_intent") == "commercial"
 
-    raw_score = (
-        (d * WEIGHT_DEMAND) +
-        (v * WEIGHT_VELOCITY) +
-        (m * WEIGHT_MONETIZATION) +
-        (sg * WEIGHT_SEO_GAP) -
-        (c * WEIGHT_COMPETITION)
-    )
-    return round(max(0.0, min(100.0, raw_score)), 2)
+        paa_score = min(paa_count * 6.0, 30.0)
+        related_score = min(related_count * 3.75, 30.0)
+        organic_score = min(organic_count * 2.0, 20.0)
+        intent_score = 20.0 if is_commercial else 10.0
 
-def generate_market_opportunities() -> List[Dict[str, Any]]:
-    opportunities = []
-    for item in SEED_OPPORTUNITIES:
-        opp_id = generate_deterministic_id(item["niche"], item["country"], item["title"])
-        score = calculate_opportunity_score(
-            demand=item["demand_score"],
-            velocity=item["velocity_score"],
-            monetization=item["monetization_score"],
-            seo_gap=item["seo_gap_score"],
-            competition=item["competition_score"]
-        )
+        raw_total = paa_score + related_score + organic_score + intent_score
+        live_serp_score = round(min(raw_total, 100.0), 2)
 
-        evidence = {
-            "source_type": "HEURISTIC_SEED",
-            "confidence": "BASELINE",
-            "signals": ["Google Trends Regional Heuristic", "Search Query Seed Analysis", "Community Problem Frequency"],
-            "velocity_score": item["velocity_score"],
-            "seo_gap_score": item["seo_gap_score"]
+        provenance = {
+            "score_type": "LIVE_SERP_OPPORTUNITY_SCORE",
+            "score_semantics": "Opportunity characteristics derived from SERP coverage, PAA depth, and related breadth. NOT verified search volume or revenue guarantee.",
+            "formula_version": OpportunityEngine.FORMULA_VERSION,
+            "raw_inputs": {
+                "organic_count": organic_count,
+                "paa_count": paa_count,
+                "related_count": related_count,
+                "is_commercial": is_commercial
+            },
+            "sub_scores": {
+                "paa_score": paa_score,
+                "related_score": related_score,
+                "organic_score": organic_score,
+                "intent_score": intent_score
+            },
+            "live_serp_opportunity_score": live_serp_score
         }
+        return provenance
 
-        opportunities.append({
-            "id": opp_id,
-            "niche": item["niche"],
-            "country": item["country"],
-            "title": item["title"],
-            "target_audience": item["target_audience"],
-            "problem_statement": item["problem_statement"],
-            "demand_score": item["demand_score"],
-            "competition_score": item["competition_score"],
-            "monetization_score": item["monetization_score"],
-            "opportunity_score": score,
-            "suggested_price": item["suggested_price"],
-            "suggested_format": item["suggested_format"],
-            "status": "DISCOVERED",
-            "evidence_data": json.dumps(evidence),
-            "risk_level": item["risk_level"],
-            "recommended_action": item["recommended_action"]
-        })
+    @staticmethod
+    def rank_live_opportunities(signals_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        ranked = []
+        for sig in signals_list:
+            if sig.get("source_type") == "LIVE_EXTERNAL_SIGNAL":
+                prov = OpportunityEngine.calculate_serp_opportunity_score(sig)
+                if prov:
+                    kw = sig.get("keyword", "unknown")
+                    tie_breaker = hashlib.sha256(kw.encode("utf-8")).hexdigest()[:6]
+                    ranked.append({
+                        "opportunity_id": f"live-opp-{tie_breaker}",
+                        "title": f"{kw.title()} Strategy & Execution Manual",
+                        "keyword": kw,
+                        "country_code": sig.get("country_code"),
+                        "language_code": sig.get("language_code"),
+                        "source_type": "LIVE_EXTERNAL_SIGNAL",
+                        "live_serp_opportunity_score": prov["live_serp_opportunity_score"],
+                        "score_provenance": prov,
+                        "market_signals": sig,
+                        "governance_status": "PROPOSED_IDEA",
+                        "search_volume_monthly": None,
+                        "cpc_value_usd": None,
+                        "competition_density": None
+                    })
 
-    opportunities.sort(key=lambda x: (x["opportunity_score"], x["id"]), reverse=True)
-    return opportunities
+        ranked.sort(key=lambda x: (-x["live_serp_opportunity_score"], x["opportunity_id"]))
+        return ranked[:5]
+
+engine = OpportunityEngine()

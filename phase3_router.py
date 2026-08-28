@@ -1,57 +1,81 @@
-from fastapi import APIRouter, HTTPException, Response
-from fastapi.responses import HTMLResponse, JSONResponse
-import sqlite3
-import json
-import seo_engine
+import uuid
+from fastapi import APIRouter
+from pydantic import BaseModel
+from typing import Optional, List
+import market_intelligence_provider
 
-router = APIRouter()
+router = APIRouter(prefix="/api/v1/opportunities", tags=["opportunities"])
 
-def get_db():
-    conn = sqlite3.connect('fastapi_local.db' if 'fastapi_local.db' in dir() else 'autonomous_local.db')
-    conn.row_factory = sqlite3.Row
-    return conn
+class DiscoverRequest(BaseModel):
+    niche: str
+    country_code: Optional[str] = "US"
+    language_code: Optional[str] = "en"
 
-@router.get('/sitemap.xml')
-def get_sitemap():
-    conn = get_db()
-    prods = conn.cursor().execute("SELECT slug FROM products WHERE status IN ('ACTIVE', 'PUBLISHED')").fetchall()
-    conn.close()
-    xml = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">', '  <url><loc>https://masterempire.ai/</loc></url>']
-    for p in prods:
-        xml.append('  <url><loc>https://masterempire.ai/product/' + str(p["slug"]) + '</loc></url>')
-    xml.append('</urlset>')
-    return Response(content='\n'.join(xml), media_type='application/xml')
+SEEDED_TOP5 = [
+    {
+        "opportunity_id": "seed-001",
+        "title": "Autonomous Remote Consulting OS",
+        "niche": "remote consulting",
+        "source_type": "INTERNAL_DEVELOPMENT_FIXTURE",
+        "opportunity_score": 97,
+        "is_seeded": True
+    },
+    {
+        "opportunity_id": "seed-002",
+        "title": "AI Career Blueprint 2026",
+        "niche": "ai careers",
+        "source_type": "INTERNAL_DEVELOPMENT_FIXTURE",
+        "opportunity_score": 96,
+        "is_seeded": True
+    },
+    {
+        "opportunity_id": "seed-003",
+        "title": "Zero-Debt Wealth Engine",
+        "niche": "personal finance",
+        "source_type": "INTERNAL_DEVELOPMENT_FIXTURE",
+        "opportunity_score": 94,
+        "is_seeded": True
+    }
+]
 
-@router.get('/robots.txt')
-def get_robots():
-    content = "User-agent: *\nAllow: /\nSitemap: https://masterempire.ai/sitemap.xml"
-    return Response(content=content, media_type='text/plain')
+@router.post("/discover")
+def discover_opportunity(req: DiscoverRequest):
+    signals = market_intelligence_provider.registry.fetch_unified_signals(
+        keyword=req.niche,
+        country_code=req.country_code,
+        language_code=req.language_code
+    )
+    
+    if signals["source_type"] == "LIVE_EXTERNAL_SIGNAL":
+        return {
+            "status": "success",
+            "opportunity_id": f"opp-{uuid.uuid4().hex[:8]}",
+            "market_signals": signals,
+            "live_score": signals.get("confidence_score"),
+            "source_type": "LIVE_EXTERNAL_SIGNAL"
+        }
+    else:
+        return {
+            "status": "zero_state",
+            "opportunity_id": None,
+            "market_signals": signals,
+            "live_score": None,
+            "source_type": "EXTERNAL_DATA_UNAVAILABLE"
+        }
 
-@router.get('/product/{slug}')
-def get_product(slug: str):
-    conn = get_db()
-    row = conn.cursor().execute("SELECT * FROM products WHERE slug = ? AND status IN ('ACTIVE', 'PUBLISHED')", (slug,)).fetchone()
-    if not row:
-        conn.close()
-        raise HTTPException(status_code=404, detail="Product not found")
-    prod = dict(row)
-    seo = seo_engine.ensure_product_seo(prod['id'])
-    conn.close()
-    m_title = str(seo.get('meta_title', prod['title']))
-    m_desc = str(seo.get('meta_description', ''))
-    p_title = str(prod.get('title', ''))
-    p_niche = str(prod.get('target_niche', ''))
-    html = '<!DOCTYPE html><html><head><title>' + m_title + '</title><meta name="description" content="' + m_desc + '"></head><body><h1>' + p_title + '</h1><p>Niche: ' + p_niche + '</p></body></html>'
-    return HTMLResponse(content=html)
-
-@router.get('/seo/{slug}')
-def get_seo(slug: str):
-    conn = get_db()
-    row = conn.cursor().execute("SELECT id FROM products WHERE slug = ?", (slug,)).fetchone()
-    if not row:
-        conn.close()
-        raise HTTPException(status_code=404, detail="Product not found")
-    prod = dict(row)
-    seo = seo_engine.ensure_product_seo(prod['id'])
-    conn.close()
-    return JSONResponse(content=dict(seo))
+@router.get("/top5")
+def get_top5_opportunities():
+    prov = market_intelligence_provider.registry.get_active_provider()
+    status = prov.get_status()
+    if status.get("auth_configured"):
+        return {
+            "status": "success",
+            "source_type": "LIVE_EXTERNAL_SIGNAL",
+            "top5": []
+        }
+    return {
+        "status": "success",
+        "source_type": "INTERNAL_DEVELOPMENT_FIXTURE",
+        "note": "Live market intelligence connector not configured. Presenting development fixtures.",
+        "top5": SEEDED_TOP5
+    }

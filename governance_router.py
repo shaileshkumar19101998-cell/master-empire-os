@@ -1,94 +1,73 @@
-from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse
-import sqlite3, datetime, uuid
+import time
+import sqlite3
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Optional
-from pipeline_orchestrator import execute_full_pipeline_cycle
-from market_intelligence_provider import registry
+from typing import Optional, Dict, Any
 
-router = APIRouter()
-def get_db():
-    conn = sqlite3.connect("autonomous_local.db")
-    conn.row_factory = sqlite3.Row
-    return conn
+import product_synthesis_engine
+import qa_engine
+
+router = APIRouter(prefix="/governance", tags=["governance"])
+DB_PATH = "autonomous_local.db"
 
 class GovernanceDecisionRequest(BaseModel):
     opportunity_id: str
-    decision: str
-    reason: Optional[str] = "Manual review"
+    decision: str  # "APPROVE", "REJECT"
+    operator: Optional[str] = "ADMIN_OPERATOR"
+    opportunity_payload: Optional[Dict[str, Any]] = None
 
-@router.post("/api/v1/opportunities/discover")
-def trigger_opportunity_discovery(country: str = "GLOBAL", niche: str = "Digital Business"):
-    prov = registry.get_active_provider()
-    status = prov.get_status()
-    now = datetime.datetime.utcnow().isoformat()
-    opp_id = f"opp-{uuid.uuid4().hex[:8]}"
-    if not status.get("auth_configured"):
-        conn = get_db()
-        cur = conn.cursor()
-        cur.execute("INSERT INTO market_opportunities (id, niche, country, title, demand_score, competition_score, opportunity_score, status, source_type, provider_status, confidence_score, evidence_freshness, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'NEW', 'DATA_UNAVAILABLE', 'CONNECTOR_REQUIRED', 0.0, 'N/A', ?)", (opp_id, niche, country, f"{country} {niche} Opportunity", 50, 50, 50, now))
-        conn.commit()
-        conn.close()
-        return {"status": "success", "opportunity_id": opp_id, "provider_status": "CONNECTOR_REQUIRED", "confidence_score": 0.0, "source_type": "DATA_UNAVAILABLE"}
-    return {"status": "success", "opportunity_id": opp_id, "provider_status": "CONNECTED"}
+@router.post("/decision")
+def record_governance_decision(req: GovernanceDecisionRequest):
+    if req.decision not in ["APPROVE", "REJECT"]:
+        raise HTTPException(status_code=400, detail="Decision must be APPROVE or REJECT")
 
-@router.get("/api/v1/opportunities/top5")
-def get_top5_opportunities():
-    conn = get_db()
+    now = time.time()
+    action = f"DECISION_{req.decision}"
+    prev_state = "PROPOSED_IDEA"
+    new_state = "APPROVED" if req.decision == "APPROVE" else "REJECTED"
+    reason = f"Governance decision by {req.operator}"
+
+    # Insert into governance_audit_log matching exact schema
+    conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
-    rows = cur.execute("SELECT * FROM market_opportunities WHERE status NOT IN ('REJECTED') ORDER BY opportunity_score DESC LIMIT 5").fetchall()
-    conn.close()
-    top5 = []
-    for r in rows:
-        d = dict(r)
-        if not d.get("source_type"):
-            d["source_type"] = "SEEDED / INTERNAL"
-            d["confidence_score"] = 100.0
-            d["provider_status"] = "INTERNAL_INITIALIZED"
-            d["evidence_freshness"] = "2026-BASELINE"
-        top5.append(d)
-    return {"status": "success", "count": len(top5), "top5": top5}
-
-@router.get("/api/v1/opportunities/{opp_id}/dossier")
-def get_opportunity_dossier(opp_id: str):
-    conn = get_db()
-    cur = conn.cursor()
-    opp = cur.execute("SELECT * FROM market_opportunities WHERE id = ?", (opp_id,)).fetchone()
-    conn.close()
-    if not opp: raise HTTPException(status_code=404)
-    d = dict(opp)
-    if not d.get("source_type"):
-        d["source_type"] = "SEEDED / INTERNAL"
-        d["confidence_score"] = 100.0
-        d["evidence_freshness"] = "2026-BASELINE"
-    return {"status": "success", "dossier": d}
-
-@router.post("/api/v1/governance/decide")
-def apply_governance_decision(req: GovernanceDecisionRequest):
-    conn = get_db()
-    cur = conn.cursor()
-    opp = cur.execute("SELECT * FROM market_opportunities WHERE id = ?", (req.opportunity_id,)).fetchone()
-    if not opp: raise HTTPException(status_code=404)
-    tgt = "APPROVED" if req.decision.upper() == "APPROVE" else ("REJECTED" if req.decision.upper() == "REJECT" else "SAVED_FOR_LATER")
-    now = datetime.datetime.utcnow().isoformat()
-    cur.execute("UPDATE market_opportunities SET status = ?, updated_at = ? WHERE id = ?", (tgt, now, req.opportunity_id))
-    cur.execute("CREATE TABLE IF NOT EXISTS governance_audit_log (id INTEGER PRIMARY KEY AUTOINCREMENT, opportunity_id TEXT, previous_status TEXT, new_status TEXT, reason TEXT, decided_at TEXT)")
-    cur.execute("INSERT INTO governance_audit_log (opportunity_id, previous_status, new_status, reason, decided_at) VALUES (?, ?, ?, ?, ?)", (req.opportunity_id, opp["status"], tgt, req.reason, now))
+    cur.execute("""
+        INSERT INTO governance_audit_log 
+        (opportunity_id, action, actor, previous_state, new_state, timestamp, previous_status, new_status, reason, decided_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (req.opportunity_id, action, req.operator, prev_state, new_state, now, prev_state, new_state, reason, now))
     conn.commit()
     conn.close()
-    pipeline_result = execute_full_pipeline_cycle(req.opportunity_id) if tgt == "APPROVED" else None
-    return {"status": "success", "opportunity_id": req.opportunity_id, "new_status": tgt, "pipeline_triggered": tgt == "APPROVED", "pipeline_result": pipeline_result}
 
-@router.get("/admin/dashboard", response_class=HTMLResponse)
-def get_control_center_dashboard():
-    conn = get_db()
-    cur = conn.cursor()
-    rows = cur.execute("SELECT * FROM market_opportunities WHERE status NOT IN ('REJECTED') ORDER BY opportunity_score DESC LIMIT 5").fetchall()
-    pc = len(cur.execute("SELECT id FROM products WHERE status IN ('ACTIVE', 'PUBLISHED')").fetchall())
-    conn.close()
-    cards = ""
-    for o in rows:
-        src = o["source_type"] or "SEEDED / INTERNAL"
-        conf = o["confidence_score"] if o["confidence_score"] is not None else 100
-        cards += f"<div style='padding:16px; background:#1e293b; margin-bottom:12px; border-radius:8px;'><h3><b>{o['title']}</b> - Score: {o['opportunity_score']} <span style='font-size:12px; color:#38bdf8; background:#0f172a; padding:2px 8px; border-radius:4px;'>[{src} | Conf: {conf}%]</span></h3><p>Niche: {o['niche']} | Country: {o['country']}</p><div id='dossier-{o['id']}' style='display:none; background:#0f172a; padding:10px; margin:10px 0; border-radius:4px; font-size:13px; color:#94a3b8;'><p><b>Problem:</b> {o['problem_statement'] or 'Identified market demand'}</p><p><b>Target:</b> {o['target_audience'] or 'Global professionals'} | <b>Freshness:</b> {o['evidence_freshness'] or 'N/A'}</p></div><div><button onclick=\"document.getElementById('dossier-{o['id']}').style.display='block'\" style='background:#3b82f6; color:white; border:none; padding:6px 12px; cursor:pointer; margin-right:8px; border-radius:4px;'>VIEW DOSSIER</button><button onclick=\"fetch('/api/v1/governance/decide', {{method:'POST', headers:{{'Content-Type':'application/json'}}, body:JSON.stringify({{opportunity_id: '{o['id']}', decision: 'APPROVE'}})}}).then(r=>r.json()).then(d=>alert('Approved & Triggered Pipeline!'))\" style='background:#10b981; color:white; border:none; padding:6px 12px; cursor:pointer; margin-right:8px; border-radius:4px;'>APPROVE</button><button style='background:#ef4444; color:white; border:none; padding:6px 12px; cursor:pointer; margin-right:8px; border-radius:4px;'>REJECT</button><button style='background:#f59e0b; color:white; border:none; padding:6px 12px; cursor:pointer; border-radius:4px;'>SAVE</button></div></div>"
-    return f"<!doctype html><html><body style='background:#0f172a; color:white; padding:20px; font-family:sans-serif;'><div style='display:flex; justify-content:space-between; align-items:center;'><h1>GLOBAL OPPORTUNITY CONTROL CENTER</h1><button onclick=\"fetch('/api/v1/opportunities/discover', {{method:'POST'}}).then(r=>r.json()).then(d=>alert('Idea Discovery Triggered! Status: '+d.provider_status))\" style='background:#6366f1; color:white; border:none; padding:10px 20px; font-weight:bold; cursor:pointer; border-radius:6px;'>GENERATE / DISCOVER IDEA</button></div><p>Active Products: {pc} | Target Jurisdictions: 197</p>{cards}</body></html>"
+    if req.decision == "APPROVE" and req.opportunity_payload:
+        blueprint = product_synthesis_engine.synthesis_engine.generate_blueprint(req.opportunity_payload)
+        artifact = product_synthesis_engine.synthesis_engine.synthesize_product(blueprint)
+        qa_result = qa_engine.qa_engine.evaluate_product(artifact)
+        return {
+            "status": "success",
+            "opportunity_id": req.opportunity_id,
+            "governance_decision": "APPROVED",
+            "synthesis_job_id": artifact["product_job_id"],
+            "qa_result": qa_result,
+            "final_status": qa_result["governance_status"]  # READY_FOR_CATALOG
+        }
+
+    return {
+        "status": "success",
+        "opportunity_id": req.opportunity_id,
+        "governance_decision": req.decision,
+        "final_status": new_state
+    }
+
+@router.post("/synthesize-gate")
+def attempt_synthesis_gate(req: Dict[str, Any]):
+    gov_status = req.get("governance_status")
+    if gov_status != "APPROVED":
+        raise HTTPException(
+            status_code=403, 
+            detail=f"Governance Violation: Cannot synthesize opportunity in state '{gov_status}'. Explicit human APPROVAL required."
+        )
+    
+    blueprint = product_synthesis_engine.synthesis_engine.generate_blueprint(req)
+    artifact = product_synthesis_engine.synthesis_engine.synthesize_product(blueprint)
+    qa_result = qa_engine.qa_engine.evaluate_product(artifact)
+    return {"status": "success", "artifact": artifact, "qa_result": qa_result}
