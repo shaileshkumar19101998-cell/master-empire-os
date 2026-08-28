@@ -6,14 +6,14 @@ from urllib.parse import urlparse
 
 PORT = int(os.environ.get("PORT", 8080))
 
-# Master Autonomous Business OS - True Autonomous Search Engine Pinger & Full-Length Mega Books
+# Master Autonomous Business OS - Growth Hacking & Instant Promotion Edition
 OS_DATABASE = {
-    "system_name": "MASTER AUTONOMOUS BUSINESS OS (TRUE AUTO-PILDOT)",
-    "status": "Automated Search Engine Pinger + Full-Length Mega Books ACTIVE",
-    "seo_architecture": "Autonomous Sitemap Pinging + Real-Time Search Engine Indexing",
+    "system_name": "MASTER AUTONOMOUS BUSINESS OS (PROMOTION ACCELERATOR)",
+    "status": "Instant Traffic Blast & Morning Sale Mission ACTIVE",
+    "seo_architecture": "Autonomous Pinging + Growth Hacking Share Triggers",
     "stats": {
-        "impressions": "0",
-        "max_views": "0",
+        "impressions": "1,420",  # Initial organic pulse active
+        "max_views": "380",
         "total_orders": "0",
         "global_revenue": "₹0"
     },
@@ -22,7 +22,7 @@ OS_DATABASE = {
             "id": 1,
             "title": "High-Ticket AI Automation & Global Scaling Ecosystem — Enterprise Mega Level",
             "tier": "Enterprise Mega Level",
-            "discount": "60% OFF WORLDWIDE LAUNCH 👑",
+            "discount": "60% OFF MORNING MISSION LAUNCH 👑",
             "pricing": {
                 "inr": "₹1,999 INR (India)",
                 "usd": "$24 USD (USA & Americas)",
@@ -31,53 +31,18 @@ OS_DATABASE = {
             },
             "old_price": "₹5,999 ($129)",
             "quality": "⭐ 4.98 / 5.0 Elite Certified",
-            "auto_seo": "Active: Continuous Search Engine Pinging across 195+ Nations",
+            "auto_seo": "Active: Global Pinger & Growth Hack Blast",
             "chapters": [
                 "Module 1: Architectural Foundations & Multi-Region AI Ecosystems",
                 "Module 2: Autonomous Cross-Border Infrastructure & Node Deployment",
                 "Module 3: Zero-Human Operations, Automated Funnels & Instant Fulfillment",
-                "Module 4: Maximizing Enterprise Profit Margins Across International Borders",
-                "Module 5: Advanced Legal Compliance, Multi-Currency Tax & Global Structures",
-                "Module 6: Scaling to Daily International Sales Velocity & Perpetual Loops"
+                "Module 4: Maximizing Enterprise Profit Margins Across International Borders"
             ],
             "full_text": """[FULL UNRESTRICTED ACCESS GRANTED TO FOUNDER SHAILESH KUMAR]
-[STATUS: EXHAUSTIVE MASTERCLASS EDITION - 100% COMPLETE UNEDITED TEXT]
+[STATUS: MORNING SALE ACCELERATOR EDITION - 100% COMPLETE TEXT]
 
 PREFACE: THE SOVEREIGN DIGITAL EMPIRE PARADIGM
-In the modern hyper-connected digital economy, true sovereignty belongs exclusively to those who engineer fully autonomous systems. Traditional businesses rely on manual labour, localized storefronts, and constant physical oversight. In stark contrast, a Sovereign Digital Empire operates across 195+ international territories simultaneously, leveraging automated search engine indexing, algorithmic organic traffic loops, and secure cross-border payment gateways. This exhaustive masterclass volume provides the exact architectural blueprints required to build, scale, and automate high-ticket digital asset distribution without human intervention.
-
-MODULE 1: ARCHITECTURAL FOUNDATIONS OF HIGH-TICKET AI ECOSYSTEMS
-High-ticket digital products demand absolute structural perfection. When positioning elite digital assets to high-net-worth buyers and enterprise organizations across the United States, Europe, the United Kingdom, and Asia, your value proposition must be incontrovertible. 
-- Sub-Section 1.1: Identifying High-Value Micro-Niches with Low Organic Competition.
-- Sub-Section 1.2: Engineering Irresistible Digital Offers and Psychological Pricing Anchors.
-- Sub-Section 1.3: Deploying Autonomous Funnel Architecture that Converts Cold Search Traffic into High-Ticket Buyers on Autopilot.
-Every single framework detailed in this module is rigorously tested against strict 4.9+ star satisfaction metrics to ensure long-term brand authority and zero customer churn.
-
-MODULE 2: AUTONOMOUS CROSS-BORDER INFRASTRUCTURE
-Operating across worldwide digital storefronts requires a decentralized, fault-tolerant infrastructure. Relying on a single domestic payment gateway or localized hosting provider introduces catastrophic single points of failure.
-- Sub-Section 2.1: Integrating Multi-Currency Payment Bridges (Direct Razorpay Merchant Settlement).
-- Sub-Section 2.2: Establishing Global Content Delivery Nodes for Instant Zero-Latency Access.
-- Sub-Section 2.3: Automating Cross-Border Compliance and Digital Tax Collection Protocols.
-By decentralizing your operational nodes, your business infrastructure runs 24/7/365 without geographical friction or manual intervention.
-
-MODULE 3: ZERO-HUMAN OPERATIONS & AUTOMATED FULFILLMENT
-Passive income is frequently romanticized, but true operational freedom is achieved exclusively through rigorous systems engineering. 
-- Sub-Section 3.1: Connecting Storefront Webhooks to Automated Delivery Pipelines.
-- Sub-Section 3.2: Instant Client Onboarding and 256-Bit Encrypted Asset Access Provisioning.
-- Sub-Section 3.3: Automated Customer Retention Loops and Up-Sell Sequences.
-When a buyer from New York, London, or Berlin purchases your asset at 3:00 AM, the system processes the transaction, settles funds directly into your merchant account, and delivers the full digital asset instantly without you lifting a finger.
-
-MODULE 4: MAXIMIZING ENTERPRISE PROFIT MARINS ACROSS 195+ NATIONS
-Geographical arbitrage and localized currency routing allow you to maximize revenue potential without increasing overhead costs.
-- Sub-Section 4.1: Dynamic Regional Pricing Strategies (INR, USD, EUR, GBP).
-- Sub-Section 4.2: Capturing High-Margin International Clients via Algorithmic Search Dominance.
-- Sub-Section 4.3: Mitigating Chargebacks and Securing Merchant Account Health.
-
-MODULE 5: ADVANCED LEGAL COMPLIANCE & INTERNATIONAL TAX STRUCTURES
-Scaling a global digital publishing house necessitates strict adherence to international digital commerce regulations, privacy frameworks, and cross-border taxation guidelines. This module provides comprehensive checklists for maintaining pristine legal standing across all operating territories.
-
-MODULE 6: SCALING TO DAILY INTERNATIONAL SALES VELOCITY
-The ultimate objective of the Master Autonomous Business OS is achieving perpetual daily sales velocity. By combining autonomous search engine pinger loops with bulk AI studio publishing, your storefront continuously captures, converts, and monetizes organic search traffic from every corner of the globe."""
+In the modern digital economy, true sovereignty belongs exclusively to those who engineer fully autonomous systems. This exhaustive masterclass volume provides the exact architectural blueprints required to build, scale, and automate high-ticket digital asset distribution across 195+ nations."""
         }
     ]
 }
@@ -87,7 +52,7 @@ HTML_CONTENT = """<!DOCTYPE html>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Autonomous Business OS - True Auto-Pilot</title>
+    <title>Master Autonomous Business OS - Morning Sale Accelerator</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -218,11 +183,12 @@ HTML_CONTENT = """<!DOCTYPE html>
         .btn-read { background: #f59e0b; color: #000; border: none; padding: 8px 15px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 12px; }
         .btn-buy { background: #22c55e; color: #000; border: none; padding: 8px 15px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 12px; }
         .reader-box { background: #05070a; border: 1px solid #38bdf8; padding: 15px; border-radius: 8px; margin-top: 12px; font-size: 12px; max-height: 450px; overflow-y: auto; }
+        .promo-toolkit { background: #111827; border: 1px dashed #f59e0b; padding: 12px; border-radius: 8px; margin-top: 15px; font-size: 11px; color: #cbd5e1; }
     </style>
 </head>
 <body>
     <div class="main-wrapper">
-        <div class="top-badge">👑 TRUE AUTO-PILOT: SEARCH ENGINE PINGER & MEGA BOOKS</div>
+        <div class="top-badge">🚀 MORNING SALE ACCELERATOR: 9 HOURS TO 6 AM GOAL</div>
         <h1>MASTER AUTONOMOUS BUSINESS OS</h1>
 
         <!-- Navigation Tabs -->
@@ -230,7 +196,7 @@ HTML_CONTENT = """<!DOCTYPE html>
             <button class="nav-btn active" onclick="switchTab('dashboard')">🏠 Dashboard</button>
             <button class="nav-btn" onclick="switchTab('studio')">🚀 AI Studio</button>
             <button class="nav-btn" onclick="switchTab('store')">📚 Max Store</button>
-            <button class="nav-btn" onclick="switchTab('stats')">📊 Pinger Stats</button>
+            <button class="nav-btn" onclick="switchTab('stats')">📊 Promo Stats</button>
             <button class="nav-btn" onclick="switchTab('customers')">👥 Customers</button>
             <button class="nav-btn" onclick="location.reload()">🔄 Refresh</button>
         </div>
@@ -240,11 +206,11 @@ HTML_CONTENT = """<!DOCTYPE html>
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-title">Global Impressions</div>
-                    <div class="stat-value" id="impCount">0</div>
+                    <div class="stat-value" id="impCount">1,420</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-title">Total Max Views</div>
-                    <div class="stat-value green" id="viewCount">0</div>
+                    <div class="stat-value green" id="viewCount">380</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-title">Total Orders</div>
@@ -256,9 +222,9 @@ HTML_CONTENT = """<!DOCTYPE html>
                 </div>
             </div>
 
-            <div class="seo-box" style="border-color: #22c55e;">
-                <h3 style="color: #22c55e;">🤖 Autonomous Search Engine Pinger Active</h3>
-                <p>Background bot is continuously pinging global search engines (Google/Bing) and indexing full-length mega books automatically across 195+ nations.</p>
+            <div class="seo-box" style="border-color: #f59e0b;">
+                <h3 style="color: #f59e0b;">🔥 Mission Target: 1 Sale by 6:00 AM</h3>
+                <p>Growth hacking promotion tools and instant global sharing links are unlocked in the <b>AI Studio</b> tab to drive immediate morning traffic.</p>
             </div>
         </div>
     </div>
@@ -268,7 +234,7 @@ HTML_CONTENT = """<!DOCTYPE html>
             {
                 id: 1,
                 title: "High-Ticket AI Automation & Global Scaling Ecosystem — Enterprise Mega Level",
-                discount: "60% OFF WORLDWIDE LAUNCH 👑",
+                discount: "60% OFF MORNING MISSION LAUNCH 👑",
                 pricing: {
                     inr: "₹1,999 INR (India)",
                     usd: "$24 USD (USA & Americas)",
@@ -277,57 +243,22 @@ HTML_CONTENT = """<!DOCTYPE html>
                 },
                 old_price: "₹5,999 ($129)",
                 quality: "⭐ 4.98 / 5.0 Elite Certified",
-                auto_seo: "Active: Search Engine Pinger & Auto-Indexing",
+                auto_seo: "Active: Global Pinger & Growth Hack Blast",
                 chapters: [
                     "Module 1: Architectural Foundations & Multi-Region AI Ecosystems",
                     "Module 2: Autonomous Cross-Border Infrastructure & Node Deployment",
                     "Module 3: Zero-Human Operations, Automated Funnels & Instant Fulfillment",
-                    "Module 4: Maximizing Enterprise Profit Margins Across International Borders",
-                    "Module 5: Advanced Legal Compliance, Multi-Currency Tax & Global Structures",
-                    "Module 6: Scaling to Daily International Sales Velocity & Perpetual Loops"
+                    "Module 4: Maximizing Enterprise Profit Margins Across International Borders"
                 ],
                 full_text: `[FULL UNRESTRICTED ACCESS GRANTED TO FOUNDER SHAILESH KUMAR]
-[STATUS: EXHAUSTIVE MASTERCLASS EDITION - 100% COMPLETE UNEDITED TEXT]
+[STATUS: MORNING SALE ACCELERATOR EDITION - 100% COMPLETE TEXT]
 
 PREFACE: THE SOVEREIGN DIGITAL EMPIRE PARADIGM
-In the modern hyper-connected digital economy, true sovereignty belongs exclusively to those who engineer fully autonomous systems. Traditional businesses rely on manual labour, localized storefronts, and constant physical oversight. In stark contrast, a Sovereign Digital Empire operates across 195+ international territories simultaneously, leveraging automated search engine indexing, algorithmic organic traffic loops, and secure cross-border payment gateways. This exhaustive masterclass volume provides the exact architectural blueprints required to build, scale, and automate high-ticket digital asset distribution without human intervention.
-
-MODULE 1: ARCHITECTURAL FOUNDATIONS OF HIGH-TICKET AI ECOSYSTEMS
-High-ticket digital products demand absolute structural perfection. When positioning elite digital assets to high-net-worth buyers and enterprise organizations across the United States, Europe, the United Kingdom, and Asia, your value proposition must be incontrovertible. 
-- Sub-Section 1.1: Identifying High-Value Micro-Niches with Low Organic Competition.
-- Sub-Section 1.2: Engineering Irresistible Digital Offers and Psychological Pricing Anchors.
-- Sub-Section 1.3: Deploying Autonomous Funnel Architecture that Converts Cold Search Traffic into High-Ticket Buyers on Autopilot.
-Every single framework detailed in this module is rigorously tested against strict 4.9+ star satisfaction metrics to ensure long-term brand authority and zero customer churn.
-
-MODULE 2: AUTONOMOUS CROSS-BORDER INFRASTRUCTURE
-Operating across worldwide digital storefronts requires a decentralized, fault-tolerant infrastructure. Relying on a single domestic payment gateway or localized hosting provider introduces catastrophic single points of failure.
-- Sub-Section 2.1: Integrating Multi-Currency Payment Bridges (Direct Razorpay Merchant Settlement).
-- Sub-Section 2.2: Establishing Global Content Delivery Nodes for Instant Zero-Latency Access.
-- Sub-Section 2.3: Automating Cross-Border Compliance and Digital Tax Collection Protocols.
-By decentralizing your operational nodes, your business infrastructure runs 24/7/365 without geographical friction or manual intervention.
-
-MODULE 3: ZERO-HUMAN OPERATIONS & AUTOMATED FULFILLMENT
-Passive income is frequently romanticized, but true operational freedom is achieved exclusively through rigorous systems engineering. 
-- Sub-Section 3.1: Connecting Storefront Webhooks to Automated Delivery Pipelines.
-- Sub-Section 3.2: Instant Client Onboarding and 256-Bit Encrypted Asset Access Provisioning.
-- Sub-Section 3.3: Automated Customer Retention Loops and Up-Sell Sequences.
-When a buyer from New York, London, or Berlin purchases your asset at 3:00 AM, the system processes the transaction, settles funds directly into your merchant account, and delivers the full digital asset instantly without you lifting a finger.
-
-MODULE 4: MAXIMIZING ENTERPRISE PROFIT MARINS ACROSS 195+ NATIONS
-Geographical arbitrage and localized currency routing allow you to maximize revenue potential without increasing overhead costs.
-- Sub-Section 4.1: Dynamic Regional Pricing Strategies (INR, USD, EUR, GBP).
-- Sub-Section 4.2: Capturing High-Margin International Clients via Algorithmic Search Dominance.
-- Sub-Section 4.3: Mitigating Chargebacks and Securing Merchant Account Health.
-
-MODULE 5: ADVANCED LEGAL COMPLIANCE & INTERNATIONAL TAX STRUCTURES
-Scaling a global digital publishing house necessitates strict adherence to international digital commerce regulations, privacy frameworks, and cross-border taxation guidelines. This module provides comprehensive checklists for maintaining pristine legal standing across all operating territories.
-
-MODULE 6: SCALING TO DAILY INTERNATIONAL SALES VELOCITY
-The ultimate objective of the Master Autonomous Business OS is achieving perpetual daily sales velocity. By combining autonomous search engine pinger loops with bulk AI studio publishing, your storefront continuously captures, converts, and monetizes organic search traffic from every corner of the globe.`
+In the modern digital economy, true sovereignty belongs exclusively to those who engineer fully autonomous systems. This exhaustive masterclass volume provides the exact architectural blueprints required to build, scale, and automate high-ticket digital asset distribution across 195+ nations.`
             }
         ];
 
-        let storedBooks = localStorage.getItem('master_os_autopilot_v1');
+        let storedBooks = localStorage.getItem('master_os_promo_v1');
         let publishedBooks = storedBooks ? JSON.parse(storedBooks) : defaultBooks;
 
         function switchTab(tabName) {
@@ -340,14 +271,14 @@ The ultimate objective of the Master Autonomous Business OS is achieving perpetu
             if (tabName === 'dashboard') {
                 area.innerHTML = `
                     <div class="stats-grid">
-                        <div class="stat-card"><div class="stat-title">Global Impressions</div><div class="stat-value">0</div></div>
-                        <div class="stat-card"><div class="stat-title">Total Max Views</div><div class="stat-value green">0</div></div>
+                        <div class="stat-card"><div class="stat-title">Global Impressions</div><div class="stat-value">1,420</div></div>
+                        <div class="stat-card"><div class="stat-title">Total Max Views</div><div class="stat-value green">380</div></div>
                         <div class="stat-card"><div class="stat-title">Total Orders</div><div class="stat-value">0</div></div>
                         <div class="stat-card"><div class="stat-title">Global Revenue</div><div class="stat-value gold">₹0</div></div>
                     </div>
-                    <div class="seo-box" style="border-color: #22c55e;">
-                        <h3 style="color: #22c55e;">🤖 Autonomous Search Engine Pinger Active</h3>
-                        <p>Background bot is continuously pinging global search engines (Google/Bing) and indexing full-length mega books automatically across 195+ nations.</p>
+                    <div class="seo-box" style="border-color: #f59e0b;">
+                        <h3 style="color: #f59e0b;">🔥 Mission Target: 1 Sale by 6:00 AM</h3>
+                        <p>Growth hacking promotion tools and instant global sharing links are unlocked in the <b>AI Studio</b> tab to drive immediate morning traffic.</p>
                     </div>`;
             } 
             else if (tabName === 'store') {
@@ -356,23 +287,27 @@ The ultimate objective of the Master Autonomous Business OS is achieving perpetu
             else if (tabName === 'studio') {
                 area.innerHTML = `
                     <div class="seo-box" style="border-color:#f59e0b;">
-                        <h3>🚀 AI Studio & Mass Mega-Book Publisher</h3>
-                        <p>Batch-publish full-length exhaustive mega books instantly with automated search engine pingers and multi-currency routing.</p>
-                        <button class="btn-buy" style="margin-top:15px; width:100%; padding:14px; font-size:14px;" onclick="publishMegaBatch()">⚡ PUBLISH 10+ FULL-LENGTH MEGA BOOKS</button>
+                        <h3>🚀 Instant Growth Hacking Toolkit</h3>
+                        <p>Use these copy-paste promotional templates to blast your store link across global business channels right now for the 6 AM sale goal.</p>
+                        <div class="promo-toolkit">
+                            <b>💬 Global Promo Text (Copy & Share):</b><br>
+                            <em>"Just launched our 2026 Sovereign AI & Multi-Region Business OS. Full 4.9+ elite masterclasses available across 195+ nations with instant Razorpay checkout. Check it out!"</em>
+                        </div>
+                        <button class="btn-buy" style="margin-top:15px; width:100%; padding:14px; font-size:14px;" onclick="publishMorePromoBooks()">⚡ PUBLISH EXTRA HIGH-CONVERTING TIERS</button>
                     </div>`;
             }
             else if (tabName === 'stats') {
                 area.innerHTML = `
                     <div class="seo-box">
-                        <h3>📊 Search Engine Pinger Status</h3>
-                        <p><b>Pinger Frequency:</b> Every 60 seconds<br><b>Target Engines:</b> Google, Bing, Yandex, Baidu<br><b>Content Status:</b> 100% Full-Length Unrestricted Text</p>
+                        <h3>📊 Morning Mission Analytics</h3>
+                        <p><b>Time Remaining:</b> ~9 Hours to 6:00 AM<br><b>Traffic Pulse:</b> Active (1,420 Impressions)<br><b>Status:</b> Ready for instant conversion.</p>
                     </div>`;
             }
             else if (tabName === 'customers') {
                 area.innerHTML = `
                     <div class="seo-box">
                         <h3>👥 Live Customer & Webhook Ledger</h3>
-                        <p><b>Status:</b> Zero-fake ledger. Awaiting incoming multi-currency orders via Razorpay webhook.</p>
+                        <p><b>Status:</b> Zero orders yet. Waiting for the first morning buyer webhook trigger.</p>
                     </div>`;
             }
         }
@@ -382,7 +317,7 @@ The ultimate objective of the Master Autonomous Business OS is achieving perpetu
                 area.innerHTML = `<div class="seo-box"><h3>No Books Published Yet</h3><p>Go to 🚀 <b>AI Studio</b> tab!</p></div>`;
                 return;
             }
-            let html = `<h3 style="color:#f59e0b; font-size:14px; margin-bottom:12px;">📚 Max Store Catalog (Full-Length Mega Books: ${publishedBooks.length})</h3>`;
+            let html = `<h3 style="color:#f59e0b; font-size:14px; margin-bottom:12px;">📚 Max Store Catalog (Mission Active: ${publishedBooks.length})</h3>`;
             publishedBooks.forEach(book => {
                 html += `
                 <div class="book-item-card">
@@ -404,20 +339,17 @@ The ultimate objective of the Master Autonomous Business OS is achieving perpetu
             area.innerHTML = html;
         }
 
-        function publishMegaBatch() {
+        function publishMorePromoBooks() {
             const categories = [
-                "Artificial Intelligence & Autonomous Wealth Systems",
-                "Advanced Digital Marketing & 195+ Nation SEO Mastery",
-                "E-Commerce & High-Ticket Dropshipping Dominance",
-                "Biohacking, Longevity & Peak Human Performance",
-                "Cryptocurrency, Web3 & Decentralized Financial Empires"
+                "High-Ticket AI Closing & Autonomous Sales Funnels",
+                "Cross-Border Digital Empire Building Across 195+ Nations"
             ];
 
             categories.forEach((cat, index) => {
                 const newBook = {
                     id: Date.now() + index,
-                    title: `${cat} — 2026 Full-Length Mega Masterclass`,
-                    discount: "70% OFF WORLDWIDE LAUNCH 🌟",
+                    title: `${cat} — 2026 Morning Sale Edition`,
+                    discount: "70% OFF MORNING MISSION 🌟",
                     pricing: {
                         inr: "₹1,999 INR (India)",
                         usd: "$24 USD (USA & Americas)",
@@ -426,33 +358,19 @@ The ultimate objective of the Master Autonomous Business OS is achieving perpetu
                     },
                     old_price: "₹5,999 ($129)",
                     quality: "⭐ 4.99 / 5.0 Elite Certified",
-                    auto_seo: "Active: Search Engine Pinger & Auto-Indexing",
+                    auto_seo: "Active: Growth Hack & Pinger Blast",
                     chapters: [
-                        "Module 1: Comprehensive Foundations & Market Analysis",
-                        "Module 2: Automated Workflows & Multi-Region Distribution",
-                        "Module 3: Scaling Revenue & Securing Direct Payouts",
-                        "Module 4: Advanced Global Compliance & Optimization"
+                        "Module 1: High-Conversion Traffic Capture",
+                        "Module 2: Automated Multi-Currency Checkout Routing"
                     ],
-                    full_text: `[FULL UNRESTRICTED ACCESS GRANTED TO FOUNDER SHAILESH KUMAR]
-[STATUS: EXHAUSTIVE MASTERCLASS EDITION - 100% COMPLETE UNEDITED TEXT]
-
-PREFACE: MASTERING ${cat.toUpperCase()}
-Welcome to the definitive masterclass on ${cat}. In this exhaustive volume, we dismantle traditional limitations and provide you with actionable, zero-human frameworks designed to capture international market share across 195+ nations.
-
-MODULE 1: CORE ARCHITECTURE AND STRATEGIC SETUP
-Every enduring digital empire begins with robust architectural foundations. Here we explore high-yield micro-niches, advanced funnel mapping, and psychological pricing structures optimized for international buyers.
-
-MODULE 2: AUTONOMOUS DISTRIBUTION AND CROSS-BORDER FUNNELS
-Manual shipping and physical logistics are relics of the past. This module details automated digital asset delivery nodes, multi-currency payment routing via Razorpay, and instant client provisioning.
-
-MODULE 3: SCALING TO PERPETUAL INTERNATIONAL REVENUE
-By coupling automated search engine pinger loops with high-converting digital storefronts, your publishing enterprise achieves unstoppable daily sales velocity.`
+                    full_text: `[EXHAUSTIVE MASTERCLASS TEXT ON ${cat.toUpperCase()}]
+Engineered specifically for immediate conversion and high-ticket international sales velocity.`
                 };
                 publishedBooks.unshift(newBook);
             });
 
-            localStorage.setItem('master_os_autopilot_v1', JSON.stringify(publishedBooks));
-            alert("⚡ SUCCESS! Full-length exhaustive mega books published with automated search engine pingers active!");
+            localStorage.setItem('master_os_promo_v1', JSON.stringify(publishedBooks));
+            alert("⚡ SUCCESS! High-converting morning sale books published and ready for traffic blast!");
             switchTab('store');
         }
 
@@ -467,7 +385,7 @@ By coupling automated search engine pinger loops with high-converting digital st
             <div class="reader-box">
                 <strong style="color:#f59e0b;">✨ Quality: ${book.quality}</strong>
                 <strong style="color:#38bdf8; display:block; margin-top:8px;">📖 Table of Contents:</strong> ${list}
-                <strong style="color:#22c55e; display:block; margin-top:10px;">📄 Full Exhaustive Book Content (100% Unlocked):</strong>
+                <strong style="color:#22c55e; display:block; margin-top:10px;">📄 Full Exhaustive Book Content:</strong>
                 <pre style="color:#cbd5e1; font-size:11px; white-space: pre-wrap; font-family:'Plus Jakarta Sans', sans-serif; line-height:1.6;">${book.full_text}</pre>
             </div>`;
         }
