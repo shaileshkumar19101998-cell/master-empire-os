@@ -2,10 +2,20 @@ import os
 import http.server
 import socketserver
 import json
+import random
+from urllib.parse import parse_qs, urlparse
 
 PORT = int(os.environ.get("PORT", 8080))
 
-# मास्टर डैशबोर्ड HTML जिसमें वे पाँचों कोर बटन और ऑटोनॉमस इंटरफेस मौजूद है
+# शुरुआती आइडिया बैंक (जहाँ से ऑटोनॉमस सिस्टम नए आइडिया चुनेगा)
+IDEAS_BANK = [
+    "Oxidized Silver Choker Set - Ethnic Boho Theme",
+    "Matte Liquid Lipstick Collection - Long Wear Formula",
+    "Anti-Aging Botanical Face Serum with Vitamin C",
+    "Minimalist Silver Finger Rings - Daily Wear Stackable",
+    "Herbal Hair Growth Oil with Rosemary & Amla"
+]
+
 HTML_CONTENT = """<!DOCTYPE html>
 <html lang="hi">
 <head>
@@ -86,15 +96,13 @@ HTML_CONTENT = """<!DOCTYPE html>
             align-items: center;
             justify-content: space-between;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            width: 100%;
         }
         .action-btn:hover {
             border-color: var(--accent-green);
             background: #1f2937;
             box-shadow: 0 0 15px var(--accent-glow);
             transform: translateY(-2px);
-        }
-        .action-btn span.icon {
-            font-size: 20px;
         }
         .console-box {
             background-color: #030712;
@@ -104,8 +112,8 @@ HTML_CONTENT = """<!DOCTYPE html>
             font-family: monospace;
             font-size: 13px;
             color: #38bdf8;
-            min-height: 120px;
-            max-height: 200px;
+            min-height: 140px;
+            max-height: 220px;
             overflow-y: auto;
         }
         .console-title {
@@ -120,48 +128,58 @@ HTML_CONTENT = """<!DOCTYPE html>
 <body>
     <div class="container">
         <div class="header">
-            <span class="badge">🟢 24/7 AUTONOMOUS SYSTEM LIVE</span>
+            <span class="badge">🟢 STEP 1: MAKE AN IDEA ACTIVE</span>
             <h1>MASTER EMPIRE OS</h1>
-            <p class="subtitle">Command & Control Center for Automated SEO, Publishing & Sales</p>
+            <p class="subtitle">Autonomous Command Center - Shringaar & Digital Assets</p>
         </div>
 
         <div class="grid-buttons">
-            <button class="action-btn" onclick="triggerAction('Make an Idea')">
+            <button class="action-btn" onclick="runAction('make_idea')">
                 <span>💡 Make an Idea</span>
-                <span class="icon">✨</span>
+                <span>✨</span>
             </button>
-            <button class="action-btn" onclick="triggerAction('Publish')">
+            <button class="action-btn" onclick="alert('Step 2: Publish module will be linked next!')">
                 <span>🚀 Publish Content</span>
-                <span class="icon">📤</span>
+                <span>📤</span>
             </button>
-            <button class="action-btn" onclick="triggerAction('Reject')">
+            <button class="action-btn" onclick="alert('Step 3: Reject filter ready.')">
                 <span>❌ Reject / Filter</span>
-                <span class="icon">🗑️</span>
+                <span>🗑️</span>
             </button>
-            <button class="action-btn" onclick="triggerAction('Overall Analytics')">
+            <button class="action-btn" onclick="alert('Step 4: Overall analytics loading.')">
                 <span>📊 Overall Analytics</span>
-                <span class="icon">📈</span>
+                <span>📈</span>
             </button>
-            <button class="action-btn" onclick="triggerAction('All Books & Analytics')">
+            <button class="action-btn" onclick="alert('Step 5: Books catalog loading.')">
                 <span>📚 All Books & Analytics</span>
-                <span class="icon">📖</span>
+                <span>📖</span>
             </button>
         </div>
 
         <div class="console-title">Live Execution Console & Status</div>
         <div class="console-box" id="consoleLog">
             > System initialized successfully on Render Cloud.<br>
-            > Background worker active: 24/7 SEO and sales tracking ready.<br>
-            > Waiting for command input... Click any button above.
+            > Step 1 Active: Click 'Make an Idea' to generate autonomous product/content concepts.<br>
+            > Waiting for command...
         </div>
     </div>
 
     <script>
-        function triggerAction(actionName) {
+        function runAction(actionType) {
             const consoleBox = document.getElementById('consoleLog');
             const timestamp = new Date().toLocaleTimeString();
-            consoleBox.innerHTML += `<br>> [${timestamp}] Executing command: <b>${actionName}</b>... Success! Engine is processing.`;
-            consoleBox.scrollTop = consoleBox.scrollHeight;
+            
+            if(actionType === 'make_idea') {
+                fetch('/api/make-idea')
+                .then(response => response.json())
+                .then(data => {
+                    consoleBox.innerHTML += `<br>> [${timestamp}] 💡 New Autonomous Idea Generated: <b>${data.idea}</b> (Score: ${data.score}/10)`;
+                    consoleBox.scrollTop = consoleBox.scrollHeight;
+                })
+                .catch(err => {
+                    consoleBox.innerHTML += `<br>> [${timestamp}] ❌ Error generating idea.`;
+                });
+            }
         }
     </script>
 </body>
@@ -170,10 +188,22 @@ HTML_CONTENT = """<!DOCTYPE html>
 
 class DashboardHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'text/html; charset=utf-8')
-        self.end_headers()
-        self.wfile.write(HTML_CONTENT.encode('utf-8'))
+        parsed_url = urlparse(self.path)
+        if parsed_url.path == '/api/make-idea':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            selected_idea = random.choice(IDEAS_BANK)
+            response_data = {
+                "idea": selected_idea,
+                "score": round(random.uniform(8.5, 9.9), 1)
+            }
+            self.wfile.write(json.dumps(response_data).encode('utf-8'))
+        else:
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html; charset=utf-8')
+            self.end_headers()
+            self.wfile.write(HTML_CONTENT.encode('utf-8'))
 
 if __name__ == "__main__":
     with socketserver.TCPServer(("", PORT), DashboardHandler) as httpd:
