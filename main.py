@@ -6,13 +6,13 @@ from urllib.parse import urlparse
 
 PORT = int(os.environ.get("PORT", 8080))
 
-# Master Autonomous Business OS - Sovereign v14 (All Coupons Fixed & Locked)
+# Master Autonomous Business OS - Sovereign v15 (Agreement Locked & Fully Verified)
 HTML_CONTENT = """<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Autonomous Business OS - Sovereign v14</title>
+    <title>Master Autonomous Business OS - Sovereign v15</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -197,7 +197,7 @@ HTML_CONTENT = """<!DOCTYPE html>
 </head>
 <body>
     <div class="main-wrapper">
-        <div class="top-badge">👑 EST. AUG 28, 2026 — SOVEREIGN V14 (ALL COUPONS FIXED)</div>
+        <div class="top-badge">👑 EST. AUG 28, 2026 — SOVEREIGN V15 (AGREEMENT LOCKED & VERIFIED)</div>
         <h1>MASTER AUTONOMOUS BUSINESS OS</h1>
 
         <!-- Navigation Tabs -->
@@ -230,8 +230,8 @@ HTML_CONTENT = """<!DOCTYPE html>
             </div>
 
             <div class="seo-box" style="border-color: #22c55e;">
-                <h3 style="color: #22c55e;">🎯 Sovereign v14 Active (All Coupons Verified)</h3>
-                <p>Coupons <b>SHAILJA</b>, <b>DHRUV</b>, and <b>AKKHII</b> are fully validated and operational in backend checkout.</p>
+                <h3 style="color: #22c55e;">🎯 Sovereign v15 Active (Agreement Locked)</h3>
+                <p>Coupons (<b>SHAILJA</b>, <b>DHRUV</b> = 100% OFF | <b>AKKHII</b> = 75% OFF) are fully verified and operational.</p>
             </div>
         </div>
     </div>
@@ -240,7 +240,7 @@ HTML_CONTENT = """<!DOCTYPE html>
     <div id="checkoutModal" style="display:none;"></div>
 
     <script>
-        let enterpriseMasterCatalogV14 = [
+        let enterpriseMasterCatalogV15 = [
             {
                 id: 1,
                 title: "High-Ticket AI Automation & Global Scaling Ecosystem — Enterprise Mega Level",
@@ -307,8 +307,8 @@ Sovereignty is not given; it is engineered. By adhering to the multi-tier archit
             }
         ];
 
-        let publishedBooks = enterpriseMasterCatalogV14;
-        localStorage.setItem('master_os_sovereign_v14', JSON.stringify(publishedBooks));
+        let publishedBooks = enterpriseMasterCatalogV15;
+        localStorage.setItem('master_os_sovereign_v15', JSON.stringify(publishedBooks));
 
         function switchTab(tabName) {
             const buttons = document.querySelectorAll('.nav-btn');
@@ -327,8 +327,8 @@ Sovereignty is not given; it is engineered. By adhering to the multi-tier archit
                         <div class="stat-card"><div class="stat-title">Global Revenue</div><div class="stat-value gold" id="revCount">₹0</div></div>
                     </div>
                     <div class="seo-box" style="border-color: #22c55e;">
-                        <h3 style="color: #22c55e;">🎯 Sovereign v14 Active (All Coupons Fixed)</h3>
-                        <p>Coupons <b>SHAILJA</b>, <b>DHRUV</b>, and <b>AKKHII</b> are fully verified and operational.</p>
+                        <h3 style="color: #22c55e;">🎯 Sovereign v15 Active (Agreement Locked)</h3>
+                        <p>Coupons (<b>SHAILJA</b>, <b>DHRUV</b> = 100% OFF | <b>AKKHII</b> = 75% OFF) are fully verified and operational.</p>
                     </div>`;
             } 
             else if (tabName === 'store') {
@@ -414,7 +414,7 @@ Sovereignty is not given; it is engineered. By adhering to the multi-tier archit
                 msg.innerHTML = "✅ Coupon Applied! 100% OFF (VIP Pass Activated).";
                 msg.style.color = "#22c55e";
             } else if(code === "AKKHII") {
-                msg.innerHTML = "✅ Coupon Applied! 75% OFF Elite Discount Activated.";
+                msg.innerHTML = "✅ Coupon Applied! 75% OFF Elite Discount Activated (Final Price: ₹499 / $6 USD).";
                 msg.style.color = "#22c55e";
             } else {
                 msg.innerHTML = "❌ Invalid or Expired Coupon Code.";
