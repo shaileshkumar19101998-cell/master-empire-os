@@ -1,18 +1,18 @@
 import os
 import http.server
 import socketserver
-json_mod = json = __import__('json')
+import json
 from urllib.parse import urlparse
 
 PORT = int(os.environ.get("PORT", 8080))
 
-# Master Autonomous Business OS - Enterprise Sovereign Gold v10
+# Master Autonomous Business OS - Sovereign Gold v11 (Official Agreement Locked with SHAILJA, DHRUV, AKKHII)
 HTML_CONTENT = """<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Autonomous Business OS - Enterprise Sovereign v10</title>
+    <title>Master Autonomous Business OS - Sovereign v11 (Agreement Locked)</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -197,7 +197,7 @@ HTML_CONTENT = """<!DOCTYPE html>
 </head>
 <body>
     <div class="main-wrapper">
-        <div class="top-badge">👑 EST. AUG 28, 2026 — ENTERPRISE SOVEREIGN V10</div>
+        <div class="top-badge">👑 EST. AUG 28, 2026 — SOVEREIGN V11 (AGREEMENT & COUPONS LOCKED)</div>
         <h1>MASTER AUTONOMOUS BUSINESS OS</h1>
 
         <!-- Navigation Tabs -->
@@ -230,8 +230,8 @@ HTML_CONTENT = """<!DOCTYPE html>
             </div>
 
             <div class="seo-box" style="border-color: #22c55e;">
-                <h3 style="color: #22c55e;">🎯 Enterprise Sovereign v10 Active</h3>
-                <p>24/7 Autonomous per-book SEO across 195+ nations, Country Rooms, and Multi-Tier Exhaustive Masterclasses are fully operational.</p>
+                <h3 style="color: #22c55e;">🎯 Sovereign v11 Active (Coupons: SHAILJA, DHRUV, AKKHII)</h3>
+                <p>Agreement locked. Multi-tier exhaustive masterclasses, 24/7 per-book SEO, and active coupon engine are fully operational.</p>
             </div>
         </div>
     </div>
@@ -240,7 +240,7 @@ HTML_CONTENT = """<!DOCTYPE html>
     <div id="checkoutModal" style="display:none;"></div>
 
     <script>
-        let enterpriseMasterCatalog = [
+        let enterpriseMasterCatalogV11 = [
             {
                 id: 1,
                 title: "High-Ticket AI Automation & Global Scaling Ecosystem — Enterprise Mega Level",
@@ -352,8 +352,8 @@ Autonomous wealth systems provide absolute financial independence when paired wi
             }
         ];
 
-        let publishedBooks = enterpriseMasterCatalog;
-        localStorage.setItem('master_os_sovereign_v10', JSON.stringify(publishedBooks));
+        let publishedBooks = enterpriseMasterCatalogV11;
+        localStorage.setItem('master_os_sovereign_v11', JSON.stringify(publishedBooks));
 
         function switchTab(tabName) {
             const buttons = document.querySelectorAll('.nav-btn');
@@ -372,8 +372,8 @@ Autonomous wealth systems provide absolute financial independence when paired wi
                         <div class="stat-card"><div class="stat-title">Global Revenue</div><div class="stat-value gold" id="revCount">₹0</div></div>
                     </div>
                     <div class="seo-box" style="border-color: #22c55e;">
-                        <h3 style="color: #22c55e;">🎯 Enterprise Sovereign v10 Active</h3>
-                        <p>24/7 Autonomous per-book SEO across 195+ nations, Country Rooms, and Multi-Tier Exhaustive Masterclasses are fully operational.</p>
+                        <h3 style="color: #22c55e;">🎯 Sovereign v11 Active (Agreement Locked)</h3>
+                        <p>Coupons <b>SHAILJA</b>, <b>DHRUV</b>, and <b>AKKHII</b> are fully integrated. Country Rooms and Multi-Tier Masterclasses active.</p>
                     </div>`;
             } 
             else if (tabName === 'store') {
@@ -382,7 +382,7 @@ Autonomous wealth systems provide absolute financial independence when paired wi
             else if (tabName === 'rooms') {
                 area.innerHTML = `
                     <h3 style="color:#f59e0b; font-size:14px; margin-bottom:12px;">🌍 Country-Specific Global Sales Rooms</h3>
-                    <p style="font-size:11px; color:#94a3b8; margin-bottom:12px;">Select any regional node to inspect local currency routing, active SEO pinger status, and regional buyer traffic:</p>
+                    <p style="font-size:11px; color:#94a3b8; margin-bottom:12px;">Inspect regional nodes, local currency routing, and active SEO pinger status:</p>
                     <div class="country-card"><div><b>🇺🇸 United States (North America)</b><br><span style="font-size:10px; color:#22c55e;">SEO Pinger: Active (USD $24)</span></div><button class="btn-read" onclick="alert('🇺🇸 US Node Operational. Organic search indexing active across 50 states.')">Inspect</button></div>
                     <div class="country-card"><div><b>🇬🇧 United Kingdom (Europe)</b><br><span style="font-size:10px; color:#22c55e;">SEO Pinger: Active (GBP £19)</span></div><button class="btn-read" onclick="alert('🇬🇧 UK Node Operational. Localized currency routing verified.')">Inspect</button></div>
                     <div class="country-card"><div><b>🇪🇺 European Union (Eurozone)</b><br><span style="font-size:10px; color:#22c55e;">SEO Pinger: Active (EUR €22)</span></div><button class="btn-read" onclick="alert('🇪🇺 EU Node Operational. GDPR compliant delivery active.')">Inspect</button></div>
@@ -392,7 +392,7 @@ Autonomous wealth systems provide absolute financial independence when paired wi
                 area.innerHTML = `
                     <div class="seo-box" style="border-color:#f59e0b; text-align: left;">
                         <h3>🚀 AI Studio - Multi-Tier Masterclass Generator</h3>
-                        <p style="margin-bottom:10px; font-size:11px;">Generate exhaustive, multi-tier masterclasses with foundation, enterprise, and industry levels instantly:</p>
+                        <p style="margin-bottom:10px; font-size:11px;">Generate exhaustive, multi-tier masterclasses instantly on the fly:</p>
                         
                         <label style="font-size:10px; color:#94a3b8;">BOOK TITLE / TOPIC:</label>
                         <input type="text" id="genTitle" class="studio-input" value="Advanced Algorithmic Wealth & Cross-Border AI Scaling — 2026 Edition">
@@ -475,7 +475,7 @@ Perpetual organic dominance achieved through 24/7 autonomous SEO indexing.`
             };
 
             publishedBooks.unshift(newBook);
-            localStorage.setItem('master_os_sovereign_v10', JSON.stringify(publishedBooks));
+            localStorage.setItem('master_os_sovereign_v11', JSON.stringify(publishedBooks));
             alert("⚡ SUCCESS! New multi-tier enterprise masterclass generated and published!");
             switchTab('store');
         }
@@ -497,7 +497,7 @@ Perpetual organic dominance achieved through 24/7 autonomous SEO indexing.`
                     </div>
                     
                     <div class="coupon-box">
-                        <input type="text" id="couponCodeInput" class="coupon-input" placeholder="Enter Coupon Code (e.g. SOVEREIGN60)">
+                        <input type="text" id="couponCodeInput" class="coupon-input" placeholder="Enter Coupon (SHAILJA / DHRUV / AKKHII)">
                         <button class="coupon-btn" onclick="applyCouponCode()">APPLY</button>
                     </div>
                     <div id="couponMsg" style="font-size:11px; margin-bottom:10px; color:#38bdf8;"></div>
@@ -513,8 +513,11 @@ Perpetual organic dominance achieved through 24/7 autonomous SEO indexing.`
         function applyCouponCode() {
             const code = document.getElementById('couponCodeInput').value.trim().toUpperCase();
             const msg = document.getElementById('couponMsg');
-            if(code === "SOVEREIGN60" || code === "FOUNDER" || code === "SHAILESH") {
-                msg.innerHTML = "✅ Coupon Applied! 60% Special Discount Activated.";
+            if(code === "SHAILJA" || code === "DHRUV") {
+                msg.innerHTML = "✅ Coupon Applied! 100% OFF (Founder VIP Pass Activated).";
+                msg.style.color = "#22c55e";
+            } else if(code === "AKKHII") {
+                msg.innerHTML = "✅ Coupon Applied! 75% OFF Elite Discount Activated.";
                 msg.style.color = "#22c55e";
             } else {
                 msg.innerHTML = "❌ Invalid or Expired Coupon Code.";
@@ -593,4 +596,4 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     with socketserver.TCPServer(("", PORT), DashboardHandler) as httpd:
         print(f"Master Empire OS serving at port {PORT}")
-        httpd.serve_forever()
+        httpd.serve_forever()SS
