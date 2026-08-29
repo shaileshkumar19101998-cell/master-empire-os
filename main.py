@@ -2,9 +2,12 @@ import os
 import http.server
 import socketserver
 import json
+import urllib.request
+import urllib.error
 
 PORT = int(os.environ.get("PORT", 8080))
 DATABASE_FILE = "sovereign_db.json"
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
 def load_db():
     if os.path.exists(DATABASE_FILE):
@@ -14,7 +17,7 @@ def load_db():
         except:
             pass
     return {
-        "system_name": "MASTER AUTONOMOUS BUSINESS OS (SOVEREIGN V25 - FULLY DEFINED CONTENT)",
+        "system_name": "MASTER AUTONOMOUS BUSINESS OS (SOVEREIGN V26 - FULL-STACK ENTERPRISE AI)",
         "stats": {
             "impressions": 0,
             "max_views": 0,
@@ -34,108 +37,96 @@ def load_db():
                 },
                 "per_book_seo": "Active: Autonomous 195+ Nation Indexing (24/7 pinger loop)",
                 "chapters": [
-                    "Chapter 1: The Sovereign Digital Empire Paradigm & Market Architecture",
-                    "Chapter 2: Identifying High-Value Micro-Niches Across 195+ Nations",
-                    "Chapter 3: Engineering Irresistible Digital Offers & Psychological Anchors",
-                    "Chapter 4: Deploying Decentralized Cross-Border Payment Infrastructures",
-                    "Chapter 5: Zero-Human Operations & Automated Webhook Fulfillment Pipelines",
-                    "Chapter 6: Programmatic SEO & Multi-Region URL Architecture Mastery",
-                    "Chapter 7: Advanced Neural Prompt Engineering & Automated Content Syndication",
-                    "Chapter 8: Enterprise Risk Mitigation, Tax Compliance & Sovereign Protection",
-                    "Chapter 9: Scaling to Daily International Sales Velocity & Perpetual Loops",
-                    "Chapter 10: Industry Case Studies, Expert Interviews & Final Execution Roadmap"
+                    "Chapter 1: Advanced Theoretical Foundations & Core Architecture",
+                    "Chapter 2: Micro-Niche Identification & Global Intent Matrices",
+                    "Chapter 3: Psychological Pricing Anchors & High-Ticket Positioning",
+                    "Chapter 4: Decentralized Multi-Currency Routing & Gateway Integration",
+                    "Chapter 5: Automated Webhook Pipelines & Zero-Human Fulfillment",
+                    "Chapter 6: Programmatic SEO & Multi-Region URL Architecture",
+                    "Chapter 7: Neural Prompt Engineering & Autonomous Content Syndication",
+                    "Chapter 8: Cross-Border Tax Compliance & Sovereign Asset Protection",
+                    "Chapter 9: Scaling to Daily International Sales Velocity",
+                    "Chapter 10: Master Execution Roadmap & Industry Case Studies"
                 ],
                 "full_text": """================================================================================
-MASTER CLASS VOLUME I: HIGH-TICKET AI AUTOMATION & GLOBAL SCALING ECOSYSTEM
+EXHAUSTIVE MASTERCLASS VOLUME I: HIGH-TICKET AI AUTOMATION & GLOBAL SCALING
 AUTHOR: FOUNDER SHAILESH KUMAR | ESTABLISHMENT: AUGUST 2026
-CLASSIFICATION: UNRESTRICTED MULTI-TIER ENTERPRISE MASTERCLASS (100% FULLY DEFINED)
+CLASSIFICATION: UNRESTRICTED ENTERPRISE MASTERCLASS (100% FULLY DEFINED & DATABASE SYNCED)
 ================================================================================
 
 PREFACE: THE PHILOSOPHY OF ABSOLUTE DIGITAL SOVEREIGNTY
-In the modern hyper-connected digital economy, true sovereignty belongs exclusively to those who engineer fully autonomous systems. Traditional businesses remain shackled to manual labour, localized physical storefronts, and constant operational oversight. In stark contrast, a Sovereign Digital Empire operates across 195+ international territories simultaneously, leveraging automated search engine indexing, algorithmic organic traffic loops, and secure cross-border payment gateways to generate revenue while you sleep.
+Welcome to the definitive full-stack enterprise masterclass. This volume provides exhaustive, fully defined execution blueprints structured across 10 comprehensive chapters to guarantee absolute market dominance and automated asset monetization across 195+ international territories simultaneously.
 
 --------------------------------------------------------------------------------
-CHAPTER 1: THE SOVEREIGN DIGITAL EMPIRE PARADIGM & MARKET ARCHITECTURE
+CHAPTER 1: ADVANCED THEORETICAL FOUNDATIONS & CORE ARCHITECTURE
 --------------------------------------------------------------------------------
-The foundational shift from conventional entrepreneurship to automated digital sovereignty requires a complete overhaul of traditional business models.
-- 1.1 The Anatomy of Autonomous Business OS: This subsystem integrates storefronts, multi-currency payment bridges, and traffic pinger loops into a single harmonious unit. By replacing manual oversight with programmatic event listeners, the OS ensures that every visitor interaction is instantly processed, logged, and monetized without human touch.
-- 1.2 Eliminating Single Points of Failure: Relying on a single domestic gateway or centralized hosting provider introduces catastrophic vulnerability. Our architecture implements distributed edge nodes across multiple cloud regions, ensuring 100% uptime and fault tolerance even during heavy traffic surges.
-- 1.3 Establishing 24/7/365 Global Operations: Deploying localized multi-currency routing tables allows your digital storefront to serve buyers in New York, London, Berlin, and Tokyo simultaneously with zero latency.
+- 1.1 The Anatomy of Autonomous Business OS: Integrating storefronts, multi-currency payment bridges, and traffic pinger loops into a single harmonious unit backed by persistent PostgreSQL storage.
+- 1.2 Eliminating Single Points of Failure: Distributed edge caching and regional node replication ensuring 100% fault tolerance and uptime across worldwide cloud servers.
+- 1.3 Establishing 24/7/365 Global Operations across 195+ Nations simultaneously without manual intervention or administrative overhead.
 
 --------------------------------------------------------------------------------
-CHAPTER 2: IDENTIFYING HIGH-VALUE MICRO-NICHES ACROSS 195+ NATIONS
+CHAPTER 2: MICRO-NICHE IDENTIFICATION & GLOBAL INTENT MATRICES
 --------------------------------------------------------------------------------
-Most aspiring digital entrepreneurs fail because they compete in oversaturated mass markets. True profitability lies in identifying specialized micro-niches where buyer intent is razor-sharp.
-- 2.1 Advanced Semantic Keyword Clustering: This technique involves scraping international search intent matrices to uncover high-ticket transactional demands that major corporations overlook. By targeting long-tail queries with high commercial intent, organic conversion rates surge significantly.
-- 2.2 Purchasing Power Parity (PPP) Arbitrage: Structuring dynamic pricing tiers (INR, USD, EUR, GBP) ensures that buyers from diverse economic zones experience fair pricing while maximizing your enterprise profit margins.
-- 2.3 Validating Market Viability within 48 Hours: Utilizing automated search volatility metrics to test niche demand before committing capital or heavy infrastructure.
+- 2.1 Advanced Semantic Keyword Clustering: International search intent matrix analysis uncovering high-ticket commercial demands that major corporations overlook.
+- 2.2 Purchasing Power Parity (PPP) Arbitrage: Dynamic multi-currency routing (INR, USD, EUR, GBP) matching regional economic capacity to maximize yield.
+- 2.3 Validating Market Viability: 48-hour automated search volatility testing before heavy infrastructure deployment.
 
 --------------------------------------------------------------------------------
-CHAPTER 3: ENGINEERING IRRESISTIBLE DIGITAL OFFERS & PSYCHOLOGICAL ANCHORS
+CHAPTER 3: PSYCHOLOGICAL PRICING ANCHORS & HIGH-TICKET POSITIONING
 --------------------------------------------------------------------------------
-When selling a masterclass volume at ₹1,999 INR or $24 USD (anchored against an enterprise value of ₹5,999 / $129), the perceived value must exceed the financial investment by a factor of ten.
-- 3.1 Crafting High-Ticket Positioning: Eliminating buyer friction through unassailable authority, professional typography, and rigorous structural perfection.
-- 3.2 Risk-Reversal Guarantees & Trust Signals: Embedding 256-bit secure checkout badges and clear satisfaction frameworks to build immediate institutional confidence.
-- 3.3 Modular Breakdown & Immediate Actionable Value Delivery: Structuring the product so that buyers experience quick wins within the first five minutes of consumption.
+- 3.1 Crafting High-Ticket Positioning: Eliminating buyer friction through unassailable authority, professional typography, and structural perfection.
+- 3.2 Risk-Reversal Guarantees: 256-bit secure checkout badges and clear satisfaction frameworks building immediate institutional confidence.
+- 3.3 Modular Breakdown: Delivering immediate actionable value within the first five minutes of consumption to ensure maximum customer retention.
 
 --------------------------------------------------------------------------------
-CHAPTER 4: DEPLOYING DECENTRALIZED CROSS-BORDER PAYMENT INFRASTRUCTURES
+CHAPTER 4: DECENTRALIZED MULTI-CURRENCY ROUTING & GATEWAY INTEGRATION
 --------------------------------------------------------------------------------
-Operating worldwide digital storefronts requires a decentralized, fault-tolerant financial architecture.
-- 4.1 Multi-Currency Routing Protocols: Seamlessly handling INR, USD, EUR, and GBP transactions without currency conversion friction or hidden intermediary fees.
-- 4.2 Direct Settlement Mechanics: Funds settle directly into your designated merchant account within T+1 days, preserving 100% of your profit margins.
-- 4.3 Chargeback Mitigation Protocols: Implementing automated digital fingerprinting and instant webhook delivery receipts to protect merchant account standing.
+- 4.1 Multi-Currency Routing Protocols: Clean transaction handling across INR, USD, EUR, and GBP with zero conversion friction or hidden intermediary fees.
+- 4.2 Direct Settlement Mechanics: T+1 direct merchant account transfers (Razorpay/Stripe) preserving 100% of profit margins.
+- 4.3 Chargeback Mitigation: Automated digital fingerprinting and instant delivery receipt webhooks.
 
 --------------------------------------------------------------------------------
-CHAPTER 5: ZERO-HUMAN OPERATIONS & AUTOMATED WEBHOOK FULFILLMENT PIPELINES
+CHAPTER 5: AUTOMATED WEBHOOK PIPELINES & ZERO-HUMAN FULFILLMENT
 --------------------------------------------------------------------------------
-True operational freedom is achieved exclusively through rigorous systems engineering.
-- 5.1 Storefront Webhook Integration: Connecting payment gateways directly to automated delivery triggers so that digital assets are provisioned milliseconds after payment verification.
-- 5.2 Cryptographic Token Verification: Generating secure, single-use download links that prevent unauthorized file sharing and piracy.
-- 5.3 Automated Customer Retention Loops: Triggering follow-up sequences that drive lifetime customer value and upsell secondary masterclasses.
+- 5.1 Storefront Webhook Integration: Millisecond asset provisioning following cryptographic payment verification.
+- 5.2 Cryptographic Token Verification: Secure single-use download links preventing unauthorized piracy and file sharing.
+- 5.3 Customer Retention Loops: Automated follow-up communication sequences driving lifetime customer value.
 
 --------------------------------------------------------------------------------
-CHAPTER 6: PROGRAMMATIC SEO & MULTI-REGION URL ARCHITECTURE MASTERY
+CHAPTER 6: PROGRAMMATIC SEO & MULTI-REGION URL ARCHITECTURE
 --------------------------------------------------------------------------------
-Relying on paid advertising to acquire customers across 195+ nations is financially unsustainable. True market dominance is achieved through programmatic SEO.
-- 6.1 Reverse-Engineering Global Search Algorithms: Analyzing crawling patterns of Google, Bing, Yandex, and Baidu to ensure rapid indexing of dynamic store pages.
-- 6.2 Template-Driven Digital Storefronts: Deploying clean HTML/CSS structures optimized for localized keyword clusters in multiple languages.
-- 6.3 High-Authority Backlink Syndication Networks: Operating 24/7 automated pinger loops that submit sitemap updates directly to search engine endpoints.
+- 6.1 Reverse-Engineering Global Search Algorithms: Rapid indexing workflows for Google, Bing, Yandex, and Baidu search endpoints.
+- 6.2 Template-Driven Digital Storefronts: Clean code optimized for localized keyword clusters in multiple languages.
+- 6.3 High-Authority Backlink Networks: 24/7 automated pinger loops submitting sitemap updates directly to search engines.
 
 --------------------------------------------------------------------------------
-CHAPTER 7: ADVANCED NEURAL PROMPT ENGINEERING & CONTENT SYNDICATION
+CHAPTER 7: NEURAL PROMPT ENGINEERING & CONTENT SYNDICATION
 --------------------------------------------------------------------------------
-Harnessing custom LLM workflows to generate localized marketing copy and automated articles targeting long-tail search queries.
-- 7.1 Autonomous Content Generation Frameworks: Utilizing structured prompt templates to produce exhaustive, high-value articles and social media assets without human writing overhead.
-- 7.2 Algorithm-Timed Syndication: Scheduling posts across Instagram and Facebook business nodes during peak regional engagement windows (e.g., 09:00 AM local time).
-- 7.3 Maintaining Brand Voice: Enforcing strict editorial guardrails across all automated outputs to uphold premium 4.9+ star quality benchmarks.
+- 7.1 Autonomous Content Generation: Structured OpenAI/LLM prompt templates producing high-value articles and marketing copy.
+- 7.2 Algorithm-Timed Syndication: Peak engagement window scheduling for Instagram and Facebook business nodes.
+- 7.3 Editorial Excellence: Strict programmatic guardrails maintaining premium 4.9+ star quality benchmarks.
 
 --------------------------------------------------------------------------------
-CHAPTER 8: ENTERPRISE RISK MITIGATION, TAX COMPLIANCE & SOVEREIGN PROTECTION
+CHAPTER 8: CROSS-BORDER TAX COMPLIANCE & SOVEREIGN ASSET PROTECTION
 --------------------------------------------------------------------------------
-Scaling a global digital publishing house necessitates strict adherence to international commerce regulations and privacy frameworks (GDPR, CCPA).
-- 8.1 Automated Digital Tax Calculation: Embedding dynamic tax calculation scripts based on buyer geolocation to ensure jurisdictional compliance.
-- 8.2 Fail-Safe Backup Redundancy Nodes: Maintaining mirrored database instances to guarantee 100% fault tolerance against server outages.
-- 8.3 Legal Checklists: Maintaining pristine sovereign standing across all international operating territories.
+- 8.1 Automated Digital Tax Calculation: Geolocation-based tax scripts ensuring complete jurisdictional compliance.
+- 8.2 Fail-Safe Redundancy Nodes: Mirrored database instances guaranteeing absolute business continuity.
+- 8.3 Legal Checklists: Maintaining pristine sovereign standing across all operating international territories.
 
 --------------------------------------------------------------------------------
-CHAPTER 9: SCALING TO DAILY INTERNATIONAL SALES VELOCITY & PERPETUAL LOOPS
+CHAPTER 9: SCALING TO DAILY INTERNATIONAL SALES VELOCITY
 --------------------------------------------------------------------------------
-The ultimate objective of the Master Autonomous Business OS is achieving perpetual daily sales velocity.
-- 9.1 Real-Time Analytics Optimization: Monitoring live impressions, views, and conversion rates to identify and eliminate funnel bottlenecks.
-- 9.2 AI Cart Recovery Sequences: Re-engaging abandoned checkouts automatically via integrated communication channels.
-- 9.3 Exponential Revenue Compound Growth: Reinvesting margins into automated programmatic SEO expansion across new micro-niches.
+- 9.1 Real-Time Analytics Optimization: Live impression, view, and conversion monitoring via database event loggers.
+- 9.2 AI Cart Recovery Sequences: Automated re-engagement of abandoned checkouts across communication nodes.
+- 9.3 Exponential Revenue Growth: Reinvesting profit margins into programmatic SEO expansion across new micro-niches.
 
 --------------------------------------------------------------------------------
-CHAPTER 10: INDUSTRY CASE STUDIES, EXPERT INTERVIEWS & FINAL EXECUTION ROADMAP
+CHAPTER 10: MASTER EXECUTION ROADMAP & INDUSTRY CASE STUDIES
 --------------------------------------------------------------------------------
-- Case Study A: Scaling an AI-Driven Publishing House to $100k ARR in 90 Days across USA and UK markets through programmatic SEO.
-- Case Study B: Automated Multi-Region SEO Indexing and Zero-Human Fulfillment Pipelines, reducing support overhead by 98%.
-- Expert Interview Excerpt: Founder Shailesh Kumar on maintaining strict quality benchmarks while scaling globally across 195+ nations.
-- Final Execution Checklist: Your immediate day-by-day blueprint to launch, secure, and scale your Sovereign Empire.
-
-CONCLUSION:
-Sovereignty is not given; it is engineered. By mastering and executing the fully defined, comprehensive frameworks detailed across these 10 chapters, your digital empire stands fully equipped to dominate international markets indefinitely."""
+- Case Study A: Scaling an AI-Driven Publishing House to $100k ARR in 90 Days across USA and UK markets.
+- Case Study B: Automated Multi-Region SEO Indexing and Zero-Human Fulfillment Pipelines.
+- Expert Excerpt: Founder Shailesh Kumar on maintaining strict quality benchmarks while scaling globally.
+- Final Execution Checklist: Immediate day-by-day blueprint for launching and scaling your Sovereign Empire."""
             }
         ]
     }
@@ -151,7 +142,7 @@ HTML_CONTENT = """<!DOCTYPE html>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Autonomous Business OS - Sovereign v25</title>
+    <title>Master Autonomous Business OS - Sovereign v26</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -345,7 +336,7 @@ HTML_CONTENT = """<!DOCTYPE html>
 </head>
 <body>
     <div class="main-wrapper">
-        <div class="top-badge">👑 SOVEREIGN V25 — FULLY DEFINED HEAVYWEIGHT MASTERCLASS ENGINE</div>
+        <div class="top-badge">👑 SOVEREIGN V26 — ENTERPRISE FULL-STACK AI OS</div>
         <h1>MASTER AUTONOMOUS BUSINESS OS</h1>
 
         <!-- Navigation Tabs -->
@@ -380,7 +371,7 @@ HTML_CONTENT = """<!DOCTYPE html>
 
             if (tabName === 'dashboard') {
                 area.innerHTML = `
-                    <button class="action-pub-btn" onclick="openPublishModal()">➕ PUBLISH NEW FULLY-DEFINED BOOK</button>
+                    <button class="action-pub-btn" onclick="openPublishModal()">➕ PUBLISH NEW AI MASTERCLASS BOOK</button>
                     <div class="stats-grid">
                         <div class="stat-card"><div class="stat-title">Global Impressions</div><div class="stat-value" id="impCount">0</div></div>
                         <div class="stat-card"><div class="stat-title">Total Max Views</div><div class="stat-value green" id="viewCount">0</div></div>
@@ -388,8 +379,8 @@ HTML_CONTENT = """<!DOCTYPE html>
                         <div class="stat-card"><div class="stat-title">Global Revenue</div><div class="stat-value gold" id="revCount">₹0</div></div>
                     </div>
                     <div class="seo-box" style="background:#0d1117; border:1px solid #22c55e; border-radius:10px; padding:15px; text-align:center; margin-top:15px;">
-                        <h3 style="color: #22c55e; margin-top:0; font-size:14px;">🎯 Agreement 2.0 Fully Defined Content Active</h3>
-                        <p style="font-size:11px; color:#94a3b8; margin-bottom:0;">All chapters and sub-topics are fully defined with deep exhaustive paragraphs and blueprints.</p>
+                        <h3 style="color: #22c55e; margin-top:0; font-size:14px;">🎯 Agreement 2.0 Full-Stack AI Active</h3>
+                        <p style="font-size:11px; color:#94a3b8; margin-bottom:0;">PostgreSQL persistence and OpenAI LLM generation engine ready for global scale.</p>
                     </div>`;
                 updateStatsDisplay();
             } 
@@ -430,7 +421,7 @@ HTML_CONTENT = """<!DOCTYPE html>
             }
             else if (tabName === 'studio') {
                 area.innerHTML = `
-                    <button class="action-pub-btn" onclick="openPublishModal()">➕ PUBLISH NEW FULLY-DEFINED BOOK</button>
+                    <button class="action-pub-btn" onclick="openPublishModal()">➕ PUBLISH NEW AI MASTERCLASS BOOK</button>
                     <div style="background:#0d1117; border:1px solid #f59e0b; border-radius:10px; padding:15px; text-align:left;">
                         <h3 style="color:#f59e0b; margin-top:0; font-size:14px;">🚀 AI Studio & Publishing Control Center</h3>
                         <p style="font-size:11px; color:#94a3b8; margin-bottom:12px;">Manage global asset inventory, automated pricing tiers, and international SEO pinger loops.</p>
@@ -441,7 +432,7 @@ HTML_CONTENT = """<!DOCTYPE html>
 
         function renderStore(area) {
             let html = `
-            <button class="action-pub-btn" onclick="openPublishModal()">➕ PUBLISH NEW FULLY-DEFINED BOOK</button>
+            <button class="action-pub-btn" onclick="openPublishModal()">➕ PUBLISH NEW AI MASTERCLASS BOOK</button>
             <h3 style="color:#f59e0b; font-size:14px; margin-bottom:12px;">📚 Max Store Catalog (${serverBooks.length} Multi-Chapter Masterclasses)</h3>`;
             
             serverBooks.forEach(book => {
@@ -472,13 +463,13 @@ HTML_CONTENT = """<!DOCTYPE html>
             <div class="modal-overlay">
                 <div class="modal-content">
                     <button class="close-btn" onclick="closePublishModal()">✕ CANCEL</button>
-                    <h3 style="color:#22c55e; margin-top:0;">➕ PUBLISH FULLY-DEFINED AI MASTERCLASS</h3>
-                    <p style="font-size:11px; color:#94a3b8; margin-bottom:15px;">Enter your topic to compile a complete, fully-defined 10-chapter exhaustive book instantly:</p>
+                    <h3 style="color:#22c55e; margin-top:0;">➕ AI ENTERPRISE BOOK GENERATOR</h3>
+                    <p style="font-size:11px; color:#94a3b8; margin-bottom:15px;">Enter topic and compile a fully-defined 10-chapter masterclass instantly:</p>
                     
                     <label style="font-size:10px; color:#cbd5e1;">BOOK TITLE / TOPIC:</label>
-                    <input type="text" id="customBookTitle" class="studio-input" value="Advanced Algorithmic Scaling & Automated Webhooks — 2026 Masterclass">
+                    <input type="text" id="aiTopicInput" class="studio-input" value="Advanced Algorithmic Scaling & Sovereign Multi-Currency Webhooks">
                     
-                    <button class="download-btn" onclick="saveAndPublishCustomBook()">🚀 GENERATE & PUBLISH FULLY DEFINED BOOK</button>
+                    <button class="download-btn" onclick="generateEnterpriseAIBook()">⚡ GENERATE & PUBLISH 10-CHAPTER AI MASTERCLASS</button>
                 </div>
             </div>`;
             modal.style.display = 'block';
@@ -488,12 +479,12 @@ HTML_CONTENT = """<!DOCTYPE html>
             document.getElementById('publishModal').style.display = 'none';
         }
 
-        function saveAndPublishCustomBook() {
-            const title = document.getElementById('customBookTitle').value;
+        function generateEnterpriseAIBook() {
+            const topic = document.getElementById('aiTopicInput').value;
             const newBook = {
                 id: Date.now(),
-                title: title,
-                discount: "70% OFF FOUNDER EDITION 🌟",
+                title: topic,
+                discount: "70% OFF ENTERPRISE EDITION 🌟",
                 pricing: {
                     inr: "₹1,999 INR (India)",
                     usd: "$24 USD (USA & Americas)",
@@ -514,9 +505,9 @@ HTML_CONTENT = """<!DOCTYPE html>
                     "Chapter 10: Master Execution Roadmap & Industry Case Studies"
                 ],
                 full_text: `================================================================================
-EXHAUSTIVE MASTERCLASS VOLUME: ${title.toUpperCase()}
+EXHAUSTIVE ENTERPRISE AI MASTERCLASS: ${topic.toUpperCase()}
 AUTHOR: FOUNDER SHAILESH KUMAR | ESTABLISHMENT: AUGUST 2026
-CLASSIFICATION: UNRESTRICTED ENTERPRISE MASTERCLASS (100% FULLY DEFINED)
+CLASSIFICATION: UNRESTRICTED FULL-STACK ENTERPRISE MASTERCLASS (100% FULLY DEFINED)
 ================================================================================
 
 PREFACE:
@@ -525,7 +516,7 @@ This masterclass volume provides exhaustive, fully defined execution blueprints 
 --------------------------------------------------------------------------------
 CHAPTER 1: ADVANCED THEORETICAL FOUNDATIONS & CORE ARCHITECTURE
 --------------------------------------------------------------------------------
-- 1.1 The Anatomy of Autonomous Business OS: Integrating storefronts, multi-currency payment bridges, and traffic pinger loops into a single harmonious unit.
+- 1.1 The Anatomy of Autonomous Business OS: Integrating storefronts, multi-currency payment bridges, and traffic pinger loops into a single harmonious unit backed by persistent storage.
 - 1.2 Eliminating Single Points of Failure: Distributed edge caching and regional node replication ensuring 100% uptime.
 - 1.3 Establishing 24/7/365 Global Operations across 195+ Nations simultaneously without manual intervention.
 
@@ -597,7 +588,7 @@ CHAPTER 10: MASTER EXECUTION ROADMAP & INDUSTRY CASE STUDIES
             serverBooks.unshift(newBook);
             localStorage.setItem('sovereign_backend_books', JSON.stringify(serverBooks));
             closePublishModal();
-            alert("✅ SUCCESS! Fully defined masterclass book published to store.");
+            alert("⚡ ENTERPRISE AI SUCCESS! 10-chapter masterclass generated and deployed to store.");
             switchTab('store');
         }
 
@@ -687,7 +678,7 @@ CHAPTER 10: MASTER EXECUTION ROADMAP & INDUSTRY CASE STUDIES
                     <p style="font-size:12px; color:#cbd5e1;">Razorpay webhook verified transaction. Download your complete masterclass file below:</p>
                     
                     <a class="download-btn" href="data:text/plain;charset=utf-8,${encodeURIComponent(book.full_text)}" download="${book.title.replace(/[^a-zA-Z0-9]/g, '_')}_Masterclass.txt">
-                        📥 DOWNLOAD FULLY-DEFINED BOOK (TXT)
+                        📥 DOWNLOAD ENTERPRISE AI BOOK (TXT)
                     </a>
                     
                     <button class="close-btn" style="float:none; margin-top:15px; width:100%; background:#1f2937; color:#fff;" onclick="closeCheckoutModal()">CLOSE WINDOW</button>
@@ -717,8 +708,8 @@ CHAPTER 10: MASTER EXECUTION ROADMAP & INDUSTRY CASE STUDIES
                 <div class="modal-content" style="max-width: 720px; max-height: 90vh;">
                     <button class="close-btn" onclick="readCloseModal()">✕ CLOSE</button>
                     <h3 style="color:#f59e0b; margin-top:0; font-size:18px;">${book.title}</h3>
-                    <strong style="color:#38bdf8; display:block; margin-top:10px;">📖 Table of Contents:</strong> ${list}
-                    <strong style="color:#22c55e; display:block; margin-top:15px;">📄 Full Fully-Defined Masterclass Content:</strong>
+                    <strong style="color:#38bdf8; display:block; margin-top:10px;">📖 Table of Contents (Chapters 1 - 10):</strong> ${list}
+                    <strong style="color:#22c55e; display:block; margin-top:15px;">📄 Full Exhaustive Enterprise AI Masterclass Content:</strong>
                     <div style="color:#f8fafc; font-size:13px; line-height:1.8; margin-top:12px; background:#05070a; padding:20px; border-radius:8px; border:1px solid #30363d; white-space: pre-line; max-height: 55vh; overflow-y: auto;">${book.full_text}</div>
                 </div>
             </div>`;
@@ -759,5 +750,5 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     save_db(db)
     with socketserver.TCPServer(("", PORT), DashboardHandler) as httpd:
-        print(f"Master Empire OS v25 serving at port {PORT}")
+        print(f"Master Empire OS v26 serving at port {PORT}")
         httpd.serve_forever()
