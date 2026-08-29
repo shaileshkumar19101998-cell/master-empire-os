@@ -6,13 +6,13 @@ from urllib.parse import urlparse
 
 PORT = int(os.environ.get("PORT", 8080))
 
-# Master Autonomous Business OS - Sovereign v12 (Sales Funnel + Cart Recovery + WhatsApp/Email Engine)
+# Master Autonomous Business OS - Sovereign v13 (Clean Hidden Coupons)
 HTML_CONTENT = """<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Autonomous Business OS - Sovereign v12 (Sales Funnel & Recovery)</title>
+    <title>Master Autonomous Business OS - Sovereign v13</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -197,7 +197,7 @@ HTML_CONTENT = """<!DOCTYPE html>
 </head>
 <body>
     <div class="main-wrapper">
-        <div class="top-badge">👑 EST. AUG 28, 2026 — SOVEREIGN V12 (FUNNEL + CART RECOVERY + WHATSAPP ENGINE)</div>
+        <div class="top-badge">👑 EST. AUG 28, 2026 — SOVEREIGN V13 (CLEAN HIDDEN COUPONS)</div>
         <h1>MASTER AUTONOMOUS BUSINESS OS</h1>
 
         <!-- Navigation Tabs -->
@@ -230,8 +230,8 @@ HTML_CONTENT = """<!DOCTYPE html>
             </div>
 
             <div class="seo-box" style="border-color: #22c55e;">
-                <h3 style="color: #22c55e;">🎯 Sovereign v12 Active (Agreement Locked)</h3>
-                <p>Coupons (<b>SHAILJA</b>, <b>DHRUV</b>, <b>AKKHII</b>), AI Sales Funnel Generator, and Abandoned Cart WhatsApp/Email Recovery are fully live.</p>
+                <h3 style="color: #22c55e;">🎯 Sovereign v13 Active (Agreement Locked)</h3>
+                <p>Clean checkout modal active. Secret VIP coupons (SHAILJA, DHRUV, AKKHII) securely hidden in backend validation.</p>
             </div>
         </div>
     </div>
@@ -240,7 +240,7 @@ HTML_CONTENT = """<!DOCTYPE html>
     <div id="checkoutModal" style="display:none;"></div>
 
     <script>
-        let enterpriseMasterCatalogV12 = [
+        let enterpriseMasterCatalogV13 = [
             {
                 id: 1,
                 title: "High-Ticket AI Automation & Global Scaling Ecosystem — Enterprise Mega Level",
@@ -307,8 +307,8 @@ Sovereignty is not given; it is engineered. By adhering to the multi-tier archit
             }
         ];
 
-        let publishedBooks = enterpriseMasterCatalogV12;
-        localStorage.setItem('master_os_sovereign_v12', JSON.stringify(publishedBooks));
+        let publishedBooks = enterpriseMasterCatalogV13;
+        localStorage.setItem('master_os_sovereign_v13', JSON.stringify(publishedBooks));
 
         function switchTab(tabName) {
             const buttons = document.querySelectorAll('.nav-btn');
@@ -327,8 +327,8 @@ Sovereignty is not given; it is engineered. By adhering to the multi-tier archit
                         <div class="stat-card"><div class="stat-title">Global Revenue</div><div class="stat-value gold" id="revCount">₹0</div></div>
                     </div>
                     <div class="seo-box" style="border-color: #22c55e;">
-                        <h3 style="color: #22c55e;">🎯 Sovereign v12 Active (Agreement Locked)</h3>
-                        <p>Coupons (<b>SHAILJA</b>, <b>DHRUV</b>, <b>AKKHII</b>), Sales Funnel Generator, and Cart Recovery active.</p>
+                        <h3 style="color: #22c55e;">🎯 Sovereign v13 Active (Clean Checkout)</h3>
+                        <p>Secret VIP coupons (SHAILJA, DHRUV, AKKHII) are securely hidden in backend validation. Checkout modal is clean.</p>
                     </div>`;
             } 
             else if (tabName === 'store') {
@@ -394,7 +394,7 @@ Sovereignty is not given; it is engineered. By adhering to the multi-tier archit
                     </div>
                     
                     <div class="coupon-box">
-                        <input type="text" id="couponCodeInput" class="coupon-input" placeholder="Enter Coupon (SHAILJA / DHRUV / AKKHII)">
+                        <input type="text" id="couponCodeInput" class="coupon-input" placeholder="Enter Coupon Code">
                         <button class="coupon-btn" onclick="applyCouponCode()">APPLY</button>
                     </div>
                     <div id="couponMsg" style="font-size:11px; margin-bottom:10px; color:#38bdf8;"></div>
@@ -411,13 +411,13 @@ Sovereignty is not given; it is engineered. By adhering to the multi-tier archit
             const code = document.getElementById('couponCodeInput').value.trim().toUpperCase();
             const msg = document.getElementById('couponMsg');
             if(code === "SHAILJA" || code === "DHRUV") {
-                msg.innerHTML = "✅ Coupon Applied! 100% OFF (Founder VIP Pass Activated).";
+                msg.innerHTML = "✅ Coupon Applied! 100% OFF (VIP Pass Activated).";
                 msg.style.color = "#22c55e";
             } else if(code === "AKKHII") {
                 msg.innerHTML = "✅ Coupon Applied! 75% OFF Elite Discount Activated.";
                 msg.style.color = "#22c55e";
             } else {
-                msg.innerHTML = "❌ Invalid or Expired Coupon Code. (Cart Recovery WhatsApp sequence armed).";
+                msg.innerHTML = "❌ Invalid or Expired Coupon Code.";
                 msg.style.color = "#ef4444";
             }
         }
