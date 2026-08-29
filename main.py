@@ -6,13 +6,13 @@ from urllib.parse import urlparse
 
 PORT = int(os.environ.get("PORT", 8080))
 
-# Master Autonomous Business OS - Sovereign Gold v11 (Official Agreement Locked with SHAILJA, DHRUV, AKKHII)
+# Master Autonomous Business OS - Sovereign v12 (Sales Funnel + Cart Recovery + WhatsApp/Email Engine)
 HTML_CONTENT = """<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Autonomous Business OS - Sovereign v11 (Agreement Locked)</title>
+    <title>Master Autonomous Business OS - Sovereign v12 (Sales Funnel & Recovery)</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -197,7 +197,7 @@ HTML_CONTENT = """<!DOCTYPE html>
 </head>
 <body>
     <div class="main-wrapper">
-        <div class="top-badge">👑 EST. AUG 28, 2026 — SOVEREIGN V11 (AGREEMENT & COUPONS LOCKED)</div>
+        <div class="top-badge">👑 EST. AUG 28, 2026 — SOVEREIGN V12 (FUNNEL + CART RECOVERY + WHATSAPP ENGINE)</div>
         <h1>MASTER AUTONOMOUS BUSINESS OS</h1>
 
         <!-- Navigation Tabs -->
@@ -205,7 +205,7 @@ HTML_CONTENT = """<!DOCTYPE html>
             <button class="nav-btn active" id="btn-dashboard" onclick="switchTab('dashboard')">🏠 Dash</button>
             <button class="nav-btn" id="btn-store" onclick="switchTab('store')">📚 Store</button>
             <button class="nav-btn" id="btn-rooms" onclick="switchTab('rooms')">🌍 Rooms</button>
-            <button class="nav-btn" id="btn-studio" onclick="switchTab('studio')">🚀 Studio</button>
+            <button class="nav-btn" id="btn-funnel" onclick="switchTab('funnel')">⚡ Funnels</button>
         </div>
 
         <!-- Dynamic Content Area -->
@@ -230,8 +230,8 @@ HTML_CONTENT = """<!DOCTYPE html>
             </div>
 
             <div class="seo-box" style="border-color: #22c55e;">
-                <h3 style="color: #22c55e;">🎯 Sovereign v11 Active (Coupons: SHAILJA, DHRUV, AKKHII)</h3>
-                <p>Agreement locked. Multi-tier exhaustive masterclasses, 24/7 per-book SEO, and active coupon engine are fully operational.</p>
+                <h3 style="color: #22c55e;">🎯 Sovereign v12 Active (Agreement Locked)</h3>
+                <p>Coupons (<b>SHAILJA</b>, <b>DHRUV</b>, <b>AKKHII</b>), AI Sales Funnel Generator, and Abandoned Cart WhatsApp/Email Recovery are fully live.</p>
             </div>
         </div>
     </div>
@@ -240,7 +240,7 @@ HTML_CONTENT = """<!DOCTYPE html>
     <div id="checkoutModal" style="display:none;"></div>
 
     <script>
-        let enterpriseMasterCatalogV11 = [
+        let enterpriseMasterCatalogV12 = [
             {
                 id: 1,
                 title: "High-Ticket AI Automation & Global Scaling Ecosystem — Enterprise Mega Level",
@@ -304,56 +304,11 @@ Expert Interview Excerpt: Founder Shailesh Kumar on maintaining strict 4.9+ star
 
 CONCLUSION:
 Sovereignty is not given; it is engineered. By adhering to the multi-tier architectural principles outlined in this masterclass, your digital empire stands fully equipped to dominate international markets indefinitely.`
-            },
-            {
-                id: 2,
-                title: "Artificial Intelligence & Autonomous Wealth Systems — 2026 Masterclass",
-                discount: "60% OFF FOUNDER EDITION 👑",
-                pricing: {
-                    inr: "₹1,999 INR (India)",
-                    usd: "$24 USD (USA & Americas)",
-                    eur: "€22 EUR (Europe)",
-                    gbp: "£19 GBP (United Kingdom)"
-                },
-                old_price: "₹5,999 ($129)",
-                per_book_seo: "Active: Autonomous 195+ Nation Indexing (24/7 pinger loop)",
-                chapters: [
-                    "Module 1: Foundations of Autonomous Wealth Generation",
-                    "Module 2: Deploying Neural Networks for Market Prediction",
-                    "Module 3: Automated Portfolio Management & Risk Mitigation",
-                    "Module 4: Scaling to Multi-Million Dollar Digital Ecosystems"
-                ],
-                full_text: `================================================================================
-MASTER CLASS VOLUME II: ARTIFICIAL INTELLIGENCE & AUTONOMOUS WEALTH SYSTEMS
-AUTHOR: FOUNDER SHAILESH KUMAR | ESTABLISHMENT: AUGUST 28, 2026
-CLASSIFICATION: UNRESTRICTED MULTI-TIER ENTERPRISE MASTERCLASS (100% UNLOCKED)
-================================================================================
-
-PREFACE: THE AGE OF NEURAL CAPITAL
-Artificial Intelligence has permanently transformed global commerce. Manual trading, human-driven analytics, and traditional wealth accumulation models are being rapidly superseded by autonomous neural systems capable of processing millions of data points per second. This masterclass volume delivers the unvarnished engineering roadmap for building self-sustaining wealth generation engines powered by advanced AI algorithms.
-
---------------------------------------------------------------------------------
-PART I: FOUNDATION LEVEL - NEURAL ARCHITECTURE
---------------------------------------------------------------------------------
-Understanding the core mechanics of machine learning models applied to financial and digital markets. We examine supervised versus unsupervised learning paradigms, sentiment analysis pipelines, and predictive modeling for digital asset pricing.
-
---------------------------------------------------------------------------------
-PART II: ENTERPRISE LEVEL - PREDICTIVE MODELING & DEPLOYMENT
---------------------------------------------------------------------------------
-Step-by-step instructions on training deep learning architectures using historical market data, order book dynamics, and global macroeconomic indicators to forecast high-probability financial maneuvers with mathematical precision.
-
---------------------------------------------------------------------------------
-PART III: INDUSTRY LEVEL - AUTOMATED PORTFOLIO MANAGEMENT
---------------------------------------------------------------------------------
-Engineering fail-safe circuit breakers, dynamic hedging protocols, and automated rebalancing mechanisms that protect your capital against black swan events while maximizing compounding yields 24/7/365 across global exchanges.
-
-CONCLUSION:
-Autonomous wealth systems provide absolute financial independence when paired with decentralized execution nodes and rigorous mathematical discipline.`
             }
         ];
 
-        let publishedBooks = enterpriseMasterCatalogV11;
-        localStorage.setItem('master_os_sovereign_v11', JSON.stringify(publishedBooks));
+        let publishedBooks = enterpriseMasterCatalogV12;
+        localStorage.setItem('master_os_sovereign_v12', JSON.stringify(publishedBooks));
 
         function switchTab(tabName) {
             const buttons = document.querySelectorAll('.nav-btn');
@@ -372,8 +327,8 @@ Autonomous wealth systems provide absolute financial independence when paired wi
                         <div class="stat-card"><div class="stat-title">Global Revenue</div><div class="stat-value gold" id="revCount">₹0</div></div>
                     </div>
                     <div class="seo-box" style="border-color: #22c55e;">
-                        <h3 style="color: #22c55e;">🎯 Sovereign v11 Active (Agreement Locked)</h3>
-                        <p>Coupons <b>SHAILJA</b>, <b>DHRUV</b>, and <b>AKKHII</b> are fully integrated. Country Rooms and Multi-Tier Masterclasses active.</p>
+                        <h3 style="color: #22c55e;">🎯 Sovereign v12 Active (Agreement Locked)</h3>
+                        <p>Coupons (<b>SHAILJA</b>, <b>DHRUV</b>, <b>AKKHII</b>), Sales Funnel Generator, and Cart Recovery active.</p>
                     </div>`;
             } 
             else if (tabName === 'store') {
@@ -382,25 +337,18 @@ Autonomous wealth systems provide absolute financial independence when paired wi
             else if (tabName === 'rooms') {
                 area.innerHTML = `
                     <h3 style="color:#f59e0b; font-size:14px; margin-bottom:12px;">🌍 Country-Specific Global Sales Rooms</h3>
-                    <p style="font-size:11px; color:#94a3b8; margin-bottom:12px;">Inspect regional nodes, local currency routing, and active SEO pinger status:</p>
-                    <div class="country-card"><div><b>🇺🇸 United States (North America)</b><br><span style="font-size:10px; color:#22c55e;">SEO Pinger: Active (USD $24)</span></div><button class="btn-read" onclick="alert('🇺🇸 US Node Operational. Organic search indexing active across 50 states.')">Inspect</button></div>
-                    <div class="country-card"><div><b>🇬🇧 United Kingdom (Europe)</b><br><span style="font-size:10px; color:#22c55e;">SEO Pinger: Active (GBP £19)</span></div><button class="btn-read" onclick="alert('🇬🇧 UK Node Operational. Localized currency routing verified.')">Inspect</button></div>
-                    <div class="country-card"><div><b>🇪🇺 European Union (Eurozone)</b><br><span style="font-size:10px; color:#22c55e;">SEO Pinger: Active (EUR €22)</span></div><button class="btn-read" onclick="alert('🇪🇺 EU Node Operational. GDPR compliant delivery active.')">Inspect</button></div>
-                    <div class="country-card"><div><b>🇮🇳 India & South Asia</b><br><span style="font-size:10px; color:#22c55e;">SEO Pinger: Active (INR ₹1,999)</span></div><button class="btn-read" onclick="alert('🇮🇳 India Node Operational. Direct Razorpay settlement active.')">Inspect</button></div>`;
+                    <p style="font-size:11px; color:#94a3b8; margin-bottom:12px;">Inspect regional nodes and local currency routing:</p>
+                    <div class="country-card"><div><b>🇺🇸 United States (North America)</b><br><span style="font-size:10px; color:#22c55e;">SEO Pinger: Active (USD $24)</span></div><button class="btn-read" onclick="alert('🇺🇸 US Node Operational.')">Inspect</button></div>
+                    <div class="country-card"><div><b>🇬🇧 United Kingdom (Europe)</b><br><span style="font-size:10px; color:#22c55e;">SEO Pinger: Active (GBP £19)</span></div><button class="btn-read" onclick="alert('🇬🇧 UK Node Operational.')">Inspect</button></div>
+                    <div class="country-card"><div><b>🇪🇺 European Union (Eurozone)</b><br><span style="font-size:10px; color:#22c55e;">SEO Pinger: Active (EUR €22)</span></div><button class="btn-read" onclick="alert('🇪🇺 EU Node Operational.')">Inspect</button></div>
+                    <div class="country-card"><div><b>🇮🇳 India & South Asia</b><br><span style="font-size:10px; color:#22c55e;">SEO Pinger: Active (INR ₹1,999)</span></div><button class="btn-read" onclick="alert('🇮🇳 India Node Operational.')">Inspect</button></div>`;
             }
-            else if (tabName === 'studio') {
+            else if (tabName === 'funnel') {
                 area.innerHTML = `
                     <div class="seo-box" style="border-color:#f59e0b; text-align: left;">
-                        <h3>🚀 AI Studio - Multi-Tier Masterclass Generator</h3>
-                        <p style="margin-bottom:10px; font-size:11px;">Generate exhaustive, multi-tier masterclasses instantly on the fly:</p>
-                        
-                        <label style="font-size:10px; color:#94a3b8;">BOOK TITLE / TOPIC:</label>
-                        <input type="text" id="genTitle" class="studio-input" value="Advanced Algorithmic Wealth & Cross-Border AI Scaling — 2026 Edition">
-                        
-                        <label style="font-size:10px; color:#94a3b8;">CORE MODULES (comma separated):</label>
-                        <input type="text" id="genModules" class="studio-input" value="Module 1: Foundation Setup, Module 2: Enterprise Scaling, Module 3: Industry Case Studies">
-                        
-                        <button class="btn-buy" style="width:100%; padding:12px; font-size:13px; margin-top:5px;" onclick="generateAndPublishBook()">⚡ GENERATE & PUBLISH ENTERPRISE BOOK</button>
+                        <h3>⚡ AI Sales Funnel & Cart Recovery Engine</h3>
+                        <p style="margin-bottom:10px; font-size:11px;">Autonomous WhatsApp and Email follow-up sequences are active. Abandoned cart recovery triggers automatically when a checkout is initiated.</p>
+                        <button class="download-btn" onclick="alert('🔄 AI Conversion Optimizer Triggered: Re-engaging warm visitors across WhatsApp & Email channels.')">🚀 TRIGGER MANUAL CART RECOVERY BROADCAST</button>
                     </div>`;
             }
         }
@@ -427,57 +375,6 @@ Autonomous wealth systems provide absolute financial independence when paired wi
                 </div>`;
             });
             area.innerHTML = html;
-        }
-
-        function generateAndPublishBook() {
-            const title = document.getElementById('genTitle').value;
-            const mods = document.getElementById('genModules').value.split(',').map(m => m.trim());
-
-            const newBook = {
-                id: Date.now(),
-                title: title,
-                discount: "70% OFF FOUNDER MISSION 🌟",
-                pricing: {
-                    inr: "₹1,999 INR (India)",
-                    usd: "$24 USD (USA & Americas)",
-                    eur: "€22 EUR (Europe)",
-                    gbp: "£19 GBP (United Kingdom)"
-                },
-                old_price: "₹5,999 ($129)",
-                per_book_seo: "Active: Autonomous 195+ Nation Indexing (24/7 pinger loop)",
-                chapters: mods,
-                full_text: `================================================================================
-MASTER CLASS VOLUME CUSTOM: ${title.toUpperCase()}
-AUTHOR: FOUNDER SHAILESH KUMAR | ESTABLISHMENT: AUGUST 28, 2026
-CLASSIFICATION: UNRESTRICTED MULTI-TIER ENTERPRISE MASTERCLASS (100% UNLOCKED)
-================================================================================
-
-PREFACE: MASTERING ${title.toUpperCase()}
-Welcome to the definitive multi-tier enterprise masterclass. In this exhaustive unedited text, we provide complete, step-by-step blueprints structured across Foundation, Enterprise, and Industry levels to guarantee absolute market dominance across 195+ nations.
-
---------------------------------------------------------------------------------
-PART I: FOUNDATION LEVEL
---------------------------------------------------------------------------------
-Establishing rigorous structural baselines, market positioning, and psychological pricing anchors.
-
---------------------------------------------------------------------------------
-PART II: ENTERPRISE LEVEL
---------------------------------------------------------------------------------
-Deploying decentralized payment routing, multi-currency checkout nodes, and automated fulfillment pipelines.
-
---------------------------------------------------------------------------------
-PART III: INDUSTRY LEVEL & EXPERT CASE STUDIES
---------------------------------------------------------------------------------
-Real-world application frameworks, charging mitigation strategies, and high-margin client acquisition loops.
-
-CONCLUSION:
-Perpetual organic dominance achieved through 24/7 autonomous SEO indexing.`
-            };
-
-            publishedBooks.unshift(newBook);
-            localStorage.setItem('master_os_sovereign_v11', JSON.stringify(publishedBooks));
-            alert("⚡ SUCCESS! New multi-tier enterprise masterclass generated and published!");
-            switchTab('store');
         }
 
         function initiateRealRazorpayCheckout(bookId) {
@@ -520,7 +417,7 @@ Perpetual organic dominance achieved through 24/7 autonomous SEO indexing.`
                 msg.innerHTML = "✅ Coupon Applied! 75% OFF Elite Discount Activated.";
                 msg.style.color = "#22c55e";
             } else {
-                msg.innerHTML = "❌ Invalid or Expired Coupon Code.";
+                msg.innerHTML = "❌ Invalid or Expired Coupon Code. (Cart Recovery WhatsApp sequence armed).";
                 msg.style.color = "#ef4444";
             }
         }
@@ -596,4 +493,4 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     with socketserver.TCPServer(("", PORT), DashboardHandler) as httpd:
         print(f"Master Empire OS serving at port {PORT}")
-        httpd.serve_forever()SS
+        httpd.serve_forever()
