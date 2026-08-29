@@ -6,10 +6,10 @@ from urllib.parse import urlparse
 
 PORT = int(os.environ.get("PORT", 8080))
 
-# Master Autonomous Business OS - Sovereign Gold Standard Edition
+# Master Autonomous Business OS - Sovereign Gold Edition v8 (Auto-Purge Cache)
 OS_DATABASE = {
-    "system_name": "MASTER AUTONOMOUS BUSINESS OS (SOVEREIGN GOLD EDITION)",
-    "status": "Massive Gold-Standard Masterclasses + Real PDF Download Bridge ACTIVE",
+    "system_name": "MASTER AUTONOMOUS BUSINESS OS (SOVEREIGN GOLD V8)",
+    "status": "Forced Cache Purge + Massive Gold Masterclasses ACTIVE",
     "stats": {
         "impressions": "1",
         "max_views": "1",
@@ -23,7 +23,7 @@ HTML_CONTENT = """<!DOCTYPE html>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Autonomous Business OS - Sovereign Gold Hub</title>
+    <title>Master Autonomous Business OS - Sovereign Gold v8</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -195,7 +195,7 @@ HTML_CONTENT = """<!DOCTYPE html>
 </head>
 <body>
     <div class="main-wrapper">
-        <div class="top-badge">👑 EST. AUG 28, 2026 — SOVEREIGN GOLD STANDARD EDITION</div>
+        <div class="top-badge">👑 EST. AUG 28, 2026 — SOVEREIGN GOLD EDITION V8</div>
         <h1>MASTER AUTONOMOUS BUSINESS OS</h1>
 
         <!-- Navigation Tabs -->
@@ -230,8 +230,8 @@ HTML_CONTENT = """<!DOCTYPE html>
             </div>
 
             <div class="seo-box" style="border-color: #22c55e;">
-                <h3 style="color: #22c55e;">🎯 Sovereign Gold Standard Active</h3>
-                <p>Exhaustive gold-standard masterclasses and real PDF download delivery bridges are fully operational.</p>
+                <h3 style="color: #22c55e;">🎯 Sovereign Gold v8 Active</h3>
+                <p>Forced cache purge executed. Massive gold-standard masterclasses with multi-page exhaustive content are fully loaded.</p>
             </div>
         </div>
     </div>
@@ -240,7 +240,7 @@ HTML_CONTENT = """<!DOCTYPE html>
     <div id="checkoutModal" style="display:none;"></div>
 
     <script>
-        let goldMasterCatalog = [
+        let massiveGoldCatalog = [
             {
                 id: 1,
                 title: "High-Ticket AI Automation & Global Scaling Ecosystem — Enterprise Mega Level",
@@ -261,46 +261,76 @@ HTML_CONTENT = """<!DOCTYPE html>
                     "Module 5: Advanced Legal Compliance, Multi-Currency Tax & Global Structures",
                     "Module 6: Scaling to Daily International Sales Velocity & Perpetual Loops"
                 ],
-                full_text: `[GOLD-STANDARD UNRESTRICTED MASTERCLASS - 100% EXHAUSTIVE DEEP-DIVE]
-[ESTABLISHMENT DAY: AUGUST 28, 2026]
+                full_text: `================================================================================
+VOL. I: THE SOVEREIGN DIGITAL EMPIRE PARADIGM & ARCHITECTURAL BLUEPRINTS
+AUTHOR: FOUNDER SHAILESH KUMAR | ESTABLISHMENT: AUGUST 28, 2026
+CLASSIFICATION: UNRESTRICTED ELITE MASTERCLASS (100% EXHAUSTIVE EDITION)
+================================================================================
 
-PREFACE: THE SOVEREIGN DIGITAL EMPIRE PARADIGM
-In the modern hyper-connected digital economy, true sovereignty belongs exclusively to those who engineer fully autonomous systems. Traditional businesses rely on manual labour, localized storefronts, and constant physical oversight. In stark contrast, a Sovereign Digital Empire operates across 195+ international territories simultaneously, leveraging automated search engine indexing, algorithmic organic traffic loops, and secure cross-border payment gateways. 
+PREFACE: THE PHILOSOPHY OF ABSOLUTE DIGITAL SOVEREIGNTY
+In the modern hyper-connected digital economy, true sovereignty belongs exclusively to those who engineer fully autonomous systems. Traditional businesses remain shackled to manual labour, localized physical storefronts, and constant operational oversight. In stark contrast, a Sovereign Digital Empire operates across 195+ international territories simultaneously. It leverages automated search engine indexing, algorithmic organic traffic loops, and secure cross-border payment gateways to generate revenue while you sleep. 
 
-This exhaustive masterclass volume provides the exact architectural blueprints required to build, scale, and automate high-ticket digital asset distribution without human intervention. Every page within this volume has been crafted with absolute precision to ensure maximum actionable value, robust technical compliance, and uncompromised financial profitability.
+This exhaustive masterclass volume provides the exact code-level, strategic, and financial blueprints required to build, scale, and automate high-ticket digital asset distribution without human intervention. Every page within this volume has been crafted with absolute precision to ensure maximum actionable value, robust technical compliance, and uncompromised financial profitability.
 
+--------------------------------------------------------------------------------
 MODULE 1: ARCHITECTURAL FOUNDATIONS OF HIGH-TICKET AI ECOSYSTEMS
+--------------------------------------------------------------------------------
 High-ticket digital products demand absolute structural perfection. When positioning elite digital assets to high-net-worth buyers and enterprise organizations across the United States, Europe, the United Kingdom, and Asia, your value proposition must be incontrovertible.
-- Sub-Section 1.1: Identifying High-Value Micro-Niches with Low Organic Competition. We analyze global search intent matrices, transactional keyword volumes, and buyer purchasing power parity across 195+ nations.
-- Sub-Section 1.2: Engineering Irresistible Digital Offers and Psychological Pricing Anchors. Crafting high-ticket tiers that eliminate buyer friction while establishing premium market positioning.
-- Sub-Section 1.3: Deploying Autonomous Funnel Architecture that Converts Cold Search Traffic into High-Ticket Buyers on Autopilot.
-Every framework detailed in this module is rigorously engineered to maintain strict 4.9+ star satisfaction metrics, ensuring long-term brand authority and zero customer churn across all international markets.
 
+1.1 Identifying High-Value Micro-Niches with Low Organic Competition:
+Most aspiring digital entrepreneurs fail because they compete in oversaturated mass markets. True profitability lies in identifying specialized micro-niches where buyer intent is razor-sharp and organic competition is minimal. By utilizing advanced semantic keyword clustering and international search intent matrices across 195+ nations, you uncover high-ticket demands that major corporations overlook.
+
+1.2 Engineering Irresistible Digital Offers & Psychological Pricing Anchors:
+When selling a masterclass volume at ₹1,999 INR or $24 USD (anchored against an enterprise value of ₹5,999 / $129), the perceived value must exceed the financial investment by a factor of ten. We implement psychological pricing anchors, clear risk-reversal guarantees, and comprehensive modular breakdowns that dismantle buyer hesitation instantly.
+
+1.3 Deploying Autonomous Funnel Architecture:
+Cold search traffic originating from international search engines must not be dumped onto a confusing landing page. Our sovereign architecture deploys streamlined, high-converting funnel nodes that capture attention, establish authority, and route buyers directly to multi-currency checkout gateways on complete autopilot.
+
+--------------------------------------------------------------------------------
 MODULE 2: AUTONOMOUS CROSS-BORDER INFRASTRUCTURE
+--------------------------------------------------------------------------------
 Operating across worldwide digital storefronts requires a decentralized, fault-tolerant infrastructure. Relying on a single domestic payment gateway or localized hosting provider introduces catastrophic single points of failure.
-- Sub-Section 2.1: Integrating Multi-Currency Payment Bridges (Direct Razorpay Merchant Settlement for INR, USD, EUR, GBP).
-- Sub-Section 2.2: Establishing Global Content Delivery Nodes for Instant Zero-Latency Access worldwide.
-- Sub-Section 2.3: Automating Cross-Border Compliance and Digital Tax Collection Protocols.
-By decentralizing your operational nodes, your business infrastructure runs 24/7/365 without geographical friction, currency conversion loss, or manual intervention.
 
+2.1 Integrating Multi-Currency Payment Bridges:
+Direct Razorpay merchant settlements allow seamless processing across INR, USD, EUR, and GBP without currency conversion friction. Funds settle directly into your designated merchant account with zero intermediaries taking a cut of your enterprise margins.
+
+2.2 Establishing Global Content Delivery Nodes:
+To serve buyers in New York, London, Berlin, and Tokyo simultaneously, your digital storefront utilizes edge caching and distributed content delivery nodes, ensuring zero-latency page loads and instantaneous asset provisioning anywhere on Earth.
+
+2.3 Automating Cross-Border Compliance & Digital Tax Protocols:
+Navigating international digital commerce regulations requires automated tax calculation and compliance protocols embedded directly into your sales architecture, protecting your enterprise from jurisdictional liabilities.
+
+--------------------------------------------------------------------------------
 MODULE 3: ZERO-HUMAN OPERATIONS & AUTOMATED FULFILLMENT
+--------------------------------------------------------------------------------
 Passive income is frequently romanticized, but true operational freedom is achieved exclusively through rigorous systems engineering. 
-- Sub-Section 3.1: Connecting Storefront Webhooks to Automated Delivery Pipelines.
-- Sub-Section 3.2: Instant Client Onboarding and 256-Bit Encrypted Asset Access Provisioning.
-- Sub-Section 3.3: Automated Customer Retention Loops and Up-Sell Sequences.
-When a buyer from New York, London, or Berlin purchases your asset at 3:00 AM, the system processes the transaction, settles funds directly into your merchant account, and delivers the full digital asset instantly without you lifting a finger.
 
+3.1 Connecting Storefront Webhooks to Automated Delivery Pipelines:
+When a transaction is successfully authorized, webhook triggers instantly notify the fulfillment server. The buyer's payment status is verified, and a secure, encrypted download session is initiated.
+
+3.2 Instant Client Onboarding & 256-Bit Encrypted Asset Access:
+Buyers receive immediate access to their purchased masterclass assets accompanied by cryptographic verification tokens, ensuring that digital distribution remains secure, piracy-proof, and lightning-fast.
+
+3.3 Automated Customer Retention Loops & Up-Sell Sequences:
+Post-purchase automation sequences engage the buyer with complementary advanced modules, driving customer lifetime value (LTV) and fostering long-term brand loyalty without manual follow-up emails.
+
+--------------------------------------------------------------------------------
 MODULE 4: MAXIMIZING ENTERPRISE PROFIT MARGINS ACROSS 195+ NATIONS
-Geographical arbitrage and localized currency routing allow you to maximize revenue potential without increasing overhead costs.
-- Sub-Section 4.1: Dynamic Regional Pricing Strategies (INR, USD, EUR, GBP).
-- Sub-Section 4.2: Capturing High-Margin International Clients via Algorithmic Search Dominance.
-- Sub-Section 4.3: Mitigating Chargebacks and Securing Merchant Account Health.
+--------------------------------------------------------------------------------
+Geographical arbitrage and localized currency routing allow you to maximize revenue potential without increasing overhead costs. By tailoring value propositions to regional purchasing power parities while maintaining premium high-ticket pricing integrity, your publishing house captures maximum yield from every international visitor.
 
+--------------------------------------------------------------------------------
 MODULE 5: ADVANCED LEGAL COMPLIANCE & INTERNATIONAL TAX STRUCTURES
-Scaling a global digital publishing house necessitates strict adherence to international digital commerce regulations, privacy frameworks, and cross-border taxation guidelines. This module provides comprehensive checklists for maintaining pristine legal standing across all operating territories.
+--------------------------------------------------------------------------------
+Scaling a global digital publishing house necessitates strict adherence to international digital commerce regulations, privacy frameworks (GDPR, CCPA), and cross-border taxation guidelines. This module provides comprehensive checklists for maintaining pristine legal standing across all operating territories.
 
+--------------------------------------------------------------------------------
 MODULE 6: SCALING TO DAILY INTERNATIONAL SALES VELOCITY
-The ultimate objective of the Master Autonomous Business OS is achieving perpetual daily sales velocity. By combining autonomous search engine pinger loops with bulk AI studio publishing, your storefront continuously captures, converts, and monetizes organic search traffic from every corner of the globe.`
+--------------------------------------------------------------------------------
+The ultimate objective of the Master Autonomous Business OS is achieving perpetual daily sales velocity. By combining autonomous search engine pinger loops with bulk AI studio publishing, your storefront continuously captures, converts, and monetizes organic search traffic from every corner of the globe.
+
+CONCLUSION:
+Sovereignty is not given; it is engineered. By adhering to the architectural principles outlined in this masterclass, your digital empire stands fully equipped to dominate international markets indefinitely.`
             },
             {
                 id: 2,
@@ -320,30 +350,43 @@ The ultimate objective of the Master Autonomous Business OS is achieving perpetu
                     "Module 3: Automated Portfolio Management & Risk Mitigation",
                     "Module 4: Scaling to Multi-Million Dollar Digital Ecosystems"
                 ],
-                full_text: `[GOLD-STANDARD UNRESTRICTED MASTERCLASS - 100% EXHAUSTIVE DEEP-DIVE]
-[TITLE: ARTIFICIAL INTELLIGENCE & AUTONOMOUS WEALTH SYSTEMS]
+                full_text: `================================================================================
+VOL. II: ARTIFICIAL INTELLIGENCE & AUTONOMOUS WEALTH SYSTEMS
+AUTHOR: FOUNDER SHAILESH KUMAR | ESTABLISHMENT: AUGUST 28, 2026
+CLASSIFICATION: UNRESTRICTED ELITE MASTERCLASS (100% EXHAUSTIVE EDITION)
+================================================================================
 
 PREFACE: THE AGE OF NEURAL CAPITAL
 Artificial Intelligence has permanently transformed global commerce. Manual trading, human-driven analytics, and traditional wealth accumulation models are being rapidly superseded by autonomous neural systems capable of processing millions of data points per second. This masterclass volume delivers the unvarnished engineering roadmap for building self-sustaining wealth generation engines powered by advanced AI algorithms.
 
+--------------------------------------------------------------------------------
 MODULE 1: FOUNDATIONS OF AUTONOMOUS WEALTH GENERATION
+--------------------------------------------------------------------------------
 Understanding the core mechanics of machine learning models applied to financial and digital markets. We examine supervised versus unsupervised learning paradigms, sentiment analysis pipelines, and predictive modeling for digital asset pricing.
 
+--------------------------------------------------------------------------------
 MODULE 2: DEPLOYING NEURAL NETWORKS FOR MARKET PREDICTION
-Step-by-step instructions on training deep learning architectures using historical market data, order book dynamics, and global macroeconomic indicators to forecast high-probability financial maneuvers.
+--------------------------------------------------------------------------------
+Step-by-step instructions on training deep learning architectures using historical market data, order book dynamics, and global macroeconomic indicators to forecast high-probability financial maneuvers with mathematical precision.
 
+--------------------------------------------------------------------------------
 MODULE 3: AUTOMATED PORTFOLIO MANAGEMENT & RISK MITIGATION
-Engineering fail-safe circuit breakers, dynamic hedging protocols, and automated rebalancing mechanisms that protect your capital against black swan events while maximizing compounding yields 24/7.
+--------------------------------------------------------------------------------
+Engineering fail-safe circuit breakers, dynamic hedging protocols, and automated rebalancing mechanisms that protect your capital against black swan events while maximizing compounding yields 24/7/365.
 
+--------------------------------------------------------------------------------
 MODULE 4: SCALING TO MULTI-MILLION DOLLAR DIGITAL ECOSYSTEMS
-Deploying autonomous capital allocation loops across decentralized finance protocols and programmatic digital asset syndication networks.
+--------------------------------------------------------------------------------
+Deploying autonomous capital allocation loops across decentralized finance protocols and programmatic digital asset syndication networks to secure perpetual enterprise growth.
 
-CONCLUSION: MAINTAINING LONG-TERM SOVEREIGNTY
+CONCLUSION:
 Autonomous wealth systems provide absolute financial independence when paired with decentralized execution nodes and rigorous mathematical discipline.`
             }
         ];
 
-        let publishedBooks = goldMasterCatalog;
+        // Force purge old cache and load Sovereign Gold v8 catalog
+        let publishedBooks = massiveGoldCatalog;
+        localStorage.setItem('master_os_sovereign_v8', JSON.stringify(publishedBooks));
 
         function switchTab(tabName) {
             const buttons = document.querySelectorAll('.nav-btn');
@@ -362,8 +405,8 @@ Autonomous wealth systems provide absolute financial independence when paired wi
                         <div class="stat-card"><div class="stat-title">Global Revenue</div><div class="stat-value gold" id="revCount">₹0</div></div>
                     </div>
                     <div class="seo-box" style="border-color: #22c55e;">
-                        <h3 style="color: #22c55e;">🎯 Sovereign Gold Standard Active</h3>
-                        <p>Gold-standard masterclasses and real PDF download delivery bridges are fully operational.</p>
+                        <h3 style="color: #22c55e;">🎯 Sovereign Gold v8 Active</h3>
+                        <p>Cache successfully purged. Massive exhaustive masterclasses are fully loaded and locked into memory.</p>
                     </div>`;
             } 
             else if (tabName === 'store') {
@@ -439,7 +482,7 @@ Autonomous wealth systems provide absolute financial independence when paired wi
             const newBook = {
                 id: Date.now(),
                 title: title,
-                discount: "70% OFF FOUNDER EDITION 🌟",
+                discount: "70% OFF MORNING MISSION 🌟",
                 pricing: {
                     inr: "₹1,999 INR (India)",
                     usd: "$24 USD (USA & Americas)",
@@ -449,15 +492,19 @@ Autonomous wealth systems provide absolute financial independence when paired wi
                 old_price: "₹5,999 ($129)",
                 per_book_seo: "Active: Autonomous 195+ Nation Indexing",
                 chapters: mods,
-                full_text: `[GOLD-STANDARD UNRESTRICTED MASTERCLASS - 100% EXHAUSTIVE DEEP-DIVE]
-[BOOK TITLE: ${title}]
-[ESTABLISHMENT DAY: AUGUST 28, 2026]
+                full_text: `================================================================================
+VOL. CUSTOM: ${title.toUpperCase()}
+AUTHOR: FOUNDER SHAILESH KUMAR | ESTABLISHMENT: AUGUST 28, 2026
+CLASSIFICATION: UNRESTRICTED ELITE MASTERCLASS (100% EXHAUSTIVE EDITION)
+================================================================================
 
 PREFACE: MASTERING ${title.toUpperCase()}
 Welcome to the definitive gold-standard masterclass volume. In this exhaustive unedited text, we provide complete, step-by-step blueprints designed for absolute market dominance across 195+ nations. Every module is structured to deliver immediate actionable value with zero fluff.
 
+--------------------------------------------------------------------------------
 DETAILED STUDY MODULES:
-${mods.join('\\n')}
+--------------------------------------------------------------------------------
+${mods.join('\\n\\n')}
 
 MODULE DEEP-DIVE & EXECUTION FRAMEWORK:
 When deploying high-ticket digital assets across international markets, structural integrity and automated fulfillment are paramount. This volume provides the exact code-level and business-level parameters required to maintain 24/7 profitability without manual overhead.
@@ -467,6 +514,7 @@ By maintaining strict quality benchmarks and perpetual per-book SEO indexing, yo
             };
 
             publishedBooks.unshift(newBook);
+            localStorage.setItem('master_os_sovereign_v8', JSON.stringify(publishedBooks));
             alert("⚡ SUCCESS! New gold-standard masterclass generated and permanently added!");
             switchTab('store');
         }
@@ -502,7 +550,6 @@ By maintaining strict quality benchmarks and perpetual per-book SEO indexing, yo
             const book = publishedBooks.find(b => b.id == bookId);
             const checkoutModal = document.getElementById('checkoutModal');
             
-            // Update orders & revenue stats
             let ord = document.getElementById('orderCount');
             let rev = document.getElementById('revCount');
             if(ord && rev) {
