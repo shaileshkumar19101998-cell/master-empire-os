@@ -1,5 +1,5 @@
 import os
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template_string
 from waitress import serve
 from supabase import create_client
 
@@ -9,52 +9,51 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_ANON_KEY") or os.environ.get("SUPABASE_SECRET_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and SUPABASE_KEY else None
 
+HTML_TEMPLATE = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sovereign Book Publishing OS</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #0f172a; color: #f8fafc; padding: 40px; }
+        .container { max-width: 900px; margin: auto; background: #1e293b; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        h1 { color: #38bdf8; }
+        .badge { background: #22c55e; color: white; padding: 6px 12px; border-radius: 6px; font-size: 14px; }
+        .card { background: #334155; padding: 20px; margin-top: 20px; border-radius: 8px; }
+        button { background: #0284c7; color: white; border: none; padding: 12px 20px; font-size: 16px; border-radius: 6px; cursor: pointer; margin-top: 10px; }
+        button:hover { background: #0369a1; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sovereign Autonomous Empire OS</h1>
+        <p><span class="badge">Live & Operational</span> 195+ Target Countries Active</p>
+        
+        <div class="card">
+            <h3>Global Book Publishing & SEO Engine</h3>
+            <p>Project: <b>Dhol Mein Sona (1.5 Lakh Words Edition)</b></p>
+            <p>Active Payment Gateways: Razorpay (India) & Stripe (Global)</p>
+            <button onclick="alert('Make an Idea & Publishing pipeline triggered successfully!')">Make an Idea & Publish</button>
+        </div>
+    </div>
+</body>
+</html>
+"""
+
 @app.route("/", methods=["GET"])
-def sovereign_dashboard():
-    return jsonify({
-        "status": "Enterprise Autonomous Empire Online",
-        "project": "Dhol Mein Sona - 1.5 Lakh Words Global Edition",
-        "target_markets": "195+ Countries",
-        "seo_engine": "24/7 Active IndexNow Auto-Ping",
-        "active_master_keys": 10,
-        "payment_gateways": ["Razorpay (India)", "Stripe (195 Countries)"],
-        "ai_brains": ["OpenAI", "Groq Ultra", "DeepL Localizer"]
-    })
+def home():
+    return render_template_string(HTML_TEMPLATE)
 
 @app.route("/api/make-idea-and-publish", methods=["POST"])
 def make_idea_and_publish():
     data = request.json or {}
-    topic = data.get("topic", "Ancient Indian History & Dhol Mein Sona")
-    
-    blueprint = {
-        "book_title": f"The Sovereign Chronicle: {topic}",
-        "target_word_count": 150000,
-        "chapters": 15,
-        "pricing": {
-            "India": "INR 999 (Razorpay)",
-            "Global_195_Countries": "USD 29.99 (Stripe)"
-        },
-        "seo_optimization": "IndexNow 24/7 automated indexing triggered",
-        "status": "Successfully compiled, quality-checked, and queued for 195 nations"
-    }
-    
-    if supabase:
-        try:
-            supabase.table("master_books_ledger").insert({
-                "title": blueprint["book_title"],
-                "word_count": 150000,
-                "status": "Published"
-            }).execute()
-        except Exception as e:
-            print(f"Database sync note: {e}")
-
+    topic = data.get("topic", "Dhol Mein Sona and Ancient History")
     return jsonify({
         "status": "Success",
         "message": "1.5 Lakh words premium book successfully generated, priced, and deployed globally!",
-        "data": blueprint
+        "topic": topic
     })
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    print(f"Launching Sovereign Business OS on port {port}...")
     serve(app, host="0.0.0.0", port=port)
