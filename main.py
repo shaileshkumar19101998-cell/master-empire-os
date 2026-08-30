@@ -5,9 +5,16 @@ from supabase import create_client
 
 app = Flask(__name__)
 
+# Safe Supabase Initialization with Error Catching
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_ANON_KEY") or os.environ.get("SUPABASE_SECRET_KEY")
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and SUPABASE_KEY else None
+
+supabase = None
+if SUPABASE_URL and SUPABASE_KEY:
+    try:
+        supabase = create_client(SUPABASE_URL.strip(), SUPABASE_KEY.strip())
+    except Exception as e:
+        print(f"Supabase init warning: {e}")
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
