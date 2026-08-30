@@ -5,19 +5,22 @@ from supabase import create_client
 
 app = Flask(__name__)
 
-# Smart Key Detector for Render Environment
-SUPABASE_URL = os.environ.get("SUPABASE_URL") or os.environ.get("SUPABASE_PROJECT_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_ANON_KEY") or os.environ.get("SUPABASE_SECRET_KEY") or os.environ.get("SUPABASE_KEY")
+# Exact Environment Variable Matching from Render Vault
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = (
+    os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or 
+    os.environ.get("SUPABASE_SECRET_KEY") or 
+    os.environ.get("SUPABASE_ANON_KEY") or 
+    os.environ.get("SUPABASE_KEY")
+)
 
 supabase = None
 if SUPABASE_URL and SUPABASE_KEY:
     try:
         supabase = create_client(SUPABASE_URL.strip(), SUPABASE_KEY.strip())
-        print("Supabase Connected Successfully via Smart Detector!")
+        print("Supabase Connected Successfully via Exact Keys!")
     except Exception as e:
         print(f"Supabase connection error: {e}")
-else:
-    print(f"WARNING: Supabase keys missing! URL: {bool(SUPABASE_URL)}, KEY: {bool(SUPABASE_KEY)}")
 
 DASHBOARD_HTML = """
 <!DOCTYPE html>
@@ -42,7 +45,7 @@ DASHBOARD_HTML = """
     <div class="header">
         <h1>Sovereign Autonomous Empire OS</h1>
         <div>
-            <span class="badge">AUTO-KEY DETECTOR ACTIVE</span>
+            <span class="badge">EXACT KEY MATCH ACTIVE</span>
             <span class="badge" style="background: #6366f1;">195+ Nations</span>
         </div>
     </div>
@@ -118,7 +121,7 @@ def make_idea_and_publish():
     book_title = f"The Sovereign Epic: {topic}"
     word_target = 150000
     
-    db_status = "Supabase not linked (Keys missing in Environment Variables)"
+    db_status = "Not Linked"
     if supabase:
         try:
             response = supabase.table("master_books_ledger").insert({
@@ -130,14 +133,11 @@ def make_idea_and_publish():
         except Exception as e:
             db_status = f"Database Error: {str(e)}"
     else:
-        # Fallback debug info
-        has_url = bool(SUPABASE_URL)
-        has_key = bool(SUPABASE_KEY)
-        db_status = f"Supabase not linked. (URL present: {has_url}, Key present: {has_key})"
+        db_status = f"Supabase not linked. URL Present: {bool(SUPABASE_URL)}, Key Present: {bool(SUPABASE_KEY)}"
 
     return jsonify({
         "status": "Success",
-        "message": f"Generated 1.5 Lakh words structure for '{topic}'. Status: {db_status}"
+        "message": f"Generated 1.5 Lakh words structure. Status: {db_status}"
     })
 
 @app.route("/api/get-books", methods=["GET"])
@@ -154,4 +154,4 @@ def get_books():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    serve(app, host="0.0.0.0", port=port)
+    serve(app, host="0.0.0.0", port=port)SSSSSS
