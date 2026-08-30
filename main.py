@@ -10,7 +10,7 @@ import resend
 # 🛡️ MASTER SOVEREIGN OS - v2.7 (FULL 8-BRICKS & AUTO-SEO ENGINE)
 # ==============================================================================
 
-# 1. Environment & API Keys Auto-Loading (Render Environment Variables से कनेक्टेड)
+# 1. Environment & API Keys Auto-Loading (Render & Local Environment से कनेक्टेड)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -94,9 +94,6 @@ def process_successful_order(customer_email, customer_name, book_title, download
         print(f"📧 Email Delivered Successfully to {customer_email} | ID: {email_response}")
     except Exception as e:
         print(f"❌ Email Delivery Failed: {e}")
-
-    # 2. Trigger SEO Ping for the new order/receipt page if applicable
-    # auto_ping_search_engines(download_link)
 
 
 # ==============================================================================
