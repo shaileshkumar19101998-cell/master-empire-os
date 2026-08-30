@@ -5,8 +5,12 @@ from supabase import create_client
 
 app = Flask(__name__)
 
-# --- AGREEMENT 3.0: HARD FORENSIC VAULT EXTRACTION ---
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
+# --- AGREEMENT 3.0: BULLETPROOF ENV KEY & URL MATCHER ---
+SUPABASE_URL = (
+    os.environ.get("SUPABASE_URL") or 
+    os.environ.get("SUPABASE_PROJECT_URL") or 
+    os.environ.get("SUPABASE_DB_URL")
+)
 SUPABASE_KEY = (
     os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or 
     os.environ.get("SUPABASE_SECRET_KEY") or 
@@ -19,7 +23,6 @@ init_error_log = "None"
 
 if SUPABASE_URL and SUPABASE_KEY:
     try:
-        # Clean whitespaces that often cause Invalid API key errors
         clean_url = SUPABASE_URL.strip()
         clean_key = SUPABASE_KEY.strip()
         supabase = create_client(clean_url, clean_key)
@@ -28,7 +31,7 @@ if SUPABASE_URL and SUPABASE_KEY:
         init_error_log = str(e)
         print(f"[BROKEN/FAILED] Supabase initialization error: {e}")
 else:
-    init_error_log = f"Missing credentials -> URL: {bool(SUPABASE_URL)}, KEY: {bool(SUPABASE_KEY)}"
+    init_error_log = f"Missing credentials -> URL Present: {bool(SUPABASE_URL)}, KEY Present: {bool(SUPABASE_KEY)}"
 
 # --- BROWSER COMMAND CENTER (AGREEMENT 3.0 COMPLIANT) ---
 DASHBOARD_HTML = """
@@ -154,7 +157,7 @@ def api_make_idea_and_publish():
         except Exception as e:
             db_status = f"[BROKEN] Supabase Write Error: {str(e)}"
     else:
-        db_status = f"[CRITICAL ERROR] Supabase client failed to initialize due to invalid API Key or URL. Details: {init_error_log}"
+        db_status = f"[CRITICAL ERROR] Supabase client failed to initialize. Details: {init_error_log} | URL Present: {bool(SUPABASE_URL)}, KEY Present: {bool(SUPABASE_KEY)}"
 
     return jsonify({
         "status": "Success",
@@ -162,7 +165,7 @@ def api_make_idea_and_publish():
     })
 
 @app.route("/api/get-books", methods=["GET"])
-def api_get_books():
+def get_books():
     books = []
     if supabase:
         try:
