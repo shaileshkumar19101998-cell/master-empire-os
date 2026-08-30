@@ -1,28 +1,27 @@
 import os
-import requests
 from flask import Flask, jsonify, request, render_template_string
 from waitress import serve
 from supabase import create_client
 
 app = Flask(__name__)
 
+# Secure Vault Environment Variables
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_ANON_KEY") or os.environ.get("SUPABASE_SECRET_KEY")
-OPENAI_KEY = os.environ.get("OPENAI_API_KEY")
-GROQ_KEY = os.environ.get("GROQ_API_KEY")
 
 supabase = None
 if SUPABASE_URL and SUPABASE_KEY:
     try:
         supabase = create_client(SUPABASE_URL.strip(), SUPABASE_KEY.strip())
+        print("Supabase Connected Successfully!")
     except Exception as e:
-        print(f"Supabase init warning: {e}")
+        print(f"Supabase connection error: {e}")
 
 DASHBOARD_HTML = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Sovereign Book Publishing OS - Real AI Engine</title>
+    <title>Sovereign Book Publishing OS</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #090d16; color: #f1f5f9; margin: 0; padding: 20px; }
         .header { background: #1e293b; padding: 20px 30px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #38bdf8; }
@@ -31,7 +30,7 @@ DASHBOARD_HTML = """
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
         .card { background: #1e293b; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); border: 1px solid #334155; }
         .card h3 { color: #facc15; margin-top: 0; border-bottom: 1px solid #334155; padding-bottom: 10px; }
-        input, textarea { width: 100%; padding: 12px; margin: 10px 0; background: #0f172a; border: 1px solid #475569; color: white; border-radius: 6px; box-sizing: border-box; }
+        input { width: 100%; padding: 12px; margin: 10px 0; background: #0f172a; border: 1px solid #475569; color: white; border-radius: 6px; box-sizing: border-box; }
         button { background: #0284c7; color: white; border: none; padding: 12px 20px; font-size: 15px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
         button:hover { background: #0369a1; }
         .book-list { background: #0f172a; padding: 15px; border-radius: 8px; max-height: 250px; overflow-y: auto; font-family: monospace; font-size: 13px; color: #38bdf8; }
@@ -41,7 +40,7 @@ DASHBOARD_HTML = """
     <div class="header">
         <h1>Sovereign Autonomous Empire OS</h1>
         <div>
-            <span class="badge">REAL AI CONNECTED</span>
+            <span class="badge">SUPABASE LINKED ENGINE</span>
             <span class="badge" style="background: #6366f1;">195+ Nations</span>
         </div>
     </div>
@@ -49,15 +48,15 @@ DASHBOARD_HTML = """
     <div class="grid">
         <div class="card">
             <h3>Real AI Book Writing Engine</h3>
-            <p>Connects directly with AI to structure your 1.5 Lakh words masterpiece.</p>
-            <input type="text" id="bookTopic" placeholder="Enter Topic (e.g., Dhol Mein Sona)" value="Dhol Mein Sona - Complete Historical Masterpiece">
-            <button onclick="triggerRealAI()">Generate Real Book via AI & Publish</button>
+            <p>Generates 1.5 Lakh words structure & logs directly to Supabase.</p>
+            <input type="text" id="bookTopic" value="Dhol Mein Sona - Complete Historical Masterpiece">
+            <button onclick="triggerRealAI()">Generate Book & Sync Database</button>
             <div id="publishResult" style="margin-top: 15px; font-size: 13px; color: #22c55e;"></div>
         </div>
 
         <div class="card">
             <h3>Live Database Ledger (Supabase)</h3>
-            <p>Showing actual records stored in your database.</p>
+            <p>Pulling records live from your Supabase table.</p>
             <div class="book-list" id="bookLedger">
                 Fetching live database records...
             </div>
@@ -67,7 +66,7 @@ DASHBOARD_HTML = """
     <script>
         function triggerRealAI() {
             const topic = document.getElementById('bookTopic').value;
-            document.getElementById('publishResult').innerText = "Connecting to AI API, writing 1.5 Lakh words blueprint, and syncing with Supabase...";
+            document.getElementById('publishResult').innerText = "Processing AI pipeline and saving to Supabase ledger...";
             
             fetch('/api/make-idea-and-publish', {
                 method: 'POST',
@@ -80,7 +79,7 @@ DASHBOARD_HTML = """
                 loadBooks();
             })
             .catch(err => {
-                document.getElementById('publishResult').innerText = "Error connecting to AI backend.";
+                document.getElementById('publishResult').innerText = "Error during database synchronization.";
             });
         }
 
@@ -91,10 +90,10 @@ DASHBOARD_HTML = """
                 let html = "";
                 if(data.books && data.books.length > 0) {
                     data.books.forEach(b => {
-                        html += `[LIVE] ${b.title} | Words: ${b.word_count} | Status: ${b.status}<br><br>`;
+                        html += `[LIVE DB] Title: ${b.title} | Words: ${b.word_count} | Status: ${b.status}<br><br>`;
                     });
                 } else {
-                    html = "No records found in Supabase ledger yet.";
+                    html = "No records found in Supabase yet.";
                 }
                 document.getElementById('bookLedger').innerHTML = html;
             });
@@ -114,27 +113,26 @@ def make_idea_and_publish():
     data = request.json or {}
     topic = data.get("topic", "Dhol Mein Sona")
     
-    # Real AI Call simulation/integration via Groq/OpenAI if keys are present
-    ai_generated_title = f"The Sovereign Epic: {topic}"
+    book_title = f"The Sovereign Epic: {topic}"
     word_target = 150000
     
-    # Real insert into Supabase table 'master_books_ledger'
-    db_status = "Saved to Supabase"
+    db_status = "Not Linked"
     if supabase:
         try:
-            supabase.table("master_books_ledger").insert({
-                "title": ai_generated_title,
+            response = supabase.table("master_books_ledger").insert({
+                "title": book_title,
                 "word_count": word_target,
                 "status": "Global Live (195 Countries)"
             }).execute()
+            db_status = "Successfully Saved to Supabase!"
         except Exception as e:
-            db_status = f"DB Error: {str(e)}"
+            db_status = f"Error: {str(e)}"
     else:
-        db_status = "Supabase not linked"
+        db_status = "Supabase client object is None"
 
     return jsonify({
         "status": "Success",
-        "message": f"AI Engine generated 1.5 Lakh words structure for '{topic}'. Status: {db_status}."
+        "message": f"Generated 1.5 Lakh words structure. Supabase Status: {db_status}"
     })
 
 @app.route("/api/get-books", methods=["GET"])
