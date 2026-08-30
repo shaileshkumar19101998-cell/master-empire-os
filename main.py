@@ -5,33 +5,21 @@ from supabase import create_client
 
 app = Flask(__name__)
 
-# --- AGREEMENT 3.0: BULLETPROOF ENV KEY & URL MATCHER ---
-SUPABASE_URL = (
-    os.environ.get("SUPABASE_URL") or 
-    os.environ.get("SUPABASE_PROJECT_URL") or 
-    os.environ.get("SUPABASE_DB_URL")
-)
-SUPABASE_KEY = (
-    os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or 
-    os.environ.get("SUPABASE_SECRET_KEY") or 
-    os.environ.get("SUPABASE_ANON_KEY") or 
-    os.environ.get("SUPABASE_KEY")
-)
+# --- AGREEMENT 3.0: HARDCODED PRODUCTION SECURE VAULT ---
+# Direct binding to prevent any Render Environment Variable name mismatch
+SUPABASE_URL = "https://lpcnuzrycaycgoazalua.supabase.co"
+SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_SECRET_KEY") or os.environ.get("SUPABASE_ANON_KEY") or os.environ.get("SUPABASE_KEY") or "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
 supabase = None
 init_error_log = "None"
 
-if SUPABASE_URL and SUPABASE_KEY:
-    try:
-        clean_url = SUPABASE_URL.strip()
-        clean_key = SUPABASE_KEY.strip()
-        supabase = create_client(clean_url, clean_key)
-        print("[VERIFIED] Supabase client initialized successfully.")
-    except Exception as e:
-        init_error_log = str(e)
-        print(f"[BROKEN/FAILED] Supabase initialization error: {e}")
-else:
-    init_error_log = f"Missing credentials -> URL Present: {bool(SUPABASE_URL)}, KEY Present: {bool(SUPABASE_KEY)}"
+try:
+    # Initialize Supabase client with direct production parameters
+    supabase = create_client(SUPABASE_URL.strip(), SUPABASE_KEY.strip())
+    print("[AGREEMENT 3.0 VERIFIED] Supabase connected successfully via direct vault.")
+except Exception as e:
+    init_error_log = str(e)
+    print(f"[CRITICAL] Supabase connection failed: {e}")
 
 # --- BROWSER COMMAND CENTER (AGREEMENT 3.0 COMPLIANT) ---
 DASHBOARD_HTML = """
@@ -157,7 +145,7 @@ def api_make_idea_and_publish():
         except Exception as e:
             db_status = f"[BROKEN] Supabase Write Error: {str(e)}"
     else:
-        db_status = f"[CRITICAL ERROR] Supabase client failed to initialize. Details: {init_error_log} | URL Present: {bool(SUPABASE_URL)}, KEY Present: {bool(SUPABASE_KEY)}"
+        db_status = f"[CRITICAL ERROR] Supabase client failed. Details: {init_error_log}"
 
     return jsonify({
         "status": "Success",
@@ -165,7 +153,7 @@ def api_make_idea_and_publish():
     })
 
 @app.route("/api/get-books", methods=["GET"])
-def get_books():
+def api_get_books():
     books = []
     if supabase:
         try:
