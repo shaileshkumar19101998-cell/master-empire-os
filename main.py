@@ -5,7 +5,7 @@ from supabase import create_client
 
 app = Flask(__name__)
 
-# --- HARD EXECUTION: SECURE VAULT & FORENSIC KEY EXTRACTION ---
+# --- AGREEMENT 3.0: HARD FORENSIC VAULT EXTRACTION ---
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = (
     os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or 
@@ -19,8 +19,10 @@ init_error_log = "None"
 
 if SUPABASE_URL and SUPABASE_KEY:
     try:
-        # Initialize Supabase client
-        supabase = create_client(SUPABASE_URL.strip(), SUPABASE_KEY.strip())
+        # Clean whitespaces that often cause Invalid API key errors
+        clean_url = SUPABASE_URL.strip()
+        clean_key = SUPABASE_KEY.strip()
+        supabase = create_client(clean_url, clean_key)
         print("[VERIFIED] Supabase client initialized successfully.")
     except Exception as e:
         init_error_log = str(e)
@@ -28,13 +30,13 @@ if SUPABASE_URL and SUPABASE_KEY:
 else:
     init_error_log = f"Missing credentials -> URL: {bool(SUPABASE_URL)}, KEY: {bool(SUPABASE_KEY)}"
 
-# --- BROWSER COMMAND CENTER (HARD EXECUTION INTERFACE) ---
+# --- BROWSER COMMAND CENTER (AGREEMENT 3.0 COMPLIANT) ---
 DASHBOARD_HTML = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Master Empire OS — Hard Execution Mode</title>
+    <title>Master Empire OS — Agreement 3.0 Active</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #060913; color: #f8fafc; margin: 0; padding: 30px; }
         .header { background: #1e293b; padding: 25px 35px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #38bdf8; box-shadow: 0 4px 20px rgba(0,0,0,0.6); }
@@ -54,15 +56,14 @@ DASHBOARD_HTML = """
 </head>
 <body>
     <div class="header">
-        <h1>MASTER EMPIRE OS — HARD EXECUTION MODE</h1>
+        <h1>MASTER EMPIRE OS — AGREEMENT 3.0</h1>
         <div class="badges">
-            <span class="badge">SYSTEM LIVE (195+ Countries)</span>
-            <span class="badge badge-alt">Forensic Audit Active</span>
+            <span class="badge">195+ Countries Autonomous</span>
+            <span class="badge badge-alt">Forensic Mode</span>
         </div>
     </div>
 
     <div class="grid">
-        <!-- ROOM 1: AUTONOMOUS BOOK SYNTHESIS & LEDGER SYNC -->
         <div class="card">
             <h3>Autonomous Book Publishing & Ledger Pipeline</h3>
             <p>Generate 1.5 Lakh words structured blueprint & sync directly with Supabase.</p>
@@ -72,7 +73,6 @@ DASHBOARD_HTML = """
             <div id="actionStatus" style="margin-top: 15px; font-size: 14px; font-weight: bold; color: #38bdf8;"></div>
         </div>
 
-        <!-- ROOM 2: REAL-TIME SUPABASE LEDGER -->
         <div class="card">
             <h3>Live Supabase Database Ledger</h3>
             <p>Real-time records pulled directly from <code>master_books_ledger</code>.</p>
@@ -84,8 +84,8 @@ DASHBOARD_HTML = """
 
     <div class="footer-info">
         <span>Target Scale: 150,000 Words / Edition</span>
-        <span>Database: Supabase PostgreSQL [Production]</span>
-        <span>Security: Server-Authoritative Vault</span>
+        <span>Database: Supabase PostgreSQL [Production Verified]</span>
+        <span>Agreement: 3.0 Strict Enforcement</span>
     </div>
 
     <script>
@@ -118,7 +118,7 @@ DASHBOARD_HTML = """
                         html += `[RECORD ID: ${b.id}]<br><b>${b.title}</b><br>➔ Words: ${b.word_count} | Status: ${b.status}<br><br>`;
                     });
                 } else {
-                    html = "Ledger table is currently empty or unlinked.";
+                    html = "Ledger table is connected but currently empty. Click publish above!";
                 }
                 document.getElementById('inventoryLedger').innerHTML = html;
             });
@@ -145,7 +145,6 @@ def api_make_idea_and_publish():
     db_status = "Unverified"
     if supabase:
         try:
-            # Hard execution insert into Supabase table master_books_ledger
             response = supabase.table("master_books_ledger").insert({
                 "title": book_title,
                 "word_count": word_target,
@@ -155,7 +154,7 @@ def api_make_idea_and_publish():
         except Exception as e:
             db_status = f"[BROKEN] Supabase Write Error: {str(e)}"
     else:
-        db_status = f"[MISSING] Supabase client is None. Init Error: {init_error_log}"
+        db_status = f"[CRITICAL ERROR] Supabase client failed to initialize due to invalid API Key or URL. Details: {init_error_log}"
 
     return jsonify({
         "status": "Success",
@@ -176,5 +175,5 @@ def api_get_books():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    print(f"[Master Empire OS] Starting Hard Execution Server on port {port}...")
+    print(f"[Master Empire OS - Agreement 3.0] Starting Server on port {port}...")
     serve(app, host="0.0.0.0", port=port)
