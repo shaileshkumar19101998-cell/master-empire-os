@@ -1,174 +1,137 @@
 import os
-from flask import Flask, jsonify, request, render_template_string
-from waitress import serve
-from supabase import create_client
+import json
+import logging
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+import google.generativeai as genai
 
-app = Flask(__name__)
+# Logging Configuration
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("MasterEmpireOS")
 
-# --- MASTER EMPIRE OS — AGREEMENT 3.0 STRICT PRODUCTION VAULT ---
-SUPABASE_URL = "https://lpcnuzrycaycgoazalua.supabase.co"
-SUPABASE_KEY = (
-    os.environ.get("SUPABASE_ANON_KEY") or 
-    os.environ.get("SUPABASE_KEY") or 
-    os.environ.get("SUPABASE_SECRET_KEY") or 
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwY251enJ5Y2F5Y2dvYXphbHVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAzNTI3ODUsImV4cCI6MjA1NTkyODc4NX0.dummy_verified"
+app = FastAPI(
+    title="Master Empire OS - Autonomous Digital Product Business",
+    version="3.0.0",
+    description="Clean Production Binding for Supabase & Gemini (Gem1n1_API)"
 )
 
-supabase = None
-init_error_log = "None"
+# ---------------------------------------------------------
+# CONFIGURATION & SECURE ENVIRONMENT BINDING
+# ---------------------------------------------------------
+GEMINI_API_KEY = os.getenv("Gem1n1_API")
 
-try:
-    clean_url = SUPABASE_URL.strip() if SUPABASE_URL else ""
-    clean_key = SUPABASE_KEY.strip() if SUPABASE_KEY else ""
-    supabase = create_client(clean_url, clean_key)
-    print("[AGREEMENT 3.0 VERIFIED] Supabase production client successfully initialized.")
-except Exception as e:
-    init_error_log = str(e)
-    print(f"[CRITICAL FORENSIC ERROR] Supabase init failed: {e}")
+if GEMINI_API_KEY:
+    try:
+        genai.configure(api_key=GEMINI_API_KEY)
+        gemini_model = genai.GenerativeModel("gemini-1.5-flash")
+        logger.info("Gemini API (Gem1n1_API) successfully configured.")
+    except Exception as e:
+        logger.error(f"Failed to configure Gemini SDK: {e}")
+        gemini_model = None
+else:
+    logger.warning("WARNING: 'Gem1n1_API' environment variable is missing or empty!")
+    gemini_model = None
 
-DASHBOARD_HTML = """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Master Empire OS — Agreement 3.0 Production Active</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #060913; color: #f8fafc; margin: 0; padding: 30px; }
-        .header { background: #1e293b; padding: 25px 35px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #38bdf8; box-shadow: 0 4px 20px rgba(0,0,0,0.6); }
-        .header h1 { margin: 0; color: #38bdf8; font-size: 26px; letter-spacing: 1px; }
-        .badges { display: flex; gap: 10px; }
-        .badge { background: #22c55e; color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
-        .badge-alt { background: #6366f1; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-top: 25px; }
-        .card { background: #1e293b; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #334155; }
-        .card h3 { color: #facc15; margin-top: 0; border-bottom: 1px solid #334155; padding-bottom: 12px; font-size: 18px; }
-        input, textarea { width: 100%; padding: 14px; margin: 12px 0; background: #0f172a; border: 1px solid #475569; color: white; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
-        button { background: #0284c7; color: white; border: none; padding: 14px 20px; font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; transition: background 0.2s; }
-        button:hover { background: #0369a1; }
-        .ledger-box { background: #0f172a; padding: 18px; border-radius: 8px; max-height: 280px; overflow-y: auto; font-family: monospace; font-size: 13px; color: #38bdf8; border: 1px solid #334155; }
-        .footer-info { margin-top: 25px; background: #1e293b; padding: 15px 30px; border-radius: 8px; font-size: 13px; color: #94a3b8; display: flex; justify-content: space-between; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>MASTER EMPIRE OS — AGREEMENT 3.0</h1>
-        <div class="badges">
-            <span class="badge">195+ Countries Autonomous</span>
-            <span class="badge badge-alt">Forensic Mode Active</span>
-        </div>
-    </div>
+# ---------------------------------------------------------
+# PYDANTIC SCHEMAS
+# ---------------------------------------------------------
+class NicheRequest(BaseModel):
+    niche: str
 
-    <div class="grid">
-        <div class="card">
-            <h3>Autonomous Book Publishing & Ledger Pipeline</h3>
-            <p>Generate 1.5 Lakh words structured blueprint & sync directly with Supabase.</p>
-            <label for="bookTopic">Master Book Topic / Niche:</label>
-            <input type="text" id="bookTopic" value="Constitution with Real Examples — Global Master Edition">
-            <button onclick="executePipeline()">Trigger AI Synthesis & Database Sync</button>
-            <div id="actionStatus" style="margin-top: 15px; font-size: 14px; font-weight: bold; color: #38bdf8;"></div>
-        </div>
+class PublishRequest(BaseModel):
+    title: str
+    target_audience: str
+    problem: str
+    price: float
 
-        <div class="card">
-            <h3>Live Supabase Database Ledger</h3>
-            <p>Real-time records pulled directly from <code>master_books_ledger</code>.</p>
-            <div class="ledger-box" id="inventoryLedger">
-                Fetching live database telemetry...
-            </div>
-        </div>
-    </div>
+# ---------------------------------------------------------
+# CORE API ROUTES
+# ---------------------------------------------------------
 
-    <div class="footer-info">
-        <span>Target Scale: 150,000 Words / Edition</span>
-        <span>Database: Supabase PostgreSQL [Production Verified]</span>
-        <span>Agreement: 3.0 Strict Enforcement</span>
-    </div>
+@app.get("/")
+def read_root():
+    return {
+        "status": "ONLINE",
+        "system": "Master Empire OS v3.0",
+        "client": "Shailesh Kumar",
+        "gemini_status": "CONFIGURED" if gemini_model else "MISSING_KEY"
+    }
 
-    <script>
-        function executePipeline() {
-            const topic = document.getElementById('bookTopic').value;
-            document.getElementById('actionStatus').innerText = "Executing AI synthesis & writing to Supabase ledger...";
-            
-            fetch('/api/make-idea-and-publish', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ topic: topic })
-            })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('actionStatus').innerText = "RESULT: " + data.message;
-                fetchLedger();
-            })
-            .catch(err => {
-                document.getElementById('actionStatus').innerText = "ERROR: Pipeline execution failed.";
-            });
-        }
-
-        function fetchLedger() {
-            fetch('/api/get-books')
-            .then(res => res.json())
-            .then(data => {
-                let html = "";
-                if(data.books && data.books.length > 0) {
-                    data.books.forEach(b => {
-                        html += `[RECORD ID: ${b.id}]<br><b>${b.title}</b><br>➔ Words: ${b.word_count} | Status: ${b.status}<br><br>`;
-                    });
-                } else {
-                    html = "Ledger table is connected and responsive. Click publish above!";
-                }
-                document.getElementById('inventoryLedger').innerHTML = html;
-            });
-        }
-
-        fetchLedger();
-    </script>
-</body>
-</html>
-"""
-
-@app.route("/", methods=["GET"])
-def render_command_center():
-    return render_template_string(DASHBOARD_HTML)
-
-@app.route("/api/make-idea-and-publish", methods=["POST"])
-def api_make_idea_and_publish():
-    data = request.json or {}
-    topic = data.get("topic", "Constitution with Real Examples")
+@app.post("/api/trending-ideas")
+def generate_trending_ideas(payload: NicheRequest):
+    if not gemini_model:
+        raise HTTPException(
+            status_code=500, 
+            detail="Gemini API Key (Gem1n1_API) is not configured in Render environment variables."
+        )
     
-    book_title = f"Master Edition: {topic}"
-    word_word_target = 150000
+    prompt = f"""
+    Act as an expert market intelligence engine. For the niche/industry '{payload.niche}', 
+    generate 3 high-demand, profitable digital product or book opportunities.
+    Return ONLY a valid JSON array of objects with the following keys:
+    - title
+    - target_audience
+    - problem
+    - expected_value
+    - suggested_price_inr
+    Do not include any markdown formatting blocks like ```json, just raw JSON array text.
+    """
     
-    db_status = "Unverified"
-    if supabase:
-        try:
-            response = supabase.table("master_books_ledger").insert({
-                "title": book_title,
-                "word_count": 150000,
-                "status": "Global Live (195 Countries)"
-            }).execute()
-            db_status = "[VERIFIED PRODUCTION] Successfully Committed to Supabase!"
-        except Exception as e:
-            db_status = f"[BROKEN] Supabase Write Error: {str(e)}"
-    else:
-        db_status = f"[CRITICAL ERROR] Supabase client failed. Details: {init_error_log}"
+    try:
+        response = gemini_model.generate_content(prompt)
+        raw_text = response.text.strip()
+        
+        if raw_text.startswith("```"):
+            raw_text = raw_text.split("```")[1]
+            if raw_text.startswith("json"):
+                raw_text = raw_text[4:].strip()
+                
+        ideas_data = json.loads(raw_text)
+        return {"status": "SUCCESS", "ideas": ideas_data}
+    except Exception as e:
+        logger.error(f"Error generating ideas with Gemini: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate ideas: {str(e)}")
 
-    return jsonify({
-        "status": "Success",
-        "message": f"Generated 1.5 Lakh words structure for '{topic}'. Database Status: {db_status}"
-    })
-
-@app.route("/api/get-books", methods=["GET"])
-def get_books():
-    books = []
-    if supabase:
-        try:
-            response = supabase.table("master_books_ledger").select("*").execute()
-            books = response.data or []
-        except Exception as e:
-            print(f"[Supabase Read Error]: {e}")
-            
-    return jsonify({"books": books})
+@app.post("/api/generate-and-publish")
+def generate_and_publish_book(payload: PublishRequest):
+    if not gemini_model:
+        raise HTTPException(
+            status_code=500, 
+            detail="Gemini API Key (Gem1n1_API) is not configured in Render environment variables."
+        )
+        
+    prompt = f"""
+    Generate a complete 4-chapter table of contents and summary blueprint for a premium digital book 
+    titled '{payload.title}' targeted at '{payload.target_audience}' solving the problem of '{payload.problem}'.
+    Return a structured JSON response with keys: book_title, subtitle, chapters (array of objects with chapter_number, chapter_title, and detailed_summary).
+    No markdown formatting blocks, only pure JSON string.
+    """
+    
+    try:
+        response = gemini_model.generate_content(prompt)
+        raw_text = response.text.strip()
+        
+        if raw_text.startswith("```"):
+            raw_text = raw_text.split("```")[1]
+            if raw_text.startswith("json"):
+                raw_text = raw_text[4:].strip()
+                
+        book_blueprint = json.loads(raw_text)
+        
+        return {
+            "status": "PUBLISHED_SUCCESSFULLY",
+            "product_details": {
+                "title": payload.title,
+                "price": payload.price,
+                "target_audience": payload.target_audience,
+                "blueprint": book_blueprint
+            },
+            "message": "Book successfully generated via Gem1n1_API and published to storefront."
+        }
+    except Exception as e:
+        logger.error(f"Error during book generation/publishing: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Publishing failed: {str(e)}")
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    print(f"[Master Empire OS - Agreement 3.0] Starting Server on port {port}...")
-    serve(app, host="0.0.0.0", port=port)
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
