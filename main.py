@@ -1,131 +1,102 @@
 import os
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi.responses import HTMLResponse, FileResponse
+from pydantic import BaseModel
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib import colors
+from reportlab.pdfgen import canvas
 
-# --- MASTER EMPIRE OS: SHAILJA TECH STUDIO ---
-app = FastAPI(
-    title="Master Empire OS - Shailja Tech Studio",
-    version="16.5",
-    description="Fully Autonomous Digital Empire & Publishing Engine for Shailja Tech"
-)
+app = FastAPI(title="Master Empire OS", version="16.0")
 
-# Secure Quad-Key Gemini API Rotation Pool (reads safely from Render/Local Environment)
-GEMINI_API_KEYS_POOL = [
+# Quad-Key Gemini API Pool from Environment Variables
+GEMINI_KEYS = [
     os.getenv("GEMINI_API_KEY_1", ""),
     os.getenv("GEMINI_API_KEY_2", ""),
     os.getenv("GEMINI_API_KEY_3", ""),
     os.getenv("GEMINI_API_KEY_4", "")
 ]
 
-@app.get("/")
-def read_root():
-    active_keys = sum(1 for k in GEMINI_API_KEYS_POOL if k)
-    return {
-        "system": "Master Empire OS",
-        "brand": "Shailja Tech Studio",
-        "status": "ONLINE",
-        "active_ai_engines": active_keys,
-        "message": "Shailja Tech autonomous digital empire backend running at enterprise standards."
-    }
+class BookRequest(BaseModel):
+    title: str = "The Autonomous Digital Empire Blueprint"
+    tier: str = "Enterprise Level"
+    price: float = 29.99
 
-# --- AUTONOMOUS PULSE & KEEP-ALIVE ENGINE (Prevents Render Sleep & Drives Sales/Publishing) ---
-@app.get("/api/pulse")
-async def autonomous_sales_pulse():
+@app.get("/", response_class=HTMLResponse)
+def dashboard():
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Master Empire OS — Command Center</title>
+        <style>
+            body { font-family: Arial, sans-serif; background: #0b0f19; color: #ffffff; padding: 40px; }
+            .card { background: #1f2937; padding: 30px; border-radius: 12px; max-width: 600px; margin: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+            h1 { color: #38bdf8; font-size: 24px; }
+            .status { color: #22c55e; font-weight: bold; }
+            button { background: #38bdf8; color: #000; border: none; padding: 12px 20px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 20px; width: 100%; }
+            button:hover { background: #0ea5e9; }
+            #output { margin-top: 20px; background: #111827; padding: 15px; border-radius: 6px; font-family: monospace; display: none; }
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <h1>Master Empire OS &mdash; Live Engine</h1>
+            <p>System Status: <span class="status">ONLINE (v16.0)</span></p>
+            <p>Autonomous AI Book & Sales Engine is active.</p>
+            <button onclick="launchProduction()">Launch Background Book Production</button>
+            <div id="output">Initializing production cycle...</div>
+        </div>
+        <script>
+            async function launchProduction() {
+                const out = document.getElementById('output');
+                out.style.display = 'block';
+                out.innerHTML = 'Triggering background generation...';
+                try {
+                    let res = await fetch('/api/generate-book', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title: "The Autonomous Digital Empire Blueprint", tier: "Enterprise Level", price: 29.99 })
+                    });
+                    let data = await res.json();
+                    out.innerHTML = 'Success! Book Generated: ' + data.filename + '<br><a href="/download/' + data.filename + '" style="color: #38bdf8;" target="_blank">Download Generated Book PDF</a>';
+                } catch(e) {
+                    out.innerHTML = 'Error during execution: ' + e;
+                }
+            }
+        </script>
+    </body>
+    </html>
     """
-    Enterprise Keep-Alive & Autonomous Business Pulse.
-    Pinged every 5 minutes by external cron service to keep Render awake 
-    and trigger automated book production and distribution checks.
-    """
-    try:
-        active_keys_count = sum(1 for k in GEMINI_API_KEYS_POOL if k)
-        return {
-            "status": "ONLINE",
-            "empire": "Shailja Tech Studio / Master Empire OS",
-            "active_ai_keys": active_keys_count,
-            "message": "Pulse received. Autonomous systems operating at peak efficiency for Shailja Tech.",
-            "database": "Connected",
-            "timestamp": "active"
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
-# --- AUTOMATED BOOK & PDF GENERATION ENGINE (ReportLab Integration) ---
+def generate_pdf_background(filename: str, title: str):
+    pdf_path = filename
+    c = canvas.Canvas(pdf_path, pagesize=letter)
+    width, height = letter
+    
+    c.setFont("Helvetica-Bold", 20)
+    c.drawString(54, height - 72, title)
+    
+    c.setFont("Helvetica", 12)
+    c.drawString(54, height - 120, "Published by: Selza Media & Studio")
+    c.drawString(54, height - 140, "Powered by Master Empire OS Autonomous Engine")
+    
+    c.drawString(54, height - 190, "Chapter 1: The Vision of Autonomous Digital Empires")
+    c.drawString(54, height - 210, "Top-tier tech frameworks demand 24/7 uptime, zero operational cost,")
+    c.drawString(54, height - 230, "and absolute automated execution across global distribution channels.")
+    
+    c.save()
+
 @app.post("/api/generate-book")
-async def generate_book_pdf(title: str = "The Autonomous Digital Empire Blueprint", author: str = "Shailja Tech"):
-    """
-    Generates a professional publication-ready PDF book using ReportLab 
-    under the Shailja Tech publishing house standard.
-    """
-    try:
-        filename = "shailja_tech_master_empire.pdf"
-        filepath = os.path.join(os.getcwd(), filename)
-        
-        # Setup PDF Document
-        doc = SimpleDocTemplate(filepath, pagesize=letter, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=72)
-        story = []
-        styles = getSampleStyleSheet()
-        
-        # Custom Styles for Shailja Tech
-        title_style = ParagraphStyle(
-            'BookTitle',
-            parent=styles['Heading1'],
-            fontName='Helvetica-Bold',
-            fontSize=26,
-            textColor=colors.HexColor('#1A365D'),
-            spaceAfter=15,
-            alignment=1
-        )
-        
-        subtitle_style = ParagraphStyle(
-            'BookSubtitle',
-            parent=styles['Normal'],
-            fontName='Helvetica',
-            fontSize=14,
-            textColor=colors.HexColor('#4A5568'),
-            spaceAfter=30,
-            alignment=1
-        )
-        
-        body_style = ParagraphStyle(
-            'BookBody',
-            parent=styles['Normal'],
-            fontName='Helvetica',
-            fontSize=11,
-            textColor=colors.HexColor('#2D3748'),
-            leading=16,
-            spaceAfter=12
-        )
-        
-        # Content Building
-        story.append(Spacer(1, 40))
-        story.append(Paragraph(title, title_style))
-        story.append(Paragraph(f"Published by Shailja Tech Studio", subtitle_style))
-        story.append(Spacer(1, 20))
-        
-        # Chapters / Content sample
-        intro_text = ("<b>Introduction:</b> Welcome to the autonomous publishing ecosystem powered by Shailja Tech. "
-                      "This document represents a fully automated, programmatic asset generated at zero operational cost "
-                      "with top-tier enterprise efficiency, ready for global multi-platform distribution.")
-        story.append(Paragraph(intro_text, body_style))
-        
-        chapter_1 = ("<b>Chapter 1: The Architecture of Scale</b><br/>"
-                     "By leveraging multi-key AI rotation pools, automated cloud hosting on Render, and programmatic workflows, "
-                     "Shailja Tech establishes an unstoppable 24/7 digital enterprise model that operates completely independently.")
-        story.append(Spacer(1, 15))
-        story.append(Paragraph(chapter_1, body_style))
-        
-        # Build PDF
-        doc.build(story)
-        
-        return {
-            "status": "SUCCESS",
-            "message": f"Book successfully generated for Shailja Tech!",
-            "file_path": filepath,
-            "publisher": "Shailja Tech Studio"
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")
+def generate_book(req: BookRequest, background_tasks: BackgroundTasks):
+    filename = "autonomous_empire_blueprint.pdf"
+    background_tasks.add_task(generate_pdf_background, filename, req.title)
+    return {"status": "success", "message": "Book generation triggered in background", "filename": filename}
+
+@app.get("/download/{filename}")
+def download_book(filename: str):
+    if os.path.exists(filename):
+        return FileResponse(filename, media_type='application/pdf', filename=filename)
+    raise HTTPException(status_code=404, detail="File not found")
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "engine": "running", "active_keys": len([k for k in GEMINI_KEYS if k])}
