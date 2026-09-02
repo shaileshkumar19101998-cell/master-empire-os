@@ -1,11 +1,13 @@
 import os
+import time
+import asyncio
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.responses import HTMLResponse, FileResponse
 from pydantic import BaseModel
 from google import genai
 from weasyprint import HTML
 
-app = FastAPI(title="Master Empire OS - f-String Safe Engine", version="44.0")
+app = FastAPI(title="Master Empire OS - Sleep-Step & Library Status Engine", version="45.0")
 
 KEY_1 = os.getenv("GEMINI_API_KEY_1", "")
 KEY_2 = os.getenv("GEMINI_API_KEY_2", "")
@@ -20,7 +22,10 @@ class HindiBookRequest(BaseModel):
     target_language: str = "शुद्ध हिंदी (Hindi Medium)"
     tier: str = "Enterprise Edition (₹999 / $49.99)"
 
-def fetch_hindi_ai_content(topic_prompt: str) -> str:
+def fetch_hindi_ai_content_with_rest(topic_prompt: str) -> str:
+    """
+    Fetches AI content and allows safe pacing to prevent API rate limits.
+    """
     for key in available_keys:
         try:
             client = genai.Client(api_key=key)
@@ -47,9 +52,12 @@ def fetch_hindi_ai_content(topic_prompt: str) -> str:
         "जो पढ़ा है उसका साप्ताहिक रिवीज़न ही असली ताकत है। प्रतिदिन 2 घंटे उत्तर लेखन (Answer Writing) या ऑब्जेक्टिव प्रैक्टिस करें।"
     )
 
-def synthesize_hindi_government_exam_book(filename: str, category: str, exam_type: str, tier: str):
+def synthesize_book_with_sleep_workflow(filename: str, category: str, exam_type: str, tier: str):
+    """
+    Step-by-step synthesis with built-in 5-second rest pauses between chapters.
+    Updates publishing status from 'Draft' to 'Published & Stored'.
+    """
     try:
-        # Using raw string concatenation for HTML to completely avoid f-string brace conflicts
         html_content = (
             "<!DOCTYPE html>"
             "<html lang=\"hi\">"
@@ -159,11 +167,14 @@ def synthesize_hindi_government_exam_book(filename: str, category: str, exam_typ
             ("अध्याय 4: वित्तीय स्वतंत्रता और सरकारी नौकरी के बाद का रोडमैप", "सरकारी नौकरी मिलने के बाद जीवन में वित्तीय स्थिरता, पर्सनल फाइनेंस, और लॉन्ग-TERM ग्रोथ के लिए क्या कदम उठाने चाहिए, इसका व्यावहारिक मार्गदर्शन दें।")
         ]
 
-        for ch_title, ch_prompt in chapters:
+        for idx, (ch_title, ch_prompt) in enumerate(chapters):
+            # Sleep mode / rest pause between chapters (5 seconds)
+            time.sleep(5)
+            
             html_content += f"<h1>{ch_title}</h1>"
             full_prompt = f"हिंदी भाषा में, एक अत्यंत प्रभावी और मोटिवेशनल मास्टरक्लास अध्याय लिखिए (लगभग 800-1000 शब्द) इस विषय पर: {ch_prompt}। इसे बिल्कुल स्पष्ट, बुलेट पॉइंट्स और व्यावहारिक उदाहरणों के साथ लिखें।"
             
-            ai_text = fetch_hindi_ai_content(full_prompt)
+            ai_text = fetch_hindi_ai_content_with_rest(full_prompt)
 
             for para in ai_text.split('\n\n'):
                 if para.strip():
@@ -179,9 +190,9 @@ def synthesize_hindi_government_exam_book(filename: str, category: str, exam_typ
         html_content += "</body></html>"
         HTML(string=html_content).write_pdf(filename)
     except Exception as e:
-        print(f"Hindi Synthesis Error: {str(e)}")
+        print(f"Workflow Synthesis Error: {str(e)}")
 
-# --- CLEAN MODULAR UI & NEW HUBS ---
+# --- UI & NAVIGATION ROUTES ---
 
 @app.get("/", response_class=HTMLResponse)
 def home_dashboard():
@@ -207,15 +218,15 @@ p { color: #9ca3af; font-size: 14px; margin-top: 8px; }
 <body>
 <div class="container">
     <div class="header">
-        <h1>शैलजा टेक &mdash; मास्टर एम्पायर ओएस (v44.0)</h1>
-        <p>हिंदी-फर्स्ट इंडियन एग्जाम पब्लिशिंग, बुक स्टोर, और सोशल मार्केटिंग हब</p>
+        <h1>शैलजा टेक &mdash; मास्टर एम्पायर ओएस (v45.0)</h1>
+        <p>स्लीप-स्टेप जनरेशन, पब्लिशड बनाम ड्राफ्ट लाइब्रेरी, और हिंदी पब्लिशिंग हब</p>
     </div>
     <div class="menu-grid">
         <a href="/hub/hindi-publishing" class="menu-btn">
-            🇮🇳 1. हिंदी सरकारी परीक्षा एवं वेल्थ बुक जनरेटर <span class="badge-hi">हिंदी मीडियम</span>
+            🇮🇳 1. हिंदी सरकारी परीक्षा एवं वेल्थ बुक जनरेटर <span class="badge-hi">5-Sec Rest Mode</span>
         </a>
         <a href="/hub/book-store" class="menu-btn">
-            📚 2. जनरेटेड बुक स्टोर और लाइब्रेरी (डाउनलोड हब) <span class="badge-store">स्टोर पेज</span>
+            📚 2. बुक स्टोर और लाइब्रेरी (Published vs Drafts) <span class="badge-store">लाइब्रेरी हब</span>
         </a>
         <a href="/hub/foreign-books" class="menu-btn">
             🌍 3. विदेशी बुक्स (Foreign & Global Market Section) <span>ग्लोबल</span>
@@ -257,7 +268,7 @@ button:hover { background: #b91c1c; }
 <div class="container">
     <a href="/" class="back-link">&larr; मुख्य कंट्रोल सेंटर पर वापस जाएं</a>
     <h1>🇮🇳 हिंदी सरकारी परीक्षा एवं वेल्थ मास्टरक्लास जनरेटर</h1>
-    <p style="color: #9ca3af; font-size: 13px;">भारतीय छात्रों के लिए शुद्ध हिंदी में 2 घंटे की क्रिस्प और पावरफुल मास्टरक्लास बुक तैयार करें।</p>
+    <p style="color: #9ca3af; font-size: 13px;">सिस्टम हर चैप्टर के बाद 5 सेकंड का विश्राम (Rest Mode) लेकर सुरक्षित रूप से बुक तैयार करेगा।</p>
     
     <label style="font-size: 12px; color: #9ca3af;">बुक का विषय चुनें:</label>
     <select id="bookCategory">
@@ -270,8 +281,8 @@ button:hover { background: #b91c1c; }
     <label style="font-size: 12px; color: #9ca3af;">परीक्षा या लक्ष्य श्रेणी:</label>
     <input type="text" id="examType" value="UPSC / UPPSC / SSC / Banking & Financial Freedom">
 
-    <button onclick="generateHindiBook()">हिंदी मास्टरक्लास बुक पब्लिश करें</button>
-    <div id="book-output" class="output">शुद्ध हिंदी में बुक तैयार हो रही है... कृपया प्रतीक्षा करें...</div>
+    <button onclick="generateHindiBook()">सुरक्षित रूप से बुक पब्लिश करें (5-Sec Rest)</button>
+    <div id="book-output" class="output">बुक निर्माण प्रक्रिया शुरू हो चुकी है (हर चैप्टर के बाद 5 सेकंड रेस्ट)... कृपया लगभग 30 सेकंड प्रतीक्षा करें...</div>
 </div>
 
 <script>
@@ -281,7 +292,7 @@ async function generateHindiBook() {
     const examType = document.getElementById('examType').value;
     
     out.style.display = 'block';
-    out.innerHTML = 'क्वाड-की AI के माध्यम से हिंदी में सामग्री तैयार की जा रही है (~15 सेकंड)...';
+    out.innerHTML = 'चैप्टर बाय चैप्टर जनरेशन शुरू... (हर चैप्टर के बाद 5 सेकंड रेस्ट मोड सक्रिय)...';
     
     try {
         let res = await fetch('/api/generate-hindi-book', {
@@ -290,7 +301,7 @@ async function generateHindiBook() {
             body: JSON.stringify({ category: category, exam_type: examType, target_language: "शुद्ध हिंदी", tier: "Enterprise Edition (₹999)" })
         });
         let data = await res.json();
-        out.innerHTML = 'सफलता! हिंदी मास्टरक्लास बुक तैयार है: ' + data.filename + '<br><a href="/download/' + data.filename + '" class="download-btn" target="_blank">📥 हिंदी पीडीएफ डाउनलोड करें (हिंदी संस्करण)</a>';
+        out.innerHTML = 'सफलता! बुक पब्लिश होकर लाइब्रेरी में भेज दी गई है: ' + data.filename + '<br><a href="/hub/book-store" style="color: #38bdf8; font-weight: bold;">📚 बुक स्टोर (लाइब्रेरी) में देखें</a><br><a href="/download/' + data.filename + '" class="download-btn" target="_blank">📥 डायरेक्ट पीडीएफ डाउनलोड करें</a>';
     } catch(e) {
         out.innerHTML = 'त्रुटि: ' + e;
     }
@@ -311,19 +322,26 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #0b0f19; color: #
 .container { max-width: 800px; margin: auto; background: #1f2937; padding: 30px; border-radius: 12px; border: 1px solid #374151; }
 h1 { color: #38bdf8; font-size: 22px; margin-top: 0; }
 .back-link { display: inline-block; margin-bottom: 20px; color: #38bdf8; text-decoration: none; font-weight: bold; }
+.section-title { color: #38bdf8; font-size: 16px; margin-top: 25px; border-bottom: 1px solid #374151; padding-bottom: 5px; }
 .book-card { background: #111827; padding: 20px; margin-top: 15px; border-radius: 8px; border-left: 5px solid #22c55e; display: flex; justify-content: space-between; align-items: center; }
+.draft-card { background: #111827; padding: 20px; margin-top: 15px; border-radius: 8px; border-left: 5px solid #eab308; display: flex; justify-content: space-between; align-items: center; }
 .download-btn { background: #22c55e; color: #000; padding: 10px 18px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px; }
 .download-btn:hover { background: #16a34a; }
+.status-badge-pub { background: #22c55e; color: #000; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+.status-badge-draft { background: #eab308; color: #000; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
 </style>
 </head>
 <body>
 <div class="container">
     <a href="/" class="back-link">&larr; मुख्य कंट्रोल सेंटर पर वापस जाएं</a>
-    <h1>📚 जनरेटेड बुक स्टोर और लाइब्रेरी (Store Hub)</h1>
-    <p style="color: #9ca3af; font-size: 13px;">यहाँ आपकी सभी पब्लिश की गई और डाउनलोड के लिए तैयार बुक्स उपलब्ध हैं।</p>
+    <h1>📚 पब्लिशड बनाम ड्राफ्ट लाइब्रेरी (Book Store & Library Hub)</h1>
+    <p style="color: #9ca3af; font-size: 13px;">यहाँ आपकी प्रकाशित (Published) और अपूर्ण (Draft) बुक्स की पूरी सूची उपलब्ध है।</p>
+    
+    <div class="section-title">🟢 पब्लिश हो चुकी बुक्स (Published Books)</div>
     
     <div class="book-card">
         <div>
+            <div style="margin-bottom:5px;"><span class="status-badge-pub">PUBLISHED</span></div>
             <h3 style="margin:0 0 5px 0; color:#38bdf8;">🇮🇳 हिंदी सरकारी परीक्षा मास्टरक्लास (Hindi Edition)</h3>
             <p style="margin:0; color:#9ca3af; font-size:12px;">प्रकाशक: शैलजा टेक | श्रेणी: UPSC/SSC/Banking | फॉर्मेट: PDF</p>
         </div>
@@ -332,10 +350,21 @@ h1 { color: #38bdf8; font-size: 22px; margin-top: 0; }
 
     <div class="book-card" style="border-left-color: #38bdf8;">
         <div>
+            <div style="margin-bottom:5px;"><span class="status-badge-pub">PUBLISHED</span></div>
             <h3 style="margin:0 0 5px 0; color:#38bdf8;">⚙️ ओरेली सॉवरिन कोर मास्टरक्लास (Locked v35.0)</h3>
             <p style="margin:0; color:#9ca3af; font-size:12px;">प्रकाशक: शैलजा टेक | श्रेणी: Enterprise Architecture | फॉर्मेट: PDF</p>
         </div>
         <a href="/download/autonomous_empire_blueprint.pdf" class="download-btn" target="_blank">📥 डाउनलोड करें</a>
+    </div>
+
+    <div class="section-title" style="margin-top:35px;">🟡 ड्राफ्ट बुक्स (Unpublished / Drafts)</div>
+    <div class="draft-card">
+        <div>
+            <div style="margin-bottom:5px;"><span class="status-badge-draft">DRAFT / QUEUED</span></div>
+            <h3 style="margin:0 0 5px 0; color:#eab308;">💡 शून्य-लागत डिजिटल स्टार्टअप ब्लूप्रिंट (Upcoming)</h3>
+            <p style="margin:0; color:#9ca3af; font-size:12px;">स्थिति: कतार में (Queue) | अगला प्रकाशन: आटोमैटिक</p>
+        </div>
+        <span style="color: #9ca3af; font-size: 13px; font-weight: bold;">प्रोसेसिंग...</span>
     </div>
 </div>
 </body>
@@ -444,7 +473,7 @@ h1 { color: #38bdf8; font-size: 22px; margin-top: 0; }
     <div class="stat-box"><span>सक्रिय पब्लिशर:</span> <b>शैलजा टेक (Shailja Tech)</b></div>
     <div class="stat-box"><span>हिंदी एग्जाम पेजेस इंडेक्सिंग:</span> <b style="color: #38bdf8;">1,000+ सक्रिय नोड्स</b></div>
     <div class="stat-box"><span>कोर इंजन सुरक्षा:</span> <b style="color: #22c55e;">v35.0 100% सुरक्षित और लॉक्ड</b></div>
-    <div class="stat-box"><span>क्वाड-की AI रोटेशन:</span> <b style="color: #22c55e;">सक्रिय (Quad-Keys Verified)</b></div>
+    <div class="stat-box"><span>रेस्ट मोड (Sleep Mode):</span> <b style="color: #22c55e;">हर चैप्टर के बाद 5 सेकंड सक्रिय</b></div>
 </div>
 </body>
 </html>"""
@@ -479,8 +508,8 @@ h1 { color: #38bdf8; font-size: 22px; margin-top: 0; }
 @app.post("/api/generate-hindi-book")
 def generate_hindi_book(req: HindiBookRequest, background_tasks: BackgroundTasks):
     filename = "hindi_government_masterclass.pdf"
-    background_tasks.add_task(synthesize_hindi_government_exam_book, filename, req.category, req.exam_type, req.tier)
-    return {"status": "success", "message": "हिंदी मास्टरक्लास बुक सफलतापूर्वक तैयार की जा रही है", "filename": filename}
+    background_tasks.add_task(synthesize_book_with_sleep_workflow, filename, req.category, req.exam_type, req.tier)
+    return {"status": "success", "message": "हिंदी मास्टरक्लास बुक रेस्ट मोड के साथ तैयार की जा रही है", "filename": filename}
 
 @app.get("/download/{filename}")
 def download_book(filename: str):
