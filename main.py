@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from google import genai
 from weasyprint import HTML
 
-app = FastAPI(title="Master Empire OS - Hindi-First & Marketing Hub", version="43.0")
+app = FastAPI(title="Master Empire OS - f-String Safe Engine", version="44.0")
 
 KEY_1 = os.getenv("GEMINI_API_KEY_1", "")
 KEY_2 = os.getenv("GEMINI_API_KEY_2", "")
@@ -21,9 +21,6 @@ class HindiBookRequest(BaseModel):
     tier: str = "Enterprise Edition (₹999 / $49.99)"
 
 def fetch_hindi_ai_content(topic_prompt: str) -> str:
-    """
-    Quad-Key Rotator optimized specifically for deep, professional Hindi masterclass content.
-    """
     for key in available_keys:
         try:
             client = genai.Client(api_key=key)
@@ -40,124 +37,125 @@ def fetch_hindi_ai_content(topic_prompt: str) -> str:
         except Exception:
             continue
 
-    # Guaranteed high-impact professional Hindi fallback
     return (
         "विस्तृत रणनीति एवं परीक्षा क्रैक करने का ब्लूप्रिंट:\n\n"
         "1. कमरे का माहौल और मानसिक तैयारी (Study Environment & Mindset):\n"
-        "सफलता की शुरुआत आपके पढ़ने वाले कमरे (Study Room) से होती है। एक शांत कोना, दीवार पर परीक्षा का सिलेबस, और सोशल मीडिया से दूरी—यह तीनों चीजें मिलकर आपके चयन की संभावना को 80% बढ़ा देती हैं।\n\n"
+        "सफलता की शुरुआत आपके पढ़ने वाले कमरे (Study Room) से होती है। एक शांत कोना, दीवार पर परीक्षा का सिलेबस, और सोशल मीडिया से दूरी—यह तीनों चीजें मिलकर आपके चयन की संभावना को 80% बढ़ा देती हैं।\n\n"
         "2. स्मार्ट स्टडी और पिछले वर्षों के पेपर्स का विश्लेषण:\n"
-        "सरकारी परीक्षा कोई ज्ञान की परीक्षा नहीं है, बल्कि यह सही समय पर सही रणनीति अपनाने का हुनर है। हमें मोटी-मोटी किताबें पढ़ने के बजाय केवल हाई-यील्ड टॉपिक्स और पिछले 5 साल के ट्रेंड्स पर फोकस करना चाहिए।\n\n"
-        "3. रिवीज़न और मॉक टेस्ट का चक्र:\n"
-        "जो पढ़ा है उसका साप्ताहिक रिवीज़न ही असली ताकत है। प्रतिदिन 2 घंटे उत्तर लेखन (Answer Writing) या ऑब्जेक्टिव प्रैक्टिस करें।"
+        "सरकारी परीक्षा कोई ज्ञान की परीक्षा नहीं है, बल्कि यह सही समय पर सही रणनीति अपनाने का हुनर है। हमें मोटी-मोटी किताबें पढ़ने के बजाय केवल हाई-यील्ड टॉपिक्स और पिछले 5 साल के ट्रेंड्स पर फोकस करना चाहिए।\n\n"
+        "3. रिवीज़न और मॉक टेस्ट का चक्र:\n"
+        "जो पढ़ा है उसका साप्ताहिक रिवीज़न ही असली ताकत है। प्रतिदिन 2 घंटे उत्तर लेखन (Answer Writing) या ऑब्जेक्टिव प्रैक्टिस करें।"
     )
 
 def synthesize_hindi_government_exam_book(filename: str, category: str, exam_type: str, tier: str):
     try:
-        html_content = f"""<!DOCTYPE html>
-<html lang="hi">
-<head>
-<meta charset="UTF-8">
-<title>{category} - Shailja Tech Hindi Edition</title>
-<style>
-@page {{
-    size: letter;
-    margin: 28mm 22mm 28mm 22mm;
-    @bottom-right {{
-        content: "पेज " counter(page);
-        font-family: 'Helvetica', sans-serif;
-        font-size: 8.5pt;
-        color: #64748b;
-        font-weight: bold;
-    }}
-    @bottom-left {{
-        content: "शैलजा टेक | हिंदी सरकारी परीक्षा मास्टरक्लास सीरीज़";
-        font-family: 'Helvetica', sans-serif;
-        font-size: 8.5pt;
-        color: #64748b;
-    }}
-}}
-body {{
-    font-family: 'Helvetica', Arial, sans-serif;
-    font-size: 11pt;
-    line-height: 1.7;
-    color: #1e293b;
-}}
-.cover-page {{
-    text-align: center;
-    page-break-after: always;
-    padding-top: 100px;
-}}
-.cover-title {{
-    font-size: 26pt;
-    font-weight: bold;
-    color: #0f172a;
-    line-height: 1.3;
-    margin-bottom: 20px;
-}}
-.cover-subtitle {{
-    font-size: 13pt;
-    color: #475569;
-    line-height: 1.5;
-    margin-bottom: 40px;
-}}
-.publisher-badge {{
-    display: inline-block;
-    background: #fef2f2;
-    border: 2px solid #dc2626;
-    padding: 12px 25px;
-    border-radius: 8px;
-    font-size: 11pt;
-    font-weight: bold;
-    color: #dc2626;
-}}
-h1 {{
-    font-size: 18pt;
-    color: #1e3a8a;
-    border-bottom: 3px solid #1e3a8a;
-    padding-bottom: 8px;
-    margin-top: 35px;
-    page-break-before: always;
-}
-p {{
-    margin-bottom: 15px;
-    text-align: justify;
-}}
-.tip-box {{
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
-    border-left: 5px solid #2563eb;
-    padding: 15px;
-    margin: 20px 0;
-    border-radius: 4px;
-    font-size: 10pt;
-    page-break-inside: avoid;
-}}
-.tip-box b {{
-    color: #1e3a8a;
-    display: block;
-    margin-bottom: 5px;
-}}
-</style>
-</head>
-<body>
-<div class="cover-page">
-    <div class="cover-title">{category}</div>
-    <div class="cover-subtitle">({exam_type}) के लिए अचूक रणनीति, कमरे का सही माहौल, समय प्रबंधन और सफलता की संपूर्ण मार्गदर्शिका</div>
-    <div class="publisher-badge">शैलजा टेक पब्लिशिंग &mdash; {tier}</div>
-    <p style="margin-top: 50px; font-size: 9pt; color: #64748b;">
-        विशेष रूप से हिंदी माध्यम के गंभीर अभ्यर्थियों के लिए तैयार की गई मास्टरक्लास।<br/>
-        शैलजा टेक सॉवरिन पब्लिशिंग प्रोटोकॉल के तहत संरक्षित।
-    </p>
-</div>
-
-<h1>अध्याय प्रस्तावना: असफलता से सफलता तक की सीढ़ी</h1>
-<p>सरकारी नौकरी सिर्फ एक परीक्षा पास करना नहीं है, बल्कि यह आपके और आपके परिवार के भविष्य को एक नई ऊँचाई पर ले जाने वाली सीढ़ी है। भारत में लाखों युवा हर साल UPSC, UPPSC, SSC और बैंकिंग जैसी परीक्षाओं में बैठते हैं, लेकिन चयन उन्हीं का होता है जो भीड़ से हटकर स्मार्ट रणनीति अपनाते हैं।</p>
-<p>यह मास्टरक्लास आपको अगले 2 घंटे में यह सिखाएगी कि कैसे बिना भटकाव के, सही किताबों, सही टाइम-टेबल और अनुशासित दिनचर्या के साथ पहली बार में परीक्षा को क्रैक किया जाए।</p>"""
+        # Using raw string concatenation for HTML to completely avoid f-string brace conflicts
+        html_content = (
+            "<!DOCTYPE html>"
+            "<html lang=\"hi\">"
+            "<head>"
+            "<meta charset=\"UTF-8\">"
+            "<title>" + category + " - Shailja Tech Hindi Edition</title>"
+            "<style>"
+            "@page {"
+            "    size: letter;"
+            "    margin: 28mm 22mm 28mm 22mm;"
+            "    @bottom-right {"
+            "        content: \"पेज \" counter(page);"
+            "        font-family: 'Helvetica', sans-serif;"
+            "        font-size: 8.5pt;"
+            "        color: #64748b;"
+            "        font-weight: bold;"
+            "    }"
+            "    @bottom-left {"
+            "        content: \"शैलजा टेक | हिंदी सरकारी परीक्षा मास्टरक्लास सीरीज़\";"
+            "        font-family: 'Helvetica', sans-serif;"
+            "        font-size: 8.5pt;"
+            "        color: #64748b;"
+            "    }"
+            "}"
+            "body {"
+            "    font-family: 'Helvetica', Arial, sans-serif;"
+            "    font-size: 11pt;"
+            "    line-height: 1.7;"
+            "    color: #1e293b;"
+            "}"
+            ".cover-page {"
+            "    text-align: center;"
+            "    page-break-after: always;"
+            "    padding-top: 100px;"
+            "}"
+            ".cover-title {"
+            "    font-size: 26pt;"
+            "    font-weight: bold;"
+            "    color: #0f172a;"
+            "    line-height: 1.3;"
+            "    margin-bottom: 20px;"
+            "}"
+            ".cover-subtitle {"
+            "    font-size: 13pt;"
+            "    color: #475569;"
+            "    line-height: 1.5;"
+            "    margin-bottom: 40px;"
+            "}"
+            ".publisher-badge {"
+            "    display: inline-block;"
+            "    background: #fef2f2;"
+            "    border: 2px solid #dc2626;"
+            "    padding: 12px 25px;"
+            "    border-radius: 8px;"
+            "    font-size: 11pt;"
+            "    font-weight: bold;"
+            "    color: #dc2626;"
+            "}"
+            "h1 {"
+            "    font-size: 18pt;"
+            "    color: #1e3a8a;"
+            "    border-bottom: 3px solid #1e3a8a;"
+            "    padding-bottom: 8px;"
+            "    margin-top: 35px;"
+            "    page-break-before: always;"
+            "}"
+            "p {"
+            "    margin-bottom: 15px;"
+            "    text-align: justify;"
+            "}"
+            ".tip-box {"
+            "    background: #f8fafc;"
+            "    border: 1px solid #cbd5e1;"
+            "    border-left: 5px solid #2563eb;"
+            "    padding: 15px;"
+            "    margin: 20px 0;"
+            "    border-radius: 4px;"
+            "    font-size: 10pt;"
+            "    page-break-inside: avoid;"
+            "}"
+            ".tip-box b {"
+            "    color: #1e3a8a;"
+            "    display: block;"
+            "    margin-bottom: 5px;"
+            "}"
+            "</style>"
+            "</head>"
+            "<body>"
+            "<div class=\"cover-page\">"
+            "    <div class=\"cover-title\">" + category + "</div>"
+            "    <div class=\"cover-subtitle\">(" + exam_type + ") के लिए अचूक रणनीति, कमरे का सही माहौल, समय प्रबंधन और सफलता की संपूर्ण मार्गदर्शिका</div>"
+            "    <div class=\"publisher-badge\">शैलजा टेक पब्लिशिंग &mdash; " + tier + "</div>"
+            "    <p style=\"margin-top: 50px; font-size: 9pt; color: #64748b;\">"
+            "        विशेष रूप से हिंदी माध्यम के गंभीर अभ्यर्थियों के लिए तैयार की गई मास्टरक्लास。<br/>"
+            "        शैलजा टेक सॉवरिन पब्लिशिंग प्रोटोकॉल के तहत संरक्षित।"
+            "    </p>"
+            "</div>"
+            "<h1>अध्याय प्रस्तावना: असफलता से सफलता तक की सीढ़ी</h1>"
+            "<p>सरकारी नौकरी सिर्फ एक परीक्षा पास करना नहीं है, बल्कि यह आपके और आपके परिवार के भविष्य को एक नई ऊँचाई पर ले जाने वाली सीढ़ी है। भारत में लाखों युवा हर साल UPSC, UPPSC, SSC और बैंकिंग जैसी परीक्षाओं में बैठते हैं, लेकिन चयन उन्हीं का होता है जो भीड़ से हटकर स्मार्ट रणनीति अपनाते हैं।</p>"
+            "<p>यह मास्टरक्लास आपको अगले 2 घंटे में यह सिखाएगी कि कैसे बिना भटकाव के, सही किताबों, सही टाइम-टेबल और अनुशासित दिनचर्या के साथ पहली बार में परीक्षा को क्रैक किया जाए।</p>"
+        )
 
         chapters = [
-            ("अध्याय 1: स्टडी रूम का सही माहौल और मानसिक अनुशासन", "हिंदी माध्यम के छात्रों के लिए स्टडी रूम का माहौल कैसा होना चाहिए, डिस्ट्रक्शन से कैसे बचें, और रोजाना 8-10 घंटे बिना थके पढ़ने की मानसिक क्षमता कैसे विकसित करें, इस पर विस्तार से बताएं।"),
+            ("अध्याय 1: स्टडी रूम का सही माहौल और मानसिक अनुशासन", "हिंदी माध्यम के छात्रों के लिए स्टडी रूम का माहौल कैसा होना चाहिए, डिस्ट्रक्शन से कैसे बचें, और रोजाना 8-10 घंटे बिना थके पढ़ने की मानसिक क्षमता कैसे विकसित करें, इस पर विस्तार से बताएं।"),
             ("अध्याय 2: परीक्षा का संपूर्ण सिलेबस और हाई-यील्ड टॉपिक्स", "UPSC, SSC और Banking परीक्षाओं के सिलेबस को आसान भाषा में समझाएं और बताएं कि किन महत्वपूर्ण टॉपिक्स पर सबसे ज्यादा फोकस करना चाहिए ताकि कम समय में ज्यादा अंक मिल सकें।"),
-            ("अध्याय 3: उत्तर लेखन (Answer Writing) और रिवीज़न का अचूक फॉर्मूला", "परीक्षा हाल में समय प्रबंधन कैसे करें, मॉक टेस्ट का विश्लेषण कैसे करें, और अंतिम महीनों में रिवीज़न करने का सबसे वैज्ञानिक तरीका क्या है, इसे स्टेप-बाय-स्टेप समझाएं।"),
+            ("अध्याय 3: उत्तर लेखन (Answer Writing) और रिवीज़न का अचूक फॉर्मूला", "परीक्षा हाल में समय प्रबंधन कैसे करें, मॉक टेस्ट का विश्लेषण कैसे करें, और अंतिम महीनों में रिवीज़न करने का सबसे वैज्ञानिक तरीका क्या है, इसे स्टेप-बाय-स्टेप समझाएं।"),
             ("अध्याय 4: वित्तीय स्वतंत्रता और सरकारी नौकरी के बाद का रोडमैप", "सरकारी नौकरी मिलने के बाद जीवन में वित्तीय स्थिरता, पर्सनल फाइनेंस, और लॉन्ग-TERM ग्रोथ के लिए क्या कदम उठाने चाहिए, इसका व्यावहारिक मार्गदर्शन दें।")
         ]
 
@@ -171,12 +169,12 @@ p {{
                 if para.strip():
                     html_content += f"<p>{para.strip()}</p>"
 
-            html_content += f"""
-            <div class="tip-box">
-                <b>शैलजा टेक मुख्य मंत्र (Key Takeaway):</b>
-                सफलता का शॉर्टकट केवल एक ही है — निरंतरता (Consistency) और सही दिशा में की गई मेहनत। बिना भटके अपने लक्ष्य पर डटे रहें।
-            </div>
-            """
+            html_content += (
+                "<div class=\"tip-box\">"
+                "    <b>शैलजा टेक मुख्य मंत्र (Key Takeaway):</b>"
+                "    सफलता का शॉर्टकट केवल एक ही है — निरंतरता (Consistency) और सही दिशा में की गई मेहनत। बिना भटके अपने लक्ष्य पर डटे रहें।"
+                "</div>"
+            )
 
         html_content += "</body></html>"
         HTML(string=html_content).write_pdf(filename)
@@ -209,7 +207,7 @@ p { color: #9ca3af; font-size: 14px; margin-top: 8px; }
 <body>
 <div class="container">
     <div class="header">
-        <h1>शैलजा टेक &mdash; मास्टर एम्पायर ओएस (v43.0)</h1>
+        <h1>शैलजा टेक &mdash; मास्टर एम्पायर ओएस (v44.0)</h1>
         <p>हिंदी-फर्स्ट इंडियन एग्जाम पब्लिशिंग, बुक स्टोर, और सोशल मार्केटिंग हब</p>
     </div>
     <div class="menu-grid">
@@ -404,12 +402,12 @@ button:hover { background: #7c3aed; }
     <div id="promo-result" class="promo-box" style="display:none; margin-top:20px;">
         <h3 style="color:#38bdf8; margin-top:0;">📝 इंस्टाग्राम कैप्शन (Instagram Ready Caption):</h3>
         <p style="font-size:13px; line-height:1.6; color:#e2e8f0;">
-            🔥 सरकारी नौकरी का सपना अब होगा सच! UPSC, SSC और Banking परीक्षाओं के लिए शैलजा टेक की नई 'हिंदी सरकारी परीक्षा मास्टरक्लास' लॉन्च हो चुकी है।<br><br>
+            🔥 सरकारी नौकरी का सपना अब होगा सच! UPSC, SSC और Banking परीक्षाओं के लिए शैलजा टेक की नई 'हिंदी सरकारी परीक्षा मास्टरक्लास' लॉन्च हो चुकी है。<br><br>
             ✨ इस बुक में आपको मिलेगा:<br>
             ✔️ स्टडी रूम का परफेक्ट माहौल बनाने की ट्रिक<br>
             ✔️ पिछले 5 साल के ट्रेंड्स पर आधारित स्मार्ट स्टडी प्लान<br>
-            ✔️ बिना भटकाव के 2 घंटे में पढ़ने योग्य सॉलिड कंटेंट<br><br>
-            📥 अभी डाउनलोड करें! लिंक बायो या स्टोर में उपलब्ध है।<br><br>
+            ✔️ बिना भटकाव के 2 घंटे में पढ़ने योग्य सॉलिड कंटेंट<br><br>
+            📥 अभी डाउनलोड करें! लिंक बायो या स्टोर में उपलब्ध है。<br><br>
             #SarkariNaukri #UPSC2026 #HindiMedium #ShailjaTech #GovernmentExams #StudyMotivation
         </p>
     </div>
